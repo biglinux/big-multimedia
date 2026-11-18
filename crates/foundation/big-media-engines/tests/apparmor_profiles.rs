@@ -9,7 +9,23 @@ use big_media_engines::media_files::{
     VIDEO_EXTENSIONS,
 };
 
-const PLAYERS: [&str; 2] = ["big-audio-player", "big-video-player"];
+/// Each player's binary, GApplication id and its D-Bus object path.
+const PLAYERS: [(&str, &str, &str); 2] = [
+    (
+        "big-audio-player",
+        "br.com.biglinux.AudioPlayer",
+        "/br/com/biglinux/AudioPlayer",
+    ),
+    (
+        "big-video-player",
+        "br.com.biglinux.VideoPlayer",
+        "/br/com/biglinux/VideoPlayer",
+    ),
+];
+
+/// Media types that are also source code (TypeScript `.ts`/`.mts`, Go's
+/// `go.mod`): the players read them but never write them.
+const READ_ONLY_MEDIA: [&str; 3] = ["ts", "mts", "mod"];
 
 fn workspace() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
@@ -50,8 +66,14 @@ fn media_types() -> String {
         .copied()
         .chain([LYRICS_EXTENSION])
         .collect();
+    let writable: Vec<&str> = media
+        .iter()
+        .copied()
+        .filter(|ext| !READ_ONLY_MEDIA.contains(ext))
+        .collect();
     [
         variable("media_ext", &media),
+        variable("media_write_ext", &writable),
         variable("companion_ext", &companion),
         variable("playlist_ext", PLAYLIST_EXTENSIONS),
         variable("screenshot_ext", &["png"]),
@@ -65,10 +87,12 @@ fn profiles_follow_template_and_types() {
     let template =
         std::fs::read_to_string(root.join("crates/media-runtime/data/apparmor/player.apparmor.in"))
             .expect("profile template");
-    for app in PLAYERS {
+    for (app, app_id, app_path) in PLAYERS {
         let path = root.join(format!("crates/{app}/resources/apparmor/{app}"));
         let expected = template
             .replace("@MEDIA_TYPES@", &media_types())
+            .replace("@APP_ID@", app_id)
+            .replace("@APP_PATH@", app_path)
             .replace("@APP@", app);
         if std::env::var_os("BLESS_APPARMOR").is_some() {
             std::fs::create_dir_all(path.parent().expect("profile directory"))

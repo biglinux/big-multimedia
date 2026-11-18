@@ -2,25 +2,31 @@
 # crates/media-runtime/data/apparmor/player.apparmor.in; edit the template and
 # run the big-media-engines apparmor_profiles test with BLESS_APPARMOR=1.
 #
-# The player reads media, subtitle, lyrics, playlist and cover files and lists
-# folders; every other file in the home stays out of reach. It writes media
-# (tags, recordings, downloads, trash), playlists and screenshots, and its own
-# config, data and cache. ffmpeg, ffprobe, rsvg-convert, fd and yt-dlp parse
-# outside input, so they run in the narrower `decoder` profile.
+# The player reads media, subtitle, lyrics, playlist and image files outside
+# hidden folders and lists folders; the rest of the home stays out of reach. It
+# writes media (tags, recordings, downloads, trash), playlists and screenshots
+# there, and its own config, data and cache. ffmpeg, ffprobe, rsvg-convert,
+# ImageMagick, fd, curl and yt-dlp parse outside input, so they run in the
+# narrower `decoder` profile; glycin's image loaders run in `image_loader`.
 #
 # Complain mode logs what the profile would refuse without refusing it; the
-# release after the logs come back clean switches to enforce.
-# Local additions go in /etc/apparmor.d/local/big-audio-player.
+# release after the logs come back clean switches to enforce. Package upgrades
+# replace this file: local additions go in /etc/apparmor.d/local/big-audio-player.
 
 abi <abi/4.0>,
 
 include <tunables/global>
 
 @{exec_path} = /usr/bin/big-audio-player
-@{media_roots} = @{HOME} /media/ /run/media/ /mnt/
+# Where media lives: the home outside its hidden folders, and removable drives.
+@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/**
+@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/
+# Folders a publish stages its hidden `.big-media-*` copy in.
+@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/**
 @{suite_dirs} = big-audio-player big-video-player big-media-runtime
 
 @{media_ext} = {[mM][pP]4,[mM][kK][vV],[mM][kK]3[dD],[wW][eE][bB][mM],[aA][vV][iI],[mM][oO][vV],[qQ][tT],[fF][lL][vV],[wW][mM][vV],[mM][pP][gG],[mM][pP][eE][gG],[mM][pP][eE],[mM]2[vV],[tT][sS],[mM]2[tT][sS],[vV][oO][bB],[oO][gG][vV],[oO][gG][mM],3[gG][pP],3[gG]2,[mM]4[vV],[mM][tT][sS],[fF]4[vV],[dD][iI][vV][xX],[aA][sS][fF],[dD][vV],[mM][xX][fF],[rR][mM],[rR][mM][vV][bB],[nN][sS][vV],[mM][jJ]2,[mM][jJ][pP][eE][gG],[mM][jJ][pP][gG],[fF][lL][cC],[fF][lL][iI],[bB][iI][kK],[sS][mM][kK],[aA][xX][vV],3[gG][pP][pP],3[gG][pP]2,3[gG][pP][pP]2,[mM][jJ][pP]2,[mM]2[tT],[rR][vV],[bB][kK]2,[lL][rR][vV],[mM][oO][oO][vV],[mM][pP]3,[fF][lL][aA][cC],[oO][gG][gG],[oO][pP][uU][sS],[wW][aA][vV],[mM]4[aA],[mM]4[bB],[aA][aA][cC],[wW][mM][aA],[aA][pP][eE],[wW][vV],[aA][iI][fF][fF],[aA][iI][fF],[aA][iI][fF][cC],[mM][kK][aA],[oO][gG][aA],[sS][pP][xX],[aA][cC]3,[dD][tT][sS],[mM][pP][cC],[tT][tT][aA],[aA][mM][rR],[aA][wW][bB],[aA][uU],[sS][nN][dD],[dD][fF][fF],[dD][sS][fF],[wW][eE][bB][aA],[mM][oO][dD],[iI][tT],[sS]3[mM],[xX][mM],[mM][pP][gG][aA],[aA][dD][tT][sS],[fF]4[aA],[fF]4[bB],[aA][iI][fF][fF][cC],[dD][tT][sS][hH][dD],[mM][pP][pP],[lL][oO][aA][sS]}
+@{media_write_ext} = {[mM][pP]4,[mM][kK][vV],[mM][kK]3[dD],[wW][eE][bB][mM],[aA][vV][iI],[mM][oO][vV],[qQ][tT],[fF][lL][vV],[wW][mM][vV],[mM][pP][gG],[mM][pP][eE][gG],[mM][pP][eE],[mM]2[vV],[mM]2[tT][sS],[vV][oO][bB],[oO][gG][vV],[oO][gG][mM],3[gG][pP],3[gG]2,[mM]4[vV],[fF]4[vV],[dD][iI][vV][xX],[aA][sS][fF],[dD][vV],[mM][xX][fF],[rR][mM],[rR][mM][vV][bB],[nN][sS][vV],[mM][jJ]2,[mM][jJ][pP][eE][gG],[mM][jJ][pP][gG],[fF][lL][cC],[fF][lL][iI],[bB][iI][kK],[sS][mM][kK],[aA][xX][vV],3[gG][pP][pP],3[gG][pP]2,3[gG][pP][pP]2,[mM][jJ][pP]2,[mM]2[tT],[rR][vV],[bB][kK]2,[lL][rR][vV],[mM][oO][oO][vV],[mM][pP]3,[fF][lL][aA][cC],[oO][gG][gG],[oO][pP][uU][sS],[wW][aA][vV],[mM]4[aA],[mM]4[bB],[aA][aA][cC],[wW][mM][aA],[aA][pP][eE],[wW][vV],[aA][iI][fF][fF],[aA][iI][fF],[aA][iI][fF][cC],[mM][kK][aA],[oO][gG][aA],[sS][pP][xX],[aA][cC]3,[dD][tT][sS],[mM][pP][cC],[tT][tT][aA],[aA][mM][rR],[aA][wW][bB],[aA][uU],[sS][nN][dD],[dD][fF][fF],[dD][sS][fF],[wW][eE][bB][aA],[iI][tT],[sS]3[mM],[xX][mM],[mM][pP][gG][aA],[aA][dD][tT][sS],[fF]4[aA],[fF]4[bB],[aA][iI][fF][fF][cC],[dD][tT][sS][hH][dD],[mM][pP][pP],[lL][oO][aA][sS]}
 @{companion_ext} = {[sS][rR][tT],[aA][sS][sS],[sS][sS][aA],[sS][uU][bB],[vV][tT][tT],[iI][dD][xX],[sS][uU][pP],[sS][mM][iI],[jJ][pP][gG],[jJ][pP][eE][gG],[pP][nN][gG],[wW][eE][bB][pP],[bB][mM][pP],[tT][iI][fF][fF],[aA][vV][iI][fF],[hH][eE][iI][cC],[jJ][xX][lL],[sS][vV][gG],[lL][rR][cC]}
 @{playlist_ext} = {[mM]3[uU],[mM]3[uU]8,[pP][lL][sS]}
 @{screenshot_ext} = [pP][nN][gG]
@@ -28,6 +34,7 @@ include <tunables/global>
 profile big-audio-player @{exec_path} flags=(complain) {
   include <abstractions/base>
   include <abstractions/gnome>
+  include <abstractions/dconf>
   include <abstractions/wayland>
   include <abstractions/X>
   include <abstractions/audio>
@@ -36,11 +43,11 @@ profile big-audio-player @{exec_path} flags=(complain) {
   include <abstractions/nvidia>
   include <abstractions/opengl>
   include <abstractions/vulkan>
-  include <abstractions/opencl>
   include <abstractions/video>
   include <abstractions/nameservice>
   include <abstractions/ssl_certs>
   include <abstractions/dbus-session-strict>
+  include <abstractions/dbus-strict>
   include <abstractions/dbus-accessibility>
   include <abstractions/trash>
   include <abstractions/user-tmp>
@@ -52,43 +59,65 @@ profile big-audio-player @{exec_path} flags=(complain) {
   network inet6 dgram,
   network netlink raw,
 
-  # MPRIS, the tray item, portals, the keyring and the desktop's shortcuts.
-  dbus (send, receive) bus=session,
-  dbus bind bus=session name=org.mpris.MediaPlayer2.*,
+  # One instance per player: the second one hands its files to the first.
+  dbus bind bus=session name=br.com.biglinux.AudioPlayer,
+  dbus send bus=session peer=(name=br.com.biglinux.AudioPlayer),
+  dbus receive bus=session path=/br/com/biglinux/AudioPlayer{,/**},
+  # MPRIS and the taskbar progress.
+  dbus bind bus=session name=org.mpris.MediaPlayer2.Big*Player{,.*},
+  dbus (send, receive) bus=session path=/org/mpris/MediaPlayer2,
+  dbus send bus=session interface=com.canonical.Unity.LauncherEntry member=Update,
+  # The tray item and its menu.
   dbus bind bus=session name=org.kde.StatusNotifierItem-*,
-  # The sleep timer asks logind to suspend or power off.
-  dbus (send, receive) bus=system peer=(name=org.freedesktop.login1),
-  dbus send bus=system path=/org/freedesktop/DBus interface=org.freedesktop.DBus member={Hello,AddMatch,RemoveMatch,GetNameOwner},
+  dbus send bus=session interface=org.kde.StatusNotifierWatcher member=RegisterStatusNotifierItem,
+  dbus (send, receive) bus=session path=/{StatusNotifierItem,MenuBar},
+  # Portals: desktop settings, opening links and folders, the idle inhibitor.
+  dbus (send, receive) bus=session peer=(name=org.freedesktop.portal.Desktop),
+  dbus receive bus=session interface=org.freedesktop.portal.Request member=Response,
+  dbus send bus=session interface={org.freedesktop.ScreenSaver,org.gnome.SessionManager} member={Inhibit,Uninhibit,UnInhibit},
+  # IPTV passwords through secret-tool; any client the keyring serves sees every unlocked item.
+  dbus (send, receive) bus=session peer=(name=org.freedesktop.secrets),
+  # KWin's keep-above shortcut.
+  dbus send bus=session path=/component/kwin interface=org.kde.kglobalaccel.Component member=invokeShortcut,
+  # The sleep timer suspends or powers off through logind.
+  dbus send bus=system path=/org/freedesktop/login1 interface=org.freedesktop.login1.Manager member={Suspend,PowerOff,CanSuspend,CanPowerOff},
 
   @{exec_path} mr,
   / r,
   /usr/share/** r,
   /etc/mpv/** r,
   /etc/nvidia/** r,
+  # The NVIDIA OpenCL loader the GPU stack opens; the module helper has its own profile.
   /opt/cuda/targets/*/lib/*.so* mr,
+  /etc/OpenCL/vendors/{,*} r,
+  /usr/bin/nvidia-modprobe Px -> nvidia_modprobe,
   /var/lib/snapd/desktop/icons/ r,
 
   # Programs that parse outside input.
-  /usr/bin/{ffmpeg,ffprobe,rsvg-convert,fd,yt-dlp} Cx -> decoder,
+  /usr/bin/{ffmpeg,ffprobe,rsvg-convert,magick,convert,fd,curl,yt-dlp} Cx -> decoder,
+  # glycin's loaders run in their own profile. Its bwrap sandbox stays off: the
+  # player could hand bwrap any mount, so glycin starts the loader directly.
+  deny /usr/bin/bwrap x,
+  /usr/lib/glycin-loaders/** Cx -> image_loader,
   # Helpers that only talk to the desktop.
   /usr/bin/{secret-tool,gsettings,qdbus6,wmctrl,systemctl} ix,
-  # GTK decodes covers and icons through glycin, which starts its loader in bwrap.
-  /usr/bin/bwrap Cx -> image_loader,
-  /usr/lib/glycin-loaders/** Cx -> image_loader,
-  # The converters are programs of their own.
-  /usr/bin/big-{audio,video}-converter PUx,
+  # The converters run under their own profiles.
+  /usr/bin/big-{audio,video}-converter-gui Px,
   signal (send) set=(term, kill) peer=big-audio-player//{decoder,image_loader},
 
-  # What the media library and folder views show: names of every folder,
-  # contents of media and the files that come with it.
-  @{media_roots}/{,**/} r,
-  @{media_roots}/**.@{media_ext} rw,
-  @{media_roots}/**.@{companion_ext} r,
-  @{media_roots}/**.@{playlist_ext} rw,
-  owner @{HOME}/**.@{screenshot_ext} w,
-  # Writes publish through a hidden staging folder beside the target.
-  owner @{media_roots}/**/.big-media-*/ rw,
-  owner @{media_roots}/**/.big-media-*/* rw,
+  # Folder views list every folder; files are read by type.
+  @{user_dirs} r,
+  @{user_files}.@{media_ext} r,
+  owner @{user_files}.@{media_write_ext} w,
+  @{user_files}.@{companion_ext} r,
+  owner @{user_files}.@{playlist_ext} rw,
+  owner @{user_files}.@{screenshot_ext} w,
+  # Writes publish through a hidden staging copy beside the target.
+  owner @{staging_parents}/.big-media-*/ rw,
+  owner @{staging_parents}/.big-media-*/*.@{media_write_ext} rw,
+  owner @{staging_parents}/.big-media-*/*.@{playlist_ext} rw,
+  owner @{staging_parents}/.big-media-*/*.@{screenshot_ext} rw,
+  owner @{staging_parents}/.big-media-*.@{media_write_ext} rw,
 
   # The suite's own settings, library, caches and watch-later state.
   owner @{HOME}/.config/@{suite_dirs}/ rw,
@@ -99,7 +128,8 @@ profile big-audio-player @{exec_path} flags=(complain) {
   owner @{HOME}/.local/state/@{suite_dirs}/** rwk,
   owner @{HOME}/.cache/@{suite_dirs}/ rw,
   owner @{HOME}/.cache/@{suite_dirs}/** rwk,
-  owner @{HOME}/.cache/thumbnails/** rw,
+  # Thumbnails other programs made.
+  owner @{HOME}/.cache/thumbnails/** r,
 
   # Desktop settings the players follow.
   owner @{HOME}/.config/user-dirs.dirs r,
@@ -111,8 +141,8 @@ profile big-audio-player @{exec_path} flags=(complain) {
   owner @{run}/user/@{uid}/biglinux/indexd.sock rw,
 
   # GPU, network and process facts the players read about themselves.
-  @{PROC}/@{pid}/{stat,status,mountinfo,cgroup,cmdline} r,
-  @{PROC}/@{pid}/task/@{tid}/{stat,comm} r,
+  owner @{PROC}/@{pid}/{stat,status,mountinfo,cgroup,cmdline} r,
+  owner @{PROC}/@{pid}/task/@{tid}/{stat,comm} r,
   @{PROC}/driver/nvidia/version r,
   @{sys}/class/net/ r,
   @{sys}/class/net/*/device r,
@@ -124,71 +154,52 @@ profile big-audio-player @{exec_path} flags=(complain) {
     include <abstractions/nameservice>
     include <abstractions/ssl_certs>
     include <abstractions/python>
+    include <abstractions/fonts>
 
-    # Streams and yt-dlp's page and media requests.
+    # Streams, podcasts, lyrics and yt-dlp's page and media requests.
     network inet stream,
     network inet6 stream,
     network inet dgram,
     network inet6 dgram,
 
-    /usr/bin/{ffmpeg,ffprobe,rsvg-convert,fd,yt-dlp} mr,
+    /usr/bin/{ffmpeg,ffprobe,rsvg-convert,magick,convert,fd,curl,yt-dlp} mr,
+    # yt-dlp checks ffmpeg and runs a JavaScript runtime for some sites.
+    /usr/bin/{ffmpeg,ffprobe,deno,node} ix,
     /usr/bin/python3* ix,
     /usr/share/** r,
+    /etc/ImageMagick-*/** r,
     /opt/cuda/targets/*/lib/*.so* mr,
+    signal (receive) set=(term, kill) peer=big-audio-player,
     # Descriptors the player leaves open and a terminal ffmpeg looks for: never needed.
     deny /dev/dri/* rw,
     deny @{HOME}/.nv/** rwk,
     deny /dev/tty rw,
-    signal (receive) set=(term, kill) peer=big-audio-player,
 
-    @{media_roots}/{,**/} r,
-    @{media_roots}/**.@{media_ext} r,
-    @{media_roots}/**.@{companion_ext} r,
-
-    # Thumbnails, scrub frames and wallpaper copies, written through staging names.
-    owner @{HOME}/.cache/@{suite_dirs}/ rw,
-    owner @{HOME}/.cache/@{suite_dirs}/** rw,
+    @{user_dirs} r,
+    @{user_files}.@{media_ext} r,
+    @{user_files}.@{companion_ext} r,
+    # Tag edits: ffmpeg writes the hidden copy the player then publishes.
+    owner @{staging_parents}/.big-media-*.@{media_write_ext} w,
+    # Thumbnails, scrub frames and wallpaper copies, written under staging names.
+    owner @{HOME}/.cache/big-video-player/{,thumbnails/,scrub/}.big-media-* w,
     owner @{HOME}/.cache/yt-dlp/** rw,
     owner @{HOME}/.config/yt-dlp/** r,
 
     include if exists <local/big-audio-player.decoder>
   }
 
-  # bwrap builds the loader's sandbox: a user namespace and mounts of /usr,
-  # nothing of the home but the image it is handed.
-  profile image_loader flags=(complain, attach_disconnected, mediate_deleted) {
+  profile image_loader flags=(complain) {
     include <abstractions/base>
-
-    userns,
-    capability sys_admin,
-    capability sys_chroot,
-    capability setpcap,
-    capability net_admin,
-    capability sys_ptrace,
-    network netlink raw,
-    mount,
-    umount,
-    pivot_root,
+    include <abstractions/fonts>
 
     signal (receive) set=(term, kill) peer=big-audio-player,
-    @{PROC}/sys/kernel/overflow{u,g}id r,
-    @{PROC}/sys/user/max_user_namespaces r,
-    @{PROC}/@{pid}/fd/ r,
-    @{PROC}/@{pid}/{uid_map,gid_map,setgroups} rw,
-    # The empty root bwrap assembles before pivot_root.
-    /tmp/{newroot,oldroot}/ rw,
-    /newroot/{,**} rwl,
-    /proc/ rw,
     deny /dev/dri/* rw,
     deny @{HOME}/.nv/** rwk,
 
-    / r,
-    /usr/** r,
-    /usr/bin/bwrap mr,
-    /usr/lib/glycin-loaders/** ixr,
-    # glycin checks that bwrap works by running true in it.
-    /usr/bin/true ixr,
-    @{media_roots}/**.@{companion_ext} r,
+    /usr/lib/glycin-loaders/** mr,
+    /usr/share/** r,
+    @{user_files}.@{companion_ext} r,
+    owner @{HOME}/.cache/glycin/{,**} rw,
 
     include if exists <local/big-audio-player.image_loader>
   }
