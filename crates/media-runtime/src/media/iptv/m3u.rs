@@ -15,12 +15,44 @@ use std::path::Path;
 
 use super::channel::IptvChannel;
 
+/// Most entries kept from one playlist: a 64 MiB list of bare lines would
+/// otherwise become tens of millions of entries and several gigabytes.
+pub const MAX_PLAYLIST_ENTRIES: usize = 100_000;
+
+/// The entries of one playlist, at most [`MAX_PLAYLIST_ENTRIES`].
+#[derive(Debug, PartialEq, Eq)]
+pub struct PlaylistEntries<T> {
+    pub entries: Vec<T>,
+    /// The playlist listed more entries than were kept.
+    pub truncated: bool,
+}
+
+impl<T> Default for PlaylistEntries<T> {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(),
+            truncated: false,
+        }
+    }
+}
+
+impl<T> PlaylistEntries<T> {
+    /// Keeps `entry` while under the cap; false, and marked truncated, once full.
+    pub(crate) fn push(&mut self, entry: T) -> bool {
+        if self.entries.len() == MAX_PLAYLIST_ENTRIES {
+            log::warn!("playlist over {MAX_PLAYLIST_ENTRIES} entries truncated");
+            self.truncated = true;
+            return false;
+        }
+        self.entries.push(entry);
+        true
+    }
+}
+
 /// Parse an in-memory M3U/M3U8 playlist string into channel entries.
-///
-/// Returns an empty vector when the input has no URLs.
 #[must_use]
-pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
-    let mut channels = Vec::new();
+pub fn parse_m3u_content(content: &str) -> PlaylistEntries<IptvChannel> {
+    let mut channels = PlaylistEntries::default();
     let mut pending = IptvChannel::default();
     // A byte-order mark would turn `#EXTM3U` into a channel URL.
     let content = content.strip_prefix('\u{feff}').unwrap_or(content);
@@ -40,7 +72,9 @@ pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
                 ch.name = line.to_string();
             }
             ch.url = line.to_string();
-            channels.push(ch);
+            if !channels.push(ch) {
+                break;
+            }
         }
     }
 
@@ -78,22 +112,39 @@ pub fn read_playlist_text(path: &Path) -> Option<String> {
 
 /// Read and parse an M3U/M3U8 file from disk.
 ///
-/// Returns an empty vector on read error or an oversized file; callers that
+/// Returns no entries on read error or an oversized file; callers that
 /// need to distinguish "file missing" from "valid but empty" should check
 /// existence first.
 #[must_use]
-pub fn parse_m3u_file(path: &Path) -> Vec<IptvChannel> {
+pub fn parse_m3u_file(path: &Path) -> PlaylistEntries<IptvChannel> {
     read_playlist_text(path)
         .map(|s| parse_m3u_content(&s))
         .unwrap_or_default()
 }
 
+/// The quoted value of `attr`, matched by its whole name among the attributes
+/// before the display name.
 fn extract_attr(line: &str, attr: &str) -> Option<String> {
-    let pattern = format!("{attr}=\"");
-    let start = line.find(&pattern)?;
-    let rest = &line[start + pattern.len()..];
-    let end = rest.find('"')?;
-    Some(rest[..end].to_string())
+    let mut quoted = false;
+    let mut previous = ' ';
+    for (pos, character) in line.char_indices() {
+        match character {
+            '"' => quoted = !quoted,
+            ',' if !quoted => return None,
+            _ if !quoted && previous.is_whitespace() => {
+                if let Some(rest) = line[pos..]
+                    .strip_prefix(attr)
+                    .and_then(|rest| rest.strip_prefix("=\""))
+                {
+                    let end = rest.find('"')?;
+                    return Some(rest[..end].to_string());
+                }
+            }
+            _ => {}
+        }
+        previous = character;
+    }
+    None
 }
 
 /// The name after the first comma outside the quoted attributes: a name may
@@ -119,14 +170,14 @@ mod tests {
         // panicking, into at most one entry per line.
         #[test]
         fn parse_never_panics(text in "\\PC{0,4096}") {
-            proptest::prop_assert!(parse_m3u_content(&text).len() <= text.lines().count());
+            proptest::prop_assert!(parse_m3u_content(&text).entries.len() <= text.lines().count());
         }
     }
 
     #[test]
     fn names_keep_their_commas() {
         let input = "#EXTINF:-1 group-title=\"News, Brazil\",Globo, SP\nhttp://a/1\n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels[0].name, "Globo, SP");
         assert_eq!(channels[0].group, "News, Brazil");
     }
@@ -134,7 +185,7 @@ mod tests {
     #[test]
     fn byte_order_mark_is_not_a_channel() {
         let input = "\u{feff}#EXTM3U\n#EXTINF:-1,One\nhttp://a/1\n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "One");
     }
@@ -144,7 +195,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("list.m3u");
         std::fs::write(&path, b"#EXTINF:-1,Canal Not\xedcias\nhttp://a/1\n").unwrap();
-        let channels = parse_m3u_file(&path);
+        let channels = parse_m3u_file(&path).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "Canal Notícias");
         assert_eq!(channels[0].url, "http://a/1");
@@ -159,7 +210,7 @@ http://stream1.example.com/live
 #EXTINF:-1,Channel Two
 http://stream2.example.com/live
 ";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 2);
         assert_eq!(channels[0].name, "Channel One");
         assert_eq!(channels[0].url, "http://stream1.example.com/live");
@@ -174,7 +225,7 @@ http://espn.example.com
 #EXTINF:-1 group-title=\"News\",CNN
 http://cnn.example.com
 ";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels[0].group, "Sports");
         assert_eq!(channels[1].group, "News");
     }
@@ -183,25 +234,25 @@ http://cnn.example.com
     fn captures_tvg_logo_and_group() {
         let input = "#EXTINF:-1 tvg-id=\"espn.us\" tvg-logo=\"http://logo.png\" group-title=\"HD\",ESPN\n\
              http://espn.example.com\n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels[0].logo, "http://logo.png");
         assert_eq!(channels[0].group, "HD");
     }
 
     #[test]
     fn empty_input_yields_empty() {
-        assert!(parse_m3u_content("").is_empty());
+        assert!(parse_m3u_content("").entries.is_empty());
     }
 
     #[test]
     fn header_only_yields_empty() {
-        assert!(parse_m3u_content("#EXTM3U\n").is_empty());
+        assert!(parse_m3u_content("#EXTM3U\n").entries.is_empty());
     }
 
     #[test]
     fn url_without_extinf_uses_url_as_name() {
         let input = "http://stream.example.com/live\n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "http://stream.example.com/live");
     }
@@ -216,7 +267,7 @@ http://cnn.example.com
 http://only.example.com
 
 ";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "Only");
     }
@@ -229,7 +280,7 @@ http://espn.example.com
 #EXTINF:-1,NoGroup
 http://nogroup.example.com
 ";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels[0].group, "Sports");
         assert_eq!(channels[1].group, "");
     }
@@ -237,7 +288,7 @@ http://nogroup.example.com
     #[test]
     fn trims_whitespace_around_name_and_url() {
         let input = "  #EXTINF:-1,  Trimmed  \n  http://example.com  \n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "Trimmed");
         assert_eq!(channels[0].url, "http://example.com");
@@ -246,7 +297,7 @@ http://nogroup.example.com
     #[test]
     fn display_name_skips_commas_inside_attributes() {
         let input = "#EXTINF:-1 tvg-id=\"x,y\",Real Name\nhttp://u.example.com\n";
-        let channels = parse_m3u_content(input);
+        let channels = parse_m3u_content(input).entries;
         assert_eq!(channels[0].name, "Real Name");
     }
 
@@ -275,5 +326,35 @@ http://nogroup.example.com
             extract_attr(line, "group-title"),
             Some("News & Sports".into())
         );
+    }
+
+    #[test]
+    fn extract_attr_matches_whole_names() {
+        for (line, expected) in [
+            (r#"#EXTINF:-1 x-tvg-logo="a" tvg-logo="b",N"#, Some("b")),
+            (r#"#EXTINF:-1 x-tvg-logo="a",N"#, None),
+            (
+                r#"#EXTINF:-1 tvg-name="tvg-logo=" tvg-logo="b",N"#,
+                Some("b"),
+            ),
+            (r#"#EXTINF:-1 tvg-name=" tvg-logo=",N"#, None),
+            (r#"#EXTINF:-1,Name tvg-logo="c""#, None),
+        ] {
+            assert_eq!(
+                extract_attr(line, "tvg-logo").as_deref(),
+                expected,
+                "{line}"
+            );
+        }
+    }
+
+    #[test]
+    fn entries_past_the_cap_are_dropped() {
+        let at_cap = "http://a/\n".repeat(100_000);
+        let parsed = parse_m3u_content(&at_cap);
+        assert_eq!((parsed.entries.len(), parsed.truncated), (100_000, false));
+        let parsed = parse_m3u_content(&format!("{at_cap}http://b/\n"));
+        assert_eq!((parsed.entries.len(), parsed.truncated), (100_000, true));
+        assert_eq!(parsed.entries.last().unwrap().url, "http://a/");
     }
 }

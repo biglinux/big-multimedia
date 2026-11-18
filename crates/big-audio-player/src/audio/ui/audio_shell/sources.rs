@@ -143,17 +143,12 @@ impl AudioShell {
                     spawn_db_query(
                         db,
                         move |conn| {
-                            let _ = queries::insert_radio_station(
-                                conn,
-                                &name,
-                                &url,
-                                &favicon,
-                                &group_name,
-                            );
-                            queries::get_all_radio_stations(conn).unwrap_or_default()
+                            queries::insert_radio_station(conn, &name, &url, &favicon, &group_name)
                         },
-                        move |stations| {
-                            let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
+                        move |saved| {
+                            let _ = input.send(after_station_write(saved, || {
+                                i18n("The station could not be saved.")
+                            }));
                         },
                     );
                 }
@@ -163,12 +158,11 @@ impl AudioShell {
                     let input = sender.input_sender().clone();
                     spawn_db_query(
                         db,
-                        move |conn| {
-                            let _ = queries::delete_radio_station(conn, id);
-                            queries::get_all_radio_stations(conn).unwrap_or_default()
-                        },
-                        move |stations| {
-                            let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
+                        move |conn| queries::delete_radio_station(conn, id),
+                        move |deleted| {
+                            let _ = input.send(after_station_write(deleted, || {
+                                i18n("The station could not be removed.")
+                            }));
                         },
                     );
                 }
@@ -421,13 +415,9 @@ impl AudioShell {
             return;
         };
         let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| queries::get_all_radio_stations(conn).unwrap_or_default(),
-            move |stations| {
-                let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
-            },
-        );
+        spawn_db_query(db, queries::get_all_radio_stations, move |stations| {
+            let _ = input.send(loaded_stations_message(stations));
+        });
     }
 }
 
@@ -519,6 +509,32 @@ fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf)
     dialog.present(Some(parent));
 }
 
+/// A failed station write keeps the shown list and says so; a successful one rereads it.
+fn after_station_write<T>(
+    written: big_media_runtime::Result<T>,
+    failure: impl FnOnce() -> String,
+) -> AudioShellInput {
+    match written {
+        Ok(_) => AudioShellInput::Radio(RadioPanelOutput::RequestStations),
+        Err(error) => {
+            log::warn!("radio station could not be written: {error}");
+            AudioShellInput::Notify(failure())
+        }
+    }
+}
+
+fn loaded_stations_message(
+    stations: big_media_runtime::Result<Vec<RadioStation>>,
+) -> AudioShellInput {
+    match stations {
+        Ok(stations) => AudioShellInput::RadioStationsResolved(stations),
+        Err(error) => {
+            log::warn!("radio stations could not be read: {error}");
+            AudioShellInput::Notify(i18n("Saved radio stations could not be read."))
+        }
+    }
+}
+
 fn recording_saved_field(label: &str, value: &str) -> gtk::Box {
     let row = gtk::Box::new(gtk::Orientation::Vertical, 4);
     let title = gtk::Label::builder()
@@ -591,5 +607,39 @@ mod tests {
         assert!(recording_file_has_content(&path));
 
         fs::remove_file(&path).expect("remove recording fixture");
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    fn station_failures_keep_the_list() {
+        use super::{
+            AudioShellInput, RadioPanelOutput, after_station_write, loaded_stations_message,
+        };
+        use crate::db::{queries, schema};
+
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let saved = queries::insert_radio_station(&conn, "A", "https://a.test", "", "");
+        assert!(matches!(
+            after_station_write(saved, || "save failed".into()),
+            AudioShellInput::Radio(RadioPanelOutput::RequestStations)
+        ));
+
+        conn.execute_batch(
+            "CREATE TEMP TRIGGER refuse BEFORE INSERT ON radio_stations
+             BEGIN SELECT RAISE(ABORT, 'refused'); END;",
+        )
+        .unwrap();
+        let refused = queries::insert_radio_station(&conn, "B", "https://b.test", "", "");
+        assert!(matches!(
+            after_station_write(refused, || "save failed".into()),
+            AudioShellInput::Notify(message) if message == "save failed"
+        ));
+
+        conn.execute_batch("DROP TABLE radio_stations").unwrap();
+        assert!(matches!(
+            loaded_stations_message(queries::get_all_radio_stations(&conn)),
+            AudioShellInput::Notify(_)
+        ));
     }
 }

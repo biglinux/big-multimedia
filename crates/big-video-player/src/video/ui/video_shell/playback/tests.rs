@@ -56,6 +56,7 @@ mod resolve_open_files_tests {
 
     fn resolve_by_name(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
         resolve_open_files(paths, &("name".to_string(), false))
+            .map(|list| (list.entries, list.start, list.folder))
     }
 
     #[test]
@@ -167,6 +168,20 @@ mod resolve_open_files_tests {
             resolve_by_name(vec![playlist.to_string_lossy().into_owned()]),
             None
         );
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn long_playlist_reports_truncation() {
+        let dir = tempfile::tempdir().unwrap();
+        let playlist = dir.path().join("long.pls");
+        fs::write(&playlist, "File1=http://a/\n".repeat(100_001)).unwrap();
+        let list = resolve_open_files(
+            vec![playlist.to_string_lossy().into_owned()],
+            &("name".to_string(), false),
+        )
+        .unwrap();
+        assert_eq!((list.entries.len(), list.truncated), (100_000, true));
     }
 }
 

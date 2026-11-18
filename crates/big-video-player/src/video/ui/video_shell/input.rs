@@ -74,13 +74,10 @@ pub enum VideoShellInput {
     /// playlist with these paths and start playing the first.
     OpenFiles(Vec<String>),
     /// Internal: an `OpenFiles` request whose folder-scan / playlist-file parse
-    /// has been resolved off the main thread. Carries the final playlist, the
-    /// index to start at, and the optional browse folder. Dispatched by
-    /// `open_files` so the blocking disk I/O never runs on the GTK main loop.
+    /// has been resolved off the main thread. Dispatched by `open_files` so the
+    /// blocking disk I/O never runs on the GTK main loop.
     PlaylistResolved {
-        entries: Vec<String>,
-        start: usize,
-        folder: Option<String>,
+        list: super::playback::OpenedList,
         /// The request's `open_generation`; an older one is stale.
         generation: u64,
     },

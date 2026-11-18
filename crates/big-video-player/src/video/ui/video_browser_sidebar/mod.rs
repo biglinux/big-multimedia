@@ -98,6 +98,8 @@ pub enum VideoBrowserSidebarInput {
 pub enum VideoBrowserSidebarOutput {
     /// Activate a video: make `paths` the playlist and start at `start`.
     PlayFromList { paths: Vec<String>, start: usize },
+    /// Open a playlist file as the play queue, as an opened file would be.
+    OpenPlaylist(String),
     /// Append these paths to the mpv playlist without disrupting playback
     /// (Files "add to playlist" / the header add button).
     Enqueue(Vec<String>),
