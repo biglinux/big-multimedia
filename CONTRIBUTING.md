@@ -179,6 +179,30 @@ TMPDIR="$dir" cargo test --locked -p big-video-player --lib fileops -- --skip cr
 TMPDIR="$dir" cargo test --locked -p big-player-ui --features audio-panels --lib downloads_publish_only_complete_files
 ```
 
+### AppArmor profiles
+
+Each player ships `/etc/apparmor.d/big-<player>`, rendered from
+`crates/media-runtime/data/apparmor/player.apparmor.in` with the media types of
+`big_media_engines::media_files`. Edit the template, then regenerate both
+profiles; the same test fails while a shipped profile is out of date:
+
+```sh
+BLESS_APPARMOR=1 cargo test --locked -p big-media-engines --test apparmor_profiles
+apparmor_parser -Q -K crates/big-video-player/resources/apparmor/big-video-player
+```
+
+The profiles run in complain mode, which logs what they would refuse without
+refusing it. To see what a change misses, load a copy attached to your build and
+read the kernel log while you use the player; `sudo apparmor_parser -R` with the
+same file unloads it:
+
+```sh
+sed "s|^@{exec_path} = .*|@{exec_path} = $PWD/target/debug/big-video-player|" \
+	crates/big-video-player/resources/apparmor/big-video-player >"$TMPDIR/profile"
+sudo apparmor_parser -r -K "$TMPDIR/profile"
+journalctl -k -f | grep 'profile="big-video-player'
+```
+
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
 regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 

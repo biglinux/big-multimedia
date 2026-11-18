@@ -1,0 +1,192 @@
+# AppArmor profile for @APP@, generated from
+# crates/media-runtime/data/apparmor/player.apparmor.in; edit the template and
+# run the big-media-engines apparmor_profiles test with BLESS_APPARMOR=1.
+#
+# The player reads media, subtitle, lyrics, playlist and cover files and lists
+# folders; every other file in the home stays out of reach. It writes media
+# (tags, recordings, downloads, trash), playlists and screenshots, and its own
+# config, data and cache. ffmpeg, ffprobe, rsvg-convert, fd and yt-dlp parse
+# outside input, so they run in the narrower `decoder` profile.
+#
+# Complain mode logs what the profile would refuse without refusing it; the
+# release after the logs come back clean switches to enforce.
+# Local additions go in /etc/apparmor.d/local/@APP@.
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = /usr/bin/@APP@
+@{media_roots} = @{HOME} /media/ /run/media/ /mnt/
+@{suite_dirs} = big-audio-player big-video-player big-media-runtime
+
+@MEDIA_TYPES@
+
+profile @APP@ @{exec_path} flags=(complain) {
+  include <abstractions/base>
+  include <abstractions/gnome>
+  include <abstractions/wayland>
+  include <abstractions/X>
+  include <abstractions/audio>
+  include <abstractions/dri-enumerate>
+  include <abstractions/mesa>
+  include <abstractions/nvidia>
+  include <abstractions/opengl>
+  include <abstractions/vulkan>
+  include <abstractions/opencl>
+  include <abstractions/video>
+  include <abstractions/nameservice>
+  include <abstractions/ssl_certs>
+  include <abstractions/dbus-session-strict>
+  include <abstractions/dbus-accessibility>
+  include <abstractions/trash>
+  include <abstractions/user-tmp>
+
+  # Streams, radio, podcasts, lyrics, TV cast discovery and the phone remote.
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+  network netlink raw,
+
+  # MPRIS, the tray item, portals, the keyring and the desktop's shortcuts.
+  dbus (send, receive) bus=session,
+  dbus bind bus=session name=org.mpris.MediaPlayer2.*,
+  dbus bind bus=session name=org.kde.StatusNotifierItem-*,
+  # The sleep timer asks logind to suspend or power off.
+  dbus (send, receive) bus=system peer=(name=org.freedesktop.login1),
+  dbus send bus=system path=/org/freedesktop/DBus interface=org.freedesktop.DBus member={Hello,AddMatch,RemoveMatch,GetNameOwner},
+
+  @{exec_path} mr,
+  / r,
+  /usr/share/** r,
+  /etc/mpv/** r,
+  /etc/nvidia/** r,
+  /opt/cuda/targets/*/lib/*.so* mr,
+  /var/lib/snapd/desktop/icons/ r,
+
+  # Programs that parse outside input.
+  /usr/bin/{ffmpeg,ffprobe,rsvg-convert,fd,yt-dlp} Cx -> decoder,
+  # Helpers that only talk to the desktop.
+  /usr/bin/{secret-tool,gsettings,qdbus6,wmctrl,systemctl} ix,
+  # GTK decodes covers and icons through glycin, which starts its loader in bwrap.
+  /usr/bin/bwrap Cx -> image_loader,
+  /usr/lib/glycin-loaders/** Cx -> image_loader,
+  # The converters are programs of their own.
+  /usr/bin/big-{audio,video}-converter PUx,
+  signal (send) set=(term, kill) peer=@APP@//{decoder,image_loader},
+
+  # What the media library and folder views show: names of every folder,
+  # contents of media and the files that come with it.
+  @{media_roots}/{,**/} r,
+  @{media_roots}/**.@{media_ext} rw,
+  @{media_roots}/**.@{companion_ext} r,
+  @{media_roots}/**.@{playlist_ext} rw,
+  owner @{HOME}/**.@{screenshot_ext} w,
+  # Writes publish through a hidden staging folder beside the target.
+  owner @{media_roots}/**/.big-media-*/ rw,
+  owner @{media_roots}/**/.big-media-*/* rw,
+
+  # The suite's own settings, library, caches and watch-later state.
+  owner @{HOME}/.config/@{suite_dirs}/ rw,
+  owner @{HOME}/.config/@{suite_dirs}/** rwk,
+  owner @{HOME}/.local/share/@{suite_dirs}/ rw,
+  owner @{HOME}/.local/share/@{suite_dirs}/** rwk,
+  owner @{HOME}/.local/state/@{suite_dirs}/ rw,
+  owner @{HOME}/.local/state/@{suite_dirs}/** rwk,
+  owner @{HOME}/.cache/@{suite_dirs}/ rw,
+  owner @{HOME}/.cache/@{suite_dirs}/** rwk,
+  owner @{HOME}/.cache/thumbnails/** rw,
+
+  # Desktop settings the players follow.
+  owner @{HOME}/.config/user-dirs.dirs r,
+  owner @{HOME}/.config/big-shell/shell.json r,
+  owner @{HOME}/.config/plasma-org.kde.plasma.desktop-appletsrc r,
+  owner @{HOME}/.config/mpv/** r,
+
+  # The BigLinux file index answers library searches.
+  owner @{run}/user/@{uid}/biglinux/indexd.sock rw,
+
+  # GPU, network and process facts the players read about themselves.
+  @{PROC}/@{pid}/{stat,status,mountinfo,cgroup,cmdline} r,
+  @{PROC}/@{pid}/task/@{tid}/{stat,comm} r,
+  @{PROC}/driver/nvidia/version r,
+  @{sys}/class/net/ r,
+  @{sys}/class/net/*/device r,
+
+  include if exists <local/@APP@>
+
+  profile decoder flags=(complain) {
+    include <abstractions/base>
+    include <abstractions/nameservice>
+    include <abstractions/ssl_certs>
+    include <abstractions/python>
+
+    # Streams and yt-dlp's page and media requests.
+    network inet stream,
+    network inet6 stream,
+    network inet dgram,
+    network inet6 dgram,
+
+    /usr/bin/{ffmpeg,ffprobe,rsvg-convert,fd,yt-dlp} mr,
+    /usr/bin/python3* ix,
+    /usr/share/** r,
+    /opt/cuda/targets/*/lib/*.so* mr,
+    # Descriptors the player leaves open and a terminal ffmpeg looks for: never needed.
+    deny /dev/dri/* rw,
+    deny @{HOME}/.nv/** rwk,
+    deny /dev/tty rw,
+    signal (receive) set=(term, kill) peer=@APP@,
+
+    @{media_roots}/{,**/} r,
+    @{media_roots}/**.@{media_ext} r,
+    @{media_roots}/**.@{companion_ext} r,
+
+    # Thumbnails, scrub frames and wallpaper copies, written through staging names.
+    owner @{HOME}/.cache/@{suite_dirs}/ rw,
+    owner @{HOME}/.cache/@{suite_dirs}/** rw,
+    owner @{HOME}/.cache/yt-dlp/** rw,
+    owner @{HOME}/.config/yt-dlp/** r,
+
+    include if exists <local/@APP@.decoder>
+  }
+
+  # bwrap builds the loader's sandbox: a user namespace and mounts of /usr,
+  # nothing of the home but the image it is handed.
+  profile image_loader flags=(complain, attach_disconnected, mediate_deleted) {
+    include <abstractions/base>
+
+    userns,
+    capability sys_admin,
+    capability sys_chroot,
+    capability setpcap,
+    capability net_admin,
+    capability sys_ptrace,
+    network netlink raw,
+    mount,
+    umount,
+    pivot_root,
+
+    signal (receive) set=(term, kill) peer=@APP@,
+    @{PROC}/sys/kernel/overflow{u,g}id r,
+    @{PROC}/sys/user/max_user_namespaces r,
+    @{PROC}/@{pid}/fd/ r,
+    @{PROC}/@{pid}/{uid_map,gid_map,setgroups} rw,
+    # The empty root bwrap assembles before pivot_root.
+    /tmp/{newroot,oldroot}/ rw,
+    /newroot/{,**} rwl,
+    /proc/ rw,
+    deny /dev/dri/* rw,
+    deny @{HOME}/.nv/** rwk,
+
+    / r,
+    /usr/** r,
+    /usr/bin/bwrap mr,
+    /usr/lib/glycin-loaders/** ixr,
+    # glycin checks that bwrap works by running true in it.
+    /usr/bin/true ixr,
+    @{media_roots}/**.@{companion_ext} r,
+
+    include if exists <local/@APP@.image_loader>
+  }
+}
