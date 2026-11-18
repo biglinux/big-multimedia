@@ -185,6 +185,62 @@ impl Component for DownloadQueuePanel {
     }
 }
 
+/// The row of one download, its cancel button wired to `progress`.
+fn download_task(title: &str, progress: &Arc<DownloadProgress>) -> DownloadTask {
+    let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    row_box.set_margin_top(4);
+    row_box.set_margin_bottom(4);
+    row_box.add_css_class("download-panel-row");
+
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    let title_label = gtk::Label::builder()
+        .label(title)
+        .ellipsize(gtk::pango::EllipsizeMode::End)
+        .max_width_chars(40)
+        .xalign(0.0)
+        .hexpand(true)
+        .css_classes(["caption-heading"])
+        .build();
+    let cancel_button = tooltip::icon_button(
+        "process-stop-symbolic",
+        &i18n("Cancel download"),
+        &["circular"],
+    );
+    header.append(&title_label);
+    header.append(&cancel_button);
+
+    let progress_bar = gtk::ProgressBar::new();
+    progress_bar.set_show_text(false);
+
+    let status_label = gtk::Label::builder()
+        .label(i18n("Starting…"))
+        .xalign(0.0)
+        .css_classes(["caption", "dim-label"])
+        .build();
+
+    row_box.append(&header);
+    row_box.append(&progress_bar);
+    row_box.append(&status_label);
+
+    let prog_ref = Arc::clone(progress);
+    cancel_button.connect_clicked(move |button| {
+        if !prog_ref.finished.load(Ordering::Relaxed) {
+            prog_ref.cancelled.store(true, Ordering::Relaxed);
+            button.set_sensitive(false);
+        }
+    });
+
+    DownloadTask {
+        title: title.to_string(),
+        progress: Arc::clone(progress),
+        status: Cell::new(DownloadStatus::Downloading),
+        row_box,
+        progress_bar,
+        status_label,
+        cancel_button,
+    }
+}
+
 impl DownloadQueuePanel {
     /// Build a progress row, register the task, reveal the panel, and spawn the
     /// streamed HTTP download on a worker thread.
@@ -197,59 +253,8 @@ impl DownloadQueuePanel {
         sender: &ComponentSender<Self>,
     ) {
         let progress = Arc::new(DownloadProgress::default());
-
-        let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
-        row_box.set_margin_top(4);
-        row_box.set_margin_bottom(4);
-        row_box.add_css_class("download-panel-row");
-
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        let title_label = gtk::Label::builder()
-            .label(title)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .max_width_chars(40)
-            .xalign(0.0)
-            .hexpand(true)
-            .css_classes(["caption-heading"])
-            .build();
-        let cancel_button = tooltip::icon_button(
-            "process-stop-symbolic",
-            &i18n("Cancel download"),
-            &["circular"],
-        );
-        header.append(&title_label);
-        header.append(&cancel_button);
-
-        let progress_bar = gtk::ProgressBar::new();
-        progress_bar.set_show_text(false);
-
-        let status_label = gtk::Label::builder()
-            .label(i18n("Starting…"))
-            .xalign(0.0)
-            .css_classes(["caption", "dim-label"])
-            .build();
-
-        row_box.append(&header);
-        row_box.append(&progress_bar);
-        row_box.append(&status_label);
-
-        let prog_ref = Arc::clone(&progress);
-        cancel_button.connect_clicked(move |button| {
-            if !prog_ref.finished.load(Ordering::Relaxed) {
-                prog_ref.cancelled.store(true, Ordering::Relaxed);
-                button.set_sensitive(false);
-            }
-        });
-
-        let task = Rc::new(DownloadTask {
-            title: title.to_string(),
-            progress: Arc::clone(&progress),
-            status: Cell::new(DownloadStatus::Downloading),
-            row_box: row_box.clone(),
-            progress_bar,
-            status_label,
-            cancel_button,
-        });
+        let task = Rc::new(download_task(title, &progress));
+        let row_box = task.row_box.clone();
 
         self.list_box.append(&row_box);
         self.tasks.push(Rc::clone(&task));

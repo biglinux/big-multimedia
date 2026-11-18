@@ -52,7 +52,9 @@ An entry and its accept button must not capture each other through validation
 or apply callbacks. A shared validation closure holds weak widget references
 when those same widgets keep the closure in their signal handlers. Open URL and
 Go to Time validation callbacks keep the accept button weakly: the button's
-submit handler already owns the entry.
+submit handler already owns the entry. A dialog that asks for one name uses
+`big_relm4_components::layout::name_prompt::prompt_name`;
+`closed_prompts_finalize_their_entry_and_buttons` checks 50 closes.
 
 Filter apply closures hold their adjustment or dropdown weakly: those controls
 also own the apply handlers. Colorize's shared apply closure also holds its

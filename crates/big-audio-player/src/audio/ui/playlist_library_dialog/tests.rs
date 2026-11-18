@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use big_relm4_components::layout::name_prompt::BigNamePromptSpec;
+
 use super::spec::{
-    EmptyPlaylistStateSpec, NamePromptSpec, PlaylistActionKind, PlaylistActionSpec,
-    PlaylistLibraryWindowSpec, SavedPlaylistListState, SavedPlaylistRowSpec,
-    accepted_playlist_name, delete_playlist_prompt_spec, empty_playlist_state_spec,
-    generator_action_specs, import_export_action_specs, is_name_prompt_accept_enabled,
+    EmptyPlaylistStateSpec, PlaylistActionKind, PlaylistActionSpec, PlaylistLibraryWindowSpec,
+    SavedPlaylistListState, SavedPlaylistRowSpec, delete_playlist_prompt_spec,
+    empty_playlist_state_spec, generator_action_specs, import_export_action_specs,
     localized_delete_playlist_description, localized_saved_playlist_subtitle,
-    name_prompt_focus_selection, playlist_library_window_spec, rename_playlist_prompt_spec,
-    save_current_queue_prompt_spec, saved_playlist_list_state, saved_playlist_row_spec,
+    playlist_library_window_spec, rename_playlist_prompt_spec, save_current_queue_prompt_spec,
+    saved_playlist_list_state, saved_playlist_row_spec,
 };
 
 #[test]
@@ -116,41 +117,31 @@ fn saved_row_formats_counts_and_minutes() {
 }
 
 #[test]
-fn name_prompt_trims_blank_values() {
+fn name_prompts_keep_their_copy() {
     assert_eq!(
         save_current_queue_prompt_spec(),
-        NamePromptSpec {
-            heading: "Save Current Queue",
-            entry_label: "Playlist name",
-            placeholder: "Name for the new playlist",
+        BigNamePromptSpec {
+            title: "Save Current Queue".into(),
+            description: Some("Name for the new playlist".into()),
+            entry_title: "Playlist name".into(),
             prefill: String::new(),
-            accept_label: "Save",
-            cancel_label: "Cancel",
+            accept_label: "Save".into(),
+            content_width: 420,
+            content_height: 240,
         }
     );
     assert_eq!(
         rename_playlist_prompt_spec("Road Mix"),
-        NamePromptSpec {
-            heading: "Rename Playlist",
-            entry_label: "Playlist name",
-            placeholder: "New name",
+        BigNamePromptSpec {
+            title: "Rename Playlist".into(),
+            description: Some("New name".into()),
+            entry_title: "Playlist name".into(),
             prefill: "Road Mix".to_string(),
-            accept_label: "Save",
-            cancel_label: "Cancel",
+            accept_label: "Save".into(),
+            content_width: 420,
+            content_height: 240,
         }
     );
-    assert!(!is_name_prompt_accept_enabled("   "));
-    assert!(is_name_prompt_accept_enabled(" Road Mix "));
-    assert_eq!(
-        accepted_playlist_name(" Road Mix "),
-        Some("Road Mix".to_string())
-    );
-    assert_eq!(accepted_playlist_name(" \t "), None);
-}
-
-#[test]
-fn name_prompt_focus_selects_entire_prefill() {
-    assert_eq!(name_prompt_focus_selection(), (0, -1));
 }
 
 #[test]
