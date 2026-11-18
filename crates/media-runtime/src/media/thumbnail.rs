@@ -106,15 +106,26 @@ fn card_frame_spec(video_path: &str, seek_secs: f64, output: &Path) -> BigSubpro
 }
 
 /// Renders one frame of `video_path` at `seek_secs`, fitted into a 240x136 card,
-/// into `target`, whose extension picks the image format. ffmpeg writes a staging
-/// file beside `target` that replaces it only after a clean exit with a non-empty
-/// file, so a killed or failed run never leaves a cached frame that `exists()`
-/// would serve. Blocking; returns whether `target` was written. A network
-/// stream is never opened: an IPTV panel counts each card against the account.
+/// into `target` through [`publish_converted`]. Blocking; returns whether
+/// `target` was written. A network stream is never opened: an IPTV panel counts
+/// each card against the account.
 pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> bool {
     if big_os_kit::url::is_stream_uri(video_path) {
         return false;
     }
+    publish_converted(target, |partial| {
+        card_frame_spec(video_path, seek_secs, partial)
+    })
+}
+
+/// Runs the converter built for a staging file beside `target`, whose extension
+/// it keeps, and renames that file over `target` only after a clean exit with a
+/// non-empty file, so a killed or failed run never leaves a file that an
+/// `exists()` cache check would serve. Blocking; returns whether `target` was written.
+pub fn publish_converted(
+    target: &Path,
+    converter: impl FnOnce(&Path) -> BigSubprocessSpec,
+) -> bool {
     let (Some(directory), Some(extension)) = (target.parent(), target.extension()) else {
         return false;
     };
@@ -126,7 +137,7 @@ pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> boo
     ));
     partial_name.push(extension);
     let partial = directory.join(partial_name);
-    let rendered = card_frame_spec(video_path, seek_secs, &partial)
+    let rendered = converter(&partial)
         .run()
         .is_ok_and(|output| output.status.success());
     publish_frame(rendered, &partial, target)
@@ -283,6 +294,28 @@ mod tests {
         std::fs::write(&partial, b"whole").unwrap();
         assert!(publish_frame(true, &partial, &frame));
         assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
+    }
+
+    /// The converters stand in for an ffmpeg run that writes part of its output
+    /// and fails, and for one that exits cleanly without writing.
+    #[test]
+    fn failed_or_empty_conversion_leaves_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("wallpaper.png");
+        for script in ["printf part > \"$1\"; exit 1", ": > \"$1\""] {
+            assert!(!publish_converted(&target, |partial| {
+                BigSubprocessSpec::builder()
+                    .program("sh")
+                    .args(["-c", script, "sh"])
+                    .arg(partial)
+                    .build()
+            }));
+            assert_eq!(
+                std::fs::read_dir(dir.path()).unwrap().count(),
+                0,
+                "{script}"
+            );
+        }
     }
 
     #[test]
