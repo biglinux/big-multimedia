@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Regenerate big-media-runtime.pot (and POTFILES.in) from every Rust source
-# that shares the single `big-media-runtime` gettext domain.
+# Regenerate big-media-runtime.pot from every Rust source that shares the
+# single `big-media-runtime` gettext domain, and POTFILES.in from the files
+# xgettext took strings from.
 #
 # One catalog translates the whole suite: apps set `big-media-runtime` as the
 # process default domain (big_media_runtime::app::boot_player), so `i18n()`/`ni18n()`
@@ -34,9 +35,10 @@ for dir in "${SOURCES[@]}"; do
   fi
 done
 
-# POTFILES.in is the file list xgettext reads; regenerate it first. The C
-# collation keeps its order the same on every machine.
-find "${SOURCES[@]}" -name '*.rs' -not -path '*/target/*' | LC_ALL=C sort > "$HERE/POTFILES.in"
+# The C collation keeps the file order, and so the POT, the same on every machine.
+candidates="$(mktemp)"
+trap 'rm -f "$candidates"' EXIT
+find "${SOURCES[@]}" -name '*.rs' -not -path '*/target/*' | LC_ALL=C sort > "$candidates"
 
 xgettext \
   --language=Rust \
@@ -53,7 +55,10 @@ xgettext \
   --msgid-bugs-address="https://github.com/biglinux/big-multimedia/issues" \
   --output="$HERE/big-media-runtime.pot" \
   --directory="$ROOT" \
-  --files-from="$HERE/POTFILES.in"
+  --files-from="$candidates"
+
+awk '/^#: / { for (i = 2; i <= NF; i++) { sub(/:[0-9]+$/, "", $i); print $i } }' \
+  "$HERE/big-media-runtime.pot" | LC_ALL=C sort -u > "$HERE/POTFILES.in"
 
 echo "POT regenerated: $HERE/big-media-runtime.pot"
 echo "Files: $(wc -l < "$HERE/POTFILES.in")  Unique msgids: $(grep -c '^msgid ' "$HERE/big-media-runtime.pot")"

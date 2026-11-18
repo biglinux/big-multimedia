@@ -1,97 +1,27 @@
-<div align="center">
-
-<img src="crates/big-video-player/resources/icons/hicolor/scalable/apps/big-video-player.svg" width="96" alt="Big Video Player icon">
-&nbsp;&nbsp;&nbsp;
-<img src="crates/big-audio-player/resources/icons/hicolor/scalable/apps/big-audio-player.svg" width="96" alt="Big Audio Player icon">
-
 # Big Multimedia
 
-**The BigLinux media players: a video player and a music player, built in Rust with GTK 4, libadwaita and mpv.**
+The video and music players of [BigLinux](https://www.biglinux.com.br), built
+with GTK 4, libadwaita and mpv.
 
 [![Build Package](https://github.com/biglinux/big-multimedia/actions/workflows/build-package.yml/badge.svg)](https://github.com/biglinux/big-multimedia/actions/workflows/build-package.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.98.1%20%C2%B7%20edition%202024-orange?logo=rust)](rust-toolchain.toml)
-[![GTK](https://img.shields.io/badge/GTK-4.22-4a86cf?logo=gtk)](https://gtk.org)
-[![libadwaita](https://img.shields.io/badge/libadwaita-1.9-3584e4?logo=gnome)](https://gnome.pages.gitlab.gnome.org/libadwaita/)
-[![mpv](https://img.shields.io/badge/engine-libmpv-691f69)](https://mpv.io)
-[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey?logo=linux&logoColor=white)](https://www.biglinux.com.br)
 
-[Video Player](#big-video-player) ·
-[Audio Player](#big-audio-player) ·
-[Install](#installation) ·
-[Build](#building-from-source) ·
-[Architecture](#architecture) ·
-[Contributing](#contributing)
+![Big Video Player playing the Sintel trailer, with its header and control bar showing](docs/screenshots/video-player-main.png)
 
-</div>
+## Players
 
----
+| Player | Package | What it is for |
+|---|---|---|
+| [Big Video Player](crates/big-video-player/README.md) | `big-video-player` | Movies, series, streams and TV channels, with hardware decoding |
+| [Big Audio Player](crates/big-audio-player/README.md) | `big-audio-player` | A music library, playlists, internet radio and podcasts |
 
-## Overview
+![Big Audio Player with the music library on the left and an album playing in the queue](docs/screenshots/audio-player-main.png)
 
-Big Multimedia is the workspace behind the two media players of
-[BigLinux](https://www.biglinux.com.br). Both share one playback engine
-(`big-media-runtime`: mpv playback, casting, media probing) and one set of
-interface components, so they look, sound and behave alike.
+Both players share one playback engine and one set of interface components,
+so they look, sound and behave alike. Each player's README lists its features
+and command-line options.
 
-| Application | Desktop ID | What it is for |
-|-------------|------------|----------------|
-| **Big Video Player** | `br.com.biglinux.VideoPlayer` | Movies, series, streams and TV channels, with hardware decoding |
-| **Big Audio Player** | `br.com.biglinux.AudioPlayer` | A music library, playlists, internet radio and podcasts |
-
-## Big Video Player
-
-<p align="center">
-  <img src="docs/screenshots/video-player-main.png" width="880" alt="Big Video Player playing the Sintel trailer, with its header and control bar showing">
-</p>
-
-A hardware-accelerated video player that keeps the picture edge to edge and
-the controls out of the way.
-
-- **Hardware decoding** through VAAPI, VDPAU and NVDEC, on a GL render path
-  with a software fallback.
-- **Every common format**: MP4, MKV, WebM, MOV, AVI and anything else mpv
-  plays, plus DVD and Blu-ray discs, ISO images and folders.
-- **Subtitles** with a secondary track, delay control, styling, and loading of
-  external files.
-- **Picture and sound**: brightness, contrast and colour, zoom, crop and
-  rotation, HDR tone mapping, an equalizer, and upscaling shaders (FSR, CAS,
-  RAVU and Anime4K).
-- **Streams and TV**: online video, IPTV playlists and Xtream providers, and
-  playback on a TV on the same network.
-- **Library at hand**: a folder browser and a play queue in a side panel,
-  thumbnail previews on the seek bar, and chapters.
-- **Cut and convert**: mark the parts to keep and hand them to Big Video
-  Converter, or extract the audio track.
-- **Desktop integration**: MPRIS for media keys and the desktop's player
-  controls, a sleep timer, screenshots, and configurable keyboard shortcuts.
-
-## Big Audio Player
-
-<p align="center">
-  <img src="docs/screenshots/audio-player-main.png" width="880" alt="Big Audio Player with the music library on the left and an album playing in the queue">
-</p>
-
-A music player built around a fast, searchable library.
-
-- **Library** of the music folders you choose, scanned in the background and
-  searchable as you type, grouped by song, album, artist or genre.
-- **Formats**: MP3, FLAC, OGG Vorbis, Opus, AAC, WAV and more.
-- **Playlists and queue**, with undo, import of M3U/PLS playlists and smart
-  playlists.
-- **Internet radio** with recording, and **podcasts** with subscriptions.
-- **Lyrics**, a tag editor and album art.
-- **Listening**: gapless playback, ReplayGain, an equalizer, playback speed
-  that keeps voices at their natural pitch, and a sleep timer.
-- **Desktop integration**: MPRIS for media keys and the desktop's player
-  controls, and playback on a TV.
-
-Neither player converts media on its own. Cut, Convert and Extract Audio open
-`big-video-converter-gui` or `big-audio-converter-gui` with the file and any
-marked cuts (`--segments=START-END,...`), through
-`big_media_runtime::shared::converter_handoff`.
-
-## Installation
+## Install
 
 On BigLinux the players come from the official repositories:
 
@@ -109,88 +39,39 @@ the ones you choose. Inside a checkout, either recipe builds the working tree:
 cd big-video-player && makepkg -si
 ```
 
-## Building from source
+## Build from source
 
-### Requirements
-
-| Dependency | Version |
-|------------|---------|
-| Rust toolchain | 1.98.1, pinned in [`rust-toolchain.toml`](rust-toolchain.toml) |
-| GTK | 4.22 or newer |
-| libadwaita | 1.9 or newer |
-| libmpv | development files |
-| SQLite | development files |
-| gettext, pkgconf | for translations and native libraries |
-
-### Build and run
+You need the Rust toolchain pinned in
+[`rust-toolchain.toml`](rust-toolchain.toml), GTK 4.22 or newer, libadwaita
+1.9 or newer, and the libmpv, SQLite, gettext and pkgconf development files.
 
 ```sh
 cargo build --workspace --locked
-cargo run --locked -p big-video-player
+cargo run --locked -p big-video-player -- ~/Videos/movie.mkv
 cargo run --locked -p big-audio-player
 ```
 
-Either player accepts files on the command line:
+[CONTRIBUTING.md](CONTRIBUTING.md) lists the checks a change must pass and how
+to run the widget tests without a window reaching your desktop.
 
-```sh
-cargo run --locked -p big-video-player -- ~/Videos/movie.mkv
-```
+## Workspace
 
-### Checks
+| Directory | What it holds |
+|---|---|
+| [`crates/big-video-player`](crates/big-video-player/README.md), [`crates/big-audio-player`](crates/big-audio-player/README.md) | The two programs |
+| [`crates/media-runtime`](crates/media-runtime/README.md) | `big-media-runtime`: mpv playback, casting, probing, settings and the shared translation catalog |
+| `crates/foundation` | GTK-free building blocks: OS contracts, the music library data, audio effects, render policy |
+| `crates/app` | Application plumbing: actions, MPRIS, dialogs, shortcuts |
+| `crates/ui` | Relm4 and libadwaita components, media chrome and the panels both players show |
+| `big-video-player/`, `big-audio-player/` | The package recipes |
+| `third_party/relm4` | Relm4 with a lifetime patch |
 
-```sh
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --locked --all-features
-scripts/check-media-surface-imports.sh
-```
-
-Tests that create widgets need a Wayland display. Run them in an isolated,
-headless compositor so that no window reaches your desktop; see
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-## Architecture
-
-```text
-big-audio-player/            Package recipe (PKGBUILD) of the audio player
-big-video-player/            Package recipe (PKGBUILD) of the video player
-crates/
-├── big-video-player/        Video player (binary)
-├── big-audio-player/        Audio player (binary)
-├── media-runtime/           big-media-runtime: mpv engine, casting, probing, settings, translations
-├── foundation/              big-os-kit, big-audio-effects, big-media-engines, big-mpv-render, big-media-data
-├── app/                     big-app-kit, big-app-kit-core: actions, MPRIS, dialogs, shortcuts
-└── ui/
-    ├── generic/big-relm4-components     Reusable Relm4/libadwaita components
-    └── media/big-media-components       Media chrome, transport, metadata dialogs
-        media/big-player-ui              Panels shared by the players
-third_party/relm4/           Relm4 with a lifetime patch
-```
-
-- Each player keeps its own `resources/` (desktop file, AppStream metadata,
-  icon), `application-assets/` (GResource CSS) and `build.rs`.
-- The only external BigLinux dependency is
-  [big-gtk-kit](https://github.com/biglinux/big-gtk-kit), the shared GTK
-  building blocks.
-- The workspace `Cargo.toml`, `clippy.toml`, `deny.toml`,
-  `rust-toolchain.toml` and `LICENSE` live at the root. `clippy.toml` bans GTK
-  and libadwaita calls that leak or misbehave in the pinned versions;
-  [`docs/native-library-limits.md`](docs/native-library-limits.md) explains
-  why.
-
-## Translations
-
-Both players share one translation catalog in
-[`crates/media-runtime/po`](crates/media-runtime/po). Regenerate the template
-after changing user-facing text:
-
-```sh
-crates/media-runtime/po/regen-pot.sh
-```
+[Workspace architecture](docs/architecture.md) explains how the crates depend
+on each other, how the players hand media to the converters and how to
+refresh the translation template.
 
 ## Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md): build, checks and the resource-lifetime
-  rules.
 - [docs/](docs/README.md): the index of the guides below.
 - [Settings and environment](docs/settings.md): `settings.conf`, every key and
   the environment variables.
@@ -198,19 +79,11 @@ crates/media-runtime/po/regen-pot.sh
   credentials, the LAN remote and library scans behave when something fails.
 - [Native library limits](docs/native-library-limits.md): GTK and libadwaita
   defects behind the `clippy.toml` bans.
-- [Media runtime architecture](crates/media-runtime/ARCHITECTURE.md): the
-  engine's module map and subprocess rules.
-- Each player's README lists its command-line options:
-  [video](crates/big-video-player/README.md#command-line),
-  [audio](crates/big-audio-player/README.md#command-line).
-
-## Contributing
+- [CONTRIBUTING.md](CONTRIBUTING.md): build, checks and the resource-lifetime
+  rules every widget must follow.
 
 Issues and pull requests are welcome on
-[GitHub](https://github.com/biglinux/big-multimedia/issues). Before sending a
-change, read [`CONTRIBUTING.md`](CONTRIBUTING.md). It covers the build and test
-commands and the resource-lifetime rules every widget must follow: closed
-widgets must finalize, and every GLib source they arm must be removed.
+[GitHub](https://github.com/biglinux/big-multimedia/issues).
 
 ## License
 

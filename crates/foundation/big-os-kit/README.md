@@ -22,7 +22,7 @@ The crate root's rustdoc lists every module.
 It is the leaf of the workspace and links no GTK. `big-app-kit-core`,
 `big-media-data`, `big-player-ui`, `big-media-runtime` and both players depend
 on it; `big-app-kit` re-exports `subprocess` and `storage` unchanged. The
-workspace map is in the root [README](../../../README.md#architecture).
+workspace map is in the root [README](../../../README.md#workspace).
 
 ## Rules for callers
 

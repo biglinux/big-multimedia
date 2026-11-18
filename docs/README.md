@@ -12,6 +12,8 @@ Guides for people who run, configure or change the Big Multimedia players.
 ## Changing the code
 
 - [CONTRIBUTING](../CONTRIBUTING.md): build, checks and resource-lifetime rules.
+- [Workspace architecture](architecture.md): the crates and how they depend on
+  each other, the converter handoff and the translation template.
 - [Persistence and recovery](persistence-and-recovery.md): save lanes, the
   keyring, the LAN remote and library scans.
 - [Native library limits](native-library-limits.md): GTK and libadwaita defects
@@ -19,4 +21,4 @@ Guides for people who run, configure or change the Big Multimedia players.
 - [Media runtime architecture](../crates/media-runtime/ARCHITECTURE.md): the
   engine's module map and subprocess rules.
 
-`screenshots/` holds the images the root README shows.
+`screenshots/` holds the images the READMEs show.
