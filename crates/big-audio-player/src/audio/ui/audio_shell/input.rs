@@ -6,10 +6,9 @@ use super::*;
 pub enum AudioShellInput {
     QueueRestored(Result<(DbHandle, crate::db::queries_advanced::QueueSession), ()>),
     RetryQueueSave,
-    /// Tracks whose files were deleted/trashed off the main loop landed; carries
-    /// the DB ids that succeeded so the queue + database are reconciled on the
-    /// main thread (by id, robust to any queue change during the deletes).
-    TracksDeletedFromStorage(Vec<i64>),
+    /// The library id (0 for an external file) and path of each file deleted or
+    /// trashed off the main loop.
+    TracksDeletedFromStorage(Vec<(i64, String)>),
     /// An intent emitted by the library panel.
     Library(LibraryPanelOutput),
     /// An intent emitted by the queue panel.
