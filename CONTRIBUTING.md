@@ -10,7 +10,11 @@ cargo build --workspace --locked
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --locked --all-features
 scripts/check-media-surface-imports.sh
+scripts/check-no-shell-invocations.sh
 ```
+
+`check-no-shell-invocations.sh` refuses `sh -c` and `bash -c` in every crate's
+`src/`: subprocesses take an argv array, never a shell command string.
 
 Tests that create widgets need a Wayland display. Run them in an isolated
 session, a headless compositor such as `kwin_wayland --virtual` with its own
