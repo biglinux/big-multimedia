@@ -4,50 +4,57 @@
 //! crates, and `big-os-kit`, never on `big-media-runtime` (mpv/ffmpeg). Each
 //! panel is a push-model `Component` (owns its widgets + emits typed intents;
 //! the host shell owns the queue/mpv/db/settings and pushes display state back).
+//!
+//! - [`appearance`]: appearance/color preference pages shared by the audio and video
+//!   players.
+//! - [`audio_preferences`]: shared audio preferences page plus live-player callback
+//!   types.
+//! - `audio_trim_bar`: shared visual audio trim bar used by player transports.
+//! - `browser_node`: `BrowserNode` GObject node type for the file/library browser tree.
+//! - [`cut_timeline`]: shared cut timeline drawing and pointer interaction.
+//! - `download`: generic HTTP download-manager backend (worker + per-task
+//!   state/widgets).
+//! - `download_panel`: slide-up download-manager panel.
+//! - [`favicon_cache`]: bounded favicon-texture LRU cache (`gdk::Texture`) for the
+//!   radio panel.
+//! - `file_browser`: flat directory file browser.
+//! - `lyrics_panel`: lyrics panel (lyrics / loading / empty stack).
+//! - [`media_list`]: virtualized media list (recycling `ListView`) shared by radio +
+//!   podcast.
+//! - `playback_bar`: audio playback bar (transport + volume/speed/voice popovers).
+//! - `podcast_panel`: podcast subscriptions + RSS search panel.
+//! - [`preference_rows`]: preference rows bound to a typed settings key, shared by both
+//!   players.
+//! - `radio_panel`: radio tab: saved stations + Radio-Browser search/explore.
+//! - `smartphone`: smartphone web-remote pairing dialog.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 
-/// Appearance/color preference pages shared by the audio and video players.
 pub mod appearance;
-/// Shared audio preferences page plus live-player callback types.
 pub mod audio_preferences;
-/// Shared visual audio trim bar used by player transports.
 #[cfg(feature = "audio-panels")]
 pub mod audio_trim_bar;
-/// `BrowserNode` GObject node type for the file/library browser tree.
 #[cfg(feature = "audio-panels")]
 pub mod browser_node;
-/// Shared cut timeline drawing and pointer interaction.
 pub mod cut_timeline;
-/// Generic HTTP download-manager backend (worker + per-task state/widgets).
 #[cfg(feature = "audio-panels")]
 pub mod download;
-/// Slide-up download-manager panel.
 #[cfg(feature = "audio-panels")]
 pub mod download_panel;
-/// Bounded favicon-texture LRU cache (`gdk::Texture`) for the radio panel.
 pub mod favicon_cache;
-/// Flat directory file browser.
 #[cfg(feature = "audio-panels")]
 pub mod file_browser;
-/// Lyrics panel (lyrics / loading / empty stack).
 #[cfg(feature = "audio-panels")]
 pub mod lyrics_panel;
-/// Virtualized media list (recycling `ListView`) shared by radio + podcast.
 pub mod media_list;
-/// Audio playback bar (transport + volume/speed/voice popovers).
 #[cfg(feature = "audio-panels")]
 pub mod playback_bar;
-/// Podcast subscriptions + RSS search panel.
 #[cfg(feature = "audio-panels")]
 pub mod podcast_panel;
-/// Preference rows bound to a typed settings key, shared by both players.
 pub mod preference_rows;
-/// Radio tab: saved stations + Radio-Browser search/explore.
 #[cfg(feature = "audio-panels")]
 pub mod radio_panel;
-/// Smartphone web-remote pairing dialog.
 #[cfg(feature = "audio-panels")]
 pub mod smartphone;

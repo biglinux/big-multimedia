@@ -15,7 +15,8 @@
 //!   [`playlist_order`].
 //! - File and metadata helpers: [`media`], [`ffmpeg`].
 //! - GTK widgets and dialogs: [`audio`], [`playback`], [`surface`],
-//!   [`preference_rows`], [`initials_avatar`].
+//!   [`preference_rows`], [`initials_avatar`], and the shared player chrome
+//!   (popovers, play pulse, off-thread spawn) in [`player_chrome`].
 //! - Translation hook: [`text`] and [`install_media_components_translator`].
 //!
 //! # Translation

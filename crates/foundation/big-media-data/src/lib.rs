@@ -8,29 +8,30 @@
 //! HTTP + URL helpers come from `big_os_kit` (GTK-free leaf, single policy home).
 //! [`media_probe`] runs ffprobe for every crate that reads a media file's
 //! streams and tags.
+//!
+//! - [`config`]: compile-time configuration constants (paths, domain names).
+//! - `db`: SQLite database layer for the music library.
+//! - [`error`]: unified `Error` enum + crate-wide `Result<T>` alias.
+//! - [`i18n`]: internationalization helper (`gettext` wrapper).
+//! - `library`: music library scanning, metadata reading, and web-metadata clients
+//!   (MusicBrainz, LRCLIB, cover art, podcasts).
+//! - [`media_probe`]: ffprobe's JSON report on a media file, shared by the audio
+//!   library and the video metadata cache.
+//! - `radio`: radio data layer: Radio-Browser API client (GTK-free).
+//! - [`settings`]: persistent key/value settings store + typed key catalog.
 
 #![forbid(unsafe_code)]
 
-/// Compile-time configuration constants (paths, domain names).
 pub mod config;
-/// SQLite database layer for the music library.
 #[cfg(feature = "db")]
 pub mod db;
-/// Unified `Error` enum + crate-wide `Result<T>` alias.
 pub mod error;
-/// Internationalization helper (`gettext` wrapper).
 pub mod i18n;
-/// Music library scanning, metadata reading, and web-metadata clients
-/// (MusicBrainz, LRCLIB, cover art, podcasts).
 #[cfg(feature = "library")]
 pub mod library;
-/// ffprobe's JSON report on a media file, shared by the audio library and
-/// the video metadata cache.
 pub mod media_probe;
-/// Radio data layer: Radio-Browser API client (GTK-free).
 #[cfg(feature = "radio")]
 pub mod radio;
-/// Persistent key/value settings store + typed key catalog.
 pub mod settings;
 
 // Root re-export, as in `big-media-runtime`; the `db` queries use
