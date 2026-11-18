@@ -120,9 +120,12 @@ impl MpvBackend {
         advanced_control: bool,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
         // SAFETY: the caller has the creation GL context current.
-        let (vendor, renderer) = unsafe { super::fast_render::current_gl_driver() };
-        let interop = hwdec_interop_for(&vendor, &renderer);
-        info!("video: GL {vendor} / {renderer}, hwdec interop {interop}");
+        let driver = unsafe { super::fast_render::current_gl_driver() };
+        let interop = hwdec_interop_for(&driver.vendor, &driver.renderer);
+        info!(
+            "video: GL {} / {}, hwdec interop {interop}",
+            driver.vendor, driver.renderer
+        );
         self.with_mpv(|m| {
             m.set_property_logged("gpu-hwdec-interop", interop.to_string());
         });

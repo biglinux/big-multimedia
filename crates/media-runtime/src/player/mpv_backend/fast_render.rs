@@ -384,18 +384,28 @@ unsafe extern "C" fn update_wrapper(userdata: *mut c_void) {
     (callback.0)();
 }
 
-/// The current GL context's `GL_VENDOR` and `GL_RENDERER`, empty where the
-/// driver gives none.
-///
+/// The current GL context's driver strings, each empty where the driver
+/// gives none.
+pub(super) struct GlDriver {
+    pub(super) vendor: String,
+    pub(super) renderer: String,
+    pub(super) version: String,
+}
+
 /// # Safety
 /// A GL context must be current on the calling thread.
-pub(super) unsafe fn current_gl_driver() -> (String, String) {
+pub(super) unsafe fn current_gl_driver() -> GlDriver {
     const GL_VENDOR: u32 = 0x1F00;
     const GL_RENDERER: u32 = 0x1F01;
+    const GL_VERSION: u32 = 0x1F02;
     type GetString = unsafe extern "C" fn(u32) -> *const std::ffi::c_char;
     // SAFETY: `glGetString` has this signature.
     let Some(get_string) = (unsafe { gl_function::<GetString>(c"glGetString") }) else {
-        return (String::new(), String::new());
+        return GlDriver {
+            vendor: String::new(),
+            renderer: String::new(),
+            version: String::new(),
+        };
     };
     let read = |name| {
         // SAFETY: the caller has a GL context current; GL returns a static
@@ -410,7 +420,11 @@ pub(super) unsafe fn current_gl_driver() -> (String, String) {
                 .into_owned()
         }
     };
-    (read(GL_VENDOR), read(GL_RENDERER))
+    GlDriver {
+        vendor: read(GL_VENDOR),
+        renderer: read(GL_RENDERER),
+        version: read(GL_VERSION),
+    }
 }
 
 /// # Safety
