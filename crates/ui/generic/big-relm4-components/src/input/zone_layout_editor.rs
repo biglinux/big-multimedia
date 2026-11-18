@@ -48,7 +48,7 @@ const EDITOR_CSS: &str = "
     background: rgba(255,255,255,0.08); color: white; transition: opacity 150ms ease;
 }
 .zle-button:hover { background: rgba(255,255,255,0.20); }
-.zle-title { color: alpha(white, 0.45); font-size: 11px; font-style: italic; }
+.zle-title { color: alpha(white, 0.45); font-size: 0.75em; font-style: italic; }
 .zle-window-control { color: alpha(white, 0.45); }
 ";
 
