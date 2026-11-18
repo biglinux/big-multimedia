@@ -47,7 +47,7 @@ big-media-data.workspace = true
 
 gettext-rs.workspace = true
 
-rusqlite = { version = "0.40.1", default-features = false, optional = true }
+rusqlite = { version = "0.43.0", default-features = false, optional = true }
 
 log.workspace = true
 env_logger = "0.11"
