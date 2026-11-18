@@ -380,7 +380,7 @@ msgstr "Progresso na barra de tarefas"
 
 #: crates/big-audio-player/src/audio/preferences.rs:136
 msgid "Shows how far the song has played on the player icon"
-msgstr "Mostra no ícone do player quanto da música já tocou"
+msgstr "Mostra no ícone do reprodutor quanto da música já tocou"
 
 #: crates/big-audio-player/src/audio/preferences.rs:151
 msgid "Icon in the System Tray"
@@ -1011,9 +1011,9 @@ msgid ""
 "folders to build your library, organizing tracks by artist, album, and genre "
 "automatically."
 msgstr ""
-"Adicione as pastas onde seus arquivos de música estão armazenados. O player "
-"verifica essas pastas para montar sua biblioteca, organizando as faixas por "
-"artista, álbum e gênero automaticamente."
+"Adicione as pastas onde seus arquivos de música estão armazenados. O "
+"reprodutor verifica essas pastas para montar sua biblioteca, organizando as "
+"faixas por artista, álbum e gênero automaticamente."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:298
 msgid "Tips"
@@ -1479,7 +1479,7 @@ msgid ""
 "You can keep using the player. Cancelling keeps earlier confirmed imports "
 "and never deletes media files."
 msgstr ""
-"Você pode continuar usando o player. Ao cancelar, as importações já "
+"Você pode continuar usando o reprodutor. Ao cancelar, as importações já "
 "confirmadas serão mantidas e nenhum arquivo de mídia será apagado."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:62
@@ -3037,8 +3037,8 @@ msgid ""
 "When the player stops at the end of a video; off lets seeking back resume "
 "playback"
 msgstr ""
-"Quando o player para no fim de um vídeo; desligado, voltar no vídeo retoma a "
-"reprodução"
+"Quando o reprodutor para no fim de um vídeo; desligado, voltar no vídeo "
+"retoma a reprodução"
 
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:232
 msgid "Screenshot Compression"
@@ -3089,7 +3089,7 @@ msgid ""
 "reopening the player."
 msgstr ""
 "Opções extras no formato chave=valor, separadas por vírgulas. Passam a valer "
-"depois de reabrir o player."
+"depois de reabrir o reprodutor."
 
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:296
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:217
@@ -3455,7 +3455,7 @@ msgid ""
 "effect after reopening the player."
 msgstr ""
 "Altere só se o vídeo aparecer preto, corrompido ou muito lento. Passam a "
-"valer depois de reabrir o player."
+"valer depois de reabrir o reprodutor."
 
 #: crates/big-video-player/src/video/ui/preferences/video.rs:85
 msgid "Video Output"
@@ -3721,7 +3721,7 @@ msgid ""
 "are searched by the player, more slowly."
 msgstr ""
 "Os vídeos delas aparecem e são buscados aqui. Pastas que o BigSearch não "
-"indexa são buscadas pelo próprio player, mais devagar."
+"indexa são buscadas pelo próprio reprodutor, mais devagar."
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:741
 #, rust-format
@@ -4582,12 +4582,13 @@ msgstr "Parar de enviar"
 #: crates/media-runtime/src/cast/tv/card.rs:100
 #: crates/media-runtime/src/cast/tv/card.rs:217
 msgid "Use the player"
-msgstr "Usar o player"
+msgstr "Usar o reprodutor"
 
 #: crates/media-runtime/src/cast/tv/card.rs:102
 #: crates/media-runtime/src/cast/tv/card.rs:219
 msgid "The TV keeps playing, and the player is free for this or another video."
-msgstr "A TV continua tocando, e o player fica livre para este ou outro vídeo."
+msgstr ""
+"A TV continua tocando, e o reprodutor fica livre para este ou outro vídeo."
 
 #: crates/media-runtime/src/cast/tv/card.rs:109
 msgid "Show this one on the TV"
@@ -4595,7 +4596,8 @@ msgstr "Mostrar este na TV"
 
 #: crates/media-runtime/src/cast/tv/card.rs:111
 msgid "The TV plays what is in the player now, from where it is."
-msgstr "A TV passa a tocar o que está no player agora, do ponto onde ele está."
+msgstr ""
+"A TV passa a tocar o que está no reprodutor agora, do ponto onde ele está."
 
 #: crates/media-runtime/src/cast/tv/card.rs:117
 msgid "Play the TV's here"
@@ -4603,7 +4605,7 @@ msgstr "Tocar aqui o da TV"
 
 #: crates/media-runtime/src/cast/tv/card.rs:119
 msgid "The player opens what the TV plays, at the same point."
-msgstr "O player abre o que a TV está tocando, no mesmo ponto."
+msgstr "O reprodutor abre o que a TV está tocando, no mesmo ponto."
 
 #: crates/media-runtime/src/cast/tv/card.rs:214
 msgid "Watch here too"
@@ -4614,8 +4616,8 @@ msgid ""
 "The player plays the video too, in step with the TV, with its own volume "
 "starting silent."
 msgstr ""
-"O player também reproduz o vídeo, sincronizado com a TV, com volume próprio "
-"começando sem som."
+"O reprodutor também reproduz o vídeo, sincronizado com a TV, com volume "
+"próprio começando sem som."
 
 #: crates/media-runtime/src/cast/tv/card.rs:226
 msgid "Starting on the TV…"
@@ -4627,7 +4629,7 @@ msgstr "Só na TV"
 
 #: crates/media-runtime/src/cast/tv/card.rs:237
 msgid "The player stops following the TV and waits."
-msgstr "O player para de acompanhar a TV e aguarda."
+msgstr "O reprodutor para de acompanhar a TV e aguarda."
 
 #: crates/media-runtime/src/cast/tv/card.rs:263
 msgid "Control the TV"
@@ -4635,7 +4637,7 @@ msgstr "Controlar a TV"
 
 #: crates/media-runtime/src/cast/tv/card.rs:265
 msgid "The controls drive the TV again, and the player pauses."
-msgstr "Os controles voltam a comandar a TV, e o player pausa."
+msgstr "Os controles voltam a comandar a TV, e o reprodutor pausa."
 
 #: crates/media-runtime/src/converter_handoff.rs:39
 msgid "Could not launch the converter"
@@ -4810,9 +4812,9 @@ msgid ""
 "Keep the player open to review saving errors and retry. Continuing may "
 "discard unsaved session changes; it does not mark them as saved."
 msgstr ""
-"Mantenha o player aberto para verificar os erros e tentar salvar novamente. "
-"Continuar pode descartar alterações não salvas desta sessão; isso não as "
-"marca como salvas."
+"Mantenha o reprodutor aberto para verificar os erros e tentar salvar "
+"novamente. Continuar pode descartar alterações não salvas desta sessão; isso "
+"não as marca como salvas."
 
 #: crates/media-runtime/src/settings/saving.rs:180
 msgid "Some changes are not confirmed as saved"
@@ -4868,7 +4870,7 @@ msgstr "Iniciar temporizador"
 
 #: crates/media-runtime/src/sleep_timer.rs:212
 msgid "Sleep timer: closing player"
-msgstr "Temporizador de sono: fechando o player"
+msgstr "Temporizador de sono: fechando o reprodutor"
 
 #: crates/media-runtime/src/sleep_timer.rs:224
 msgid "Sleep timer: suspending computer"
@@ -5108,7 +5110,7 @@ msgstr "Saída de áudio"
 
 #: crates/ui/media/big-player-ui/src/audio_preferences.rs:153
 msgid "Takes effect after reopening the player"
-msgstr "Passa a valer depois de reabrir o player"
+msgstr "Passa a valer depois de reabrir o reprodutor"
 
 #: crates/ui/media/big-player-ui/src/audio_preferences.rs:163
 msgid "Speakers"
