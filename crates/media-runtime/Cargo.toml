@@ -161,3 +161,5 @@ unused_mut = "warn"
 unreachable_code = "warn"
 unreachable_patterns = "warn"
 trivial_numeric_casts = "warn"
+# cargo-fuzz sets cfg(fuzzing) for the entry points the fuzz targets call.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }

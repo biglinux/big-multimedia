@@ -78,3 +78,10 @@ path = "fuzz_targets/url_parsing.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "container_duration"
+path = "fuzz_targets/container_duration.rs"
+test = false
+doc = false
+bench = false

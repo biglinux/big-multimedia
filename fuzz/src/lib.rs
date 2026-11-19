@@ -167,3 +167,14 @@ pub fn url_parsing(data: &[u8]) {
         assert!(redacted.ends_with("#***"), "fragment kept in {redacted:?}");
     }
 }
+
+/// A container duration (MP4 when the first byte is odd, else Matroska) is
+/// either unknown or a finite positive number of seconds.
+pub fn container_duration(data: &[u8]) {
+    let Some((&kind, bytes)) = data.split_first() else {
+        return;
+    };
+    if let Some(seconds) = big_media_runtime::media::fuzz_read_duration(bytes, kind % 2 == 1) {
+        assert!(seconds.is_finite() && seconds > 0.0, "duration {seconds}");
+    }
+}

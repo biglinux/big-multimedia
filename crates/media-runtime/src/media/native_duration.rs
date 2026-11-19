@@ -297,6 +297,20 @@ fn mkv_duration(f: &mut (impl Read + Seek), file_size: u64) -> Option<f64> {
     (seconds.is_finite() && seconds > 0.0).then_some(seconds)
 }
 
+/// Reads the duration of in-memory container bytes, MP4 when `mp4`, else
+/// Matroska. The fuzz targets' entry to the private parsers.
+#[cfg(fuzzing)]
+#[doc(hidden)]
+pub fn fuzz_read_duration(bytes: &[u8], mp4: bool) -> Option<f64> {
+    let size = u64::try_from(bytes.len()).ok()?;
+    let mut cursor = std::io::Cursor::new(bytes);
+    if mp4 {
+        mp4_duration(&mut cursor, size)
+    } else {
+        mkv_duration(&mut cursor, size)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -214,10 +214,11 @@ lists the native defects behind those bans and what the project still inherits.
 
 `fuzz/` holds cargo-fuzz targets for the parsers that read bytes from the
 network or from files other programs write: the phone remote's requests, curl's
-headers, podcast feeds, Radio Browser replies, IPTV lists, playlist files and
-URLs. Each target asserts the parser's contract, not only that it survives. The
-package stays out of the workspace because libFuzzer needs nightly; it reaches
-private parsers through `fuzz_*` functions that exist only under `cfg(fuzzing)`.
+headers, podcast feeds, Radio Browser replies, IPTV lists, playlist files, MP4 and
+Matroska durations and URLs. Each target asserts the parser's contract, not only
+that it survives. The package stays out of the workspace because libFuzzer
+needs nightly; it reaches private parsers through `fuzz_*` functions that exist
+only under `cfg(fuzzing)`.
 Campaigns run by hand, never in the per-commit gate:
 
 ```sh
