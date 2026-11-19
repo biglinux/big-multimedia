@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 15:02-0300\n"
+"POT-Creation-Date: 2026-11-19 06:10-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -168,7 +168,7 @@ msgid "Library"
 msgstr "ספרייה"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
@@ -391,7 +391,7 @@ msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "סמל חד-צבעי שעוקב אחר ערכת הנושא של הלוח, עם פקדי ניגון"
 
 #: crates/big-audio-player/src/audio/preferences.rs:183
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "Preferences"
@@ -399,22 +399,22 @@ msgstr "העדפות"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:151
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:176
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:215
 msgid "Radio"
 msgstr "רדיו"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:163
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
 msgid "Sleep Timer"
 msgstr "מתזמן שינה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:693
 msgid "Timer Active"
 msgstr "המתזמן פעיל"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:174
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:694
 msgid "Cancel Timer"
 msgstr "ביטול המתזמן"
@@ -439,22 +439,22 @@ msgid "Files"
 msgstr "קבצים"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:154
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:183
 msgid "Podcasts"
 msgstr "פודקאסטים"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:231
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:302
 msgid "Album art"
 msgstr "עטיפת אלבום"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:233
 #: crates/big-audio-player/src/lib.rs:26
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
 msgid "Select a song to start"
 msgstr "בחרו שיר כדי להתחיל"
 
@@ -463,7 +463,7 @@ msgstr "בחרו שיר כדי להתחיל"
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "לא ניתן היה לנגן את “{file}”: ייתכן שהוא אינו נתמך או שהוא פגום."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:214
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -492,15 +492,15 @@ msgid ""
 "imported."
 msgstr "שם תיקייה זה עדיין אינו יכול להישמר בספרייה. לא שונה ולא יובא אף נתיב."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:303
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:304
 msgid "The playlist could not be saved."
 msgstr "לא ניתן היה לשמור את רשימת ההשמעה."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
 msgid "Save Episode"
 msgstr "שמירת פרק"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:406
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
@@ -508,11 +508,11 @@ msgstr "שמירת פרק"
 msgid "Save"
 msgstr "שמירה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:413
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:414
 msgid "Save Episodes"
 msgstr "שמירת פרקים"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:433
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -600,7 +600,7 @@ msgid "Voice Enhancement"
 msgstr "שיפור קול"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
 msgid "Trim & Export"
 msgstr "חיתוך וייצוא"
 
@@ -725,48 +725,52 @@ msgstr "לא ניתן היה לשמור את התחנה."
 msgid "The station could not be removed."
 msgstr "לא ניתן היה להסיר את התחנה."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:232
 msgid "There is no Music or home folder to save recordings in."
 msgstr "אין תיקיית מוזיקה או תיקיית בית לשמירת ההקלטות."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:286
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:317
 msgid "Recording was not saved"
 msgstr "ההקלטה לא נשמרה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:291
 msgid "Recording to"
 msgstr "מקליט אל"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:366
-msgid "No episodes found"
-msgstr "לא נמצאו פרקים"
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:361
+msgid "The podcast could not be loaded. Check your connection and try again."
+msgstr "לא ניתן היה לטעון את הפודקאסט. בדקו את החיבור ונסו שוב."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:450
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:380
+msgid "This podcast has no episodes to play."
+msgstr "לפודקאסט הזה אין פרקים להשמעה."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
 msgid "Recording saved"
 msgstr "ההקלטה נשמרה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:456
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
 msgid "The recording was saved and is ready to open."
 msgstr "ההקלטה נשמרה ומוכנה לפתיחה."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:460
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:90
 msgid "File"
 msgstr "קובץ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 msgid "Folder"
 msgstr "תיקייה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:484
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "פתיחת תיקייה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:154
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:201
@@ -775,12 +779,12 @@ msgstr "פתיחת תיקייה"
 msgid "Close"
 msgstr "סגירה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "פתיחת קובץ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:542
 msgid "Saved radio stations could not be read."
 msgstr "לא ניתן היה לקרוא את תחנות הרדיו השמורות."
 
@@ -792,15 +796,15 @@ msgstr "הצגת Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "הרצועה בטלוויזיה כבר אינה בתור."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
 msgid "Scan cancelled"
 msgstr "הסריקה בוטלה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid "Scan incomplete"
 msgstr "הסריקה לא הושלמה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 #, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
@@ -809,42 +813,42 @@ msgstr[1] "{count} רצועות יובאו"
 msgstr[2] "{count} רצועות יובאו"
 msgstr[3] "{count} רצועות יובאו"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "הספרייה עודכנה"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
 msgstr "הפעולה לא הושלמה. הרצועות שיובאו נשמרו; בדקו את התיקייה ונסו שוב."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
 msgstr "לא ניתן היה לקרוא את הספרייה. התוצאות הקודמות נשמרו; נסו לחפש שוב."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr "לא ניתן היה לשנות את רשימת ההשמעה. רשימת ההשמעה הקודמת שלכם נשמרה."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:205
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "לא ניתן היה לפתוח את רשימות ההשמעה. נסו שוב."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:239
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "לא ניתן היה לקרוא את רשימת ההשמעה באופן בטוח. בדקו את הפורמט וההרשאות שלה."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:312
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:309
 msgid "tracks imported"
 msgstr "רצועות יובאו"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:322
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -911,7 +915,7 @@ msgstr "חיפוש בספרייה"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:57
 #: crates/big-audio-player/src/audio/ui/library_io.rs:72
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 msgid "Music Folders"
 msgstr "תיקיות מוזיקה"
 
@@ -1136,60 +1140,60 @@ msgstr[1] "{count} רצועות · {duration}"
 msgstr[2] "{count} רצועות · {duration}"
 msgstr[3] "{count} רצועות · {duration}"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:36
 msgid "Drag and drop files to create a playlist"
 msgstr "גררו ושחררו קבצים כדי ליצור רשימת השמעה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:39
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:40
 msgid "Use the Music tab on the left to browse your library"
 msgstr "השתמשו בלשונית המוזיקה מימין כדי לדפדף בספרייה שלכם"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:43
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:44
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "גלו רדיו ופודקאסטים בלשוניות סרגל הצד"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:65
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:429
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:450
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:25
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:151
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "רשימת השמעה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:80
 msgid "Main Menu"
 msgstr "תפריט ראשי"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:91
 msgid "Show Sidebar"
 msgstr "הצגת סרגל הצד"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:175
 msgid "Save Queue as Playlist"
 msgstr "שמירת התור כרשימת השמעה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 msgid "Remove Duplicates"
 msgstr "הסרת כפילויות"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
 msgid "Clear Queue"
 msgstr "ניקוי התור"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 msgid "Manage Playlists"
 msgstr "ניהול רשימות השמעה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:140
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:660
 msgid "Convert…"
 msgstr "המרה…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:136
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:618
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
@@ -1197,49 +1201,61 @@ msgstr "המרה…"
 msgid "Play on a TV"
 msgstr "ניגון בטלוויזיה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:147
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:24
 msgid "Smartphone"
 msgstr "סמארטפון"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:152
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:559
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "מראה"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:25
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "קיצורי מקלדת"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:156
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:567
 msgid "About"
 msgstr "על אודות"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "No episodes queued"
 msgstr "אין פרקים בתור"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:246
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr "בחרו פודקאסט מימין כדי להוסיף את הפרקים שלו לתור."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
 msgid "Drop tracks here"
 msgstr "שחררו רצועות כאן"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:257
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr "או לחצו לחיצה כפולה על רצועה בספרייה, או בחרו אותה והקישו Enter."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+msgid "Listening to the radio"
+msgstr "מאזינים לרדיו"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:302
+msgid "The list is not playing."
+msgstr "הרשימה אינה מתנגנת."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:306
+msgid "Play the list"
+msgstr "ניגון הרשימה"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:351
 msgid "Welcome to Big Audio Player"
 msgstr "ברוכים הבאים אל Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:359
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1249,23 +1265,23 @@ msgstr ""
 "בלשונית מוזיקה.\n"
 "פורמטים נתמכים: MP3, FLAC, OGG, M4A, OPUS, WAV ועוד."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:372
 msgid "Open Files"
 msgstr "פתיחת קבצים"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:305
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:373
 msgid "Open files"
 msgstr "פתיחת קבצים"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:383
 msgid "Open Audio Files"
 msgstr "פתיחת קובצי שמע"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:317
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:385
 msgid "Audio Files"
 msgstr "קובצי שמע"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:409
 msgid "Quick tips"
 msgstr "טיפים מהירים"
 
@@ -1414,7 +1430,11 @@ msgstr "למחוק את רשימת ההשמעה?"
 msgid "This will permanently delete"
 msgstr "פעולה זו תמחק לצמיתות את"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:303
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:319
+msgid "Loading episodes…"
+msgstr "טוען פרקים…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:321
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:474
 msgid "Loading…"
 msgstr "טוען…"
@@ -1586,7 +1606,7 @@ msgstr "מיקום מרוחק או לא נתמך — אינו כשיר להסר�
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:124
+#: crates/big-video-player/src/video/app.rs:128
 msgid "Open a separate player window instead of using the running one"
 msgstr "לפתוח חלון נגן נפרד במקום להשתמש בנגן הפועל"
 
@@ -4881,36 +4901,49 @@ msgid "Voice enhancement"
 msgstr "שיפור קול"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr "מקור הצבעים"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr "לפי המערכת"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr "ערכת נושא בהירה"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr "ערכת נושא כהה"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:173
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr "צבעים מותאמים אישית"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:45
+msgid "Transparent Background with Blur"
+msgstr "רקע שקוף עם טשטוש"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:47
+msgid "Shows what is behind the window, blurred where the desktop supports it"
+msgstr "מציג את מה שמאחורי החלון, מטושטש היכן ששולחן העבודה תומך בכך"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:53
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "אטימות הרקע"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:101
 msgid "Accessibility"
 msgstr "נגישות"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:104
 msgid "High Contrast Text"
 msgstr "טקסט בניגודיות גבוהה"
 
@@ -4934,39 +4967,35 @@ msgstr "ורוד בהיר"
 msgid "Colors"
 msgstr "צבעים"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:177
 msgid "Color Preset"
 msgstr "ערכת צבעים מוכנה"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:184
 msgid "Background Color"
 msgstr "צבע רקע"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:191
 msgid "Font Color"
 msgstr "צבע גופן"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:198
 msgid "Icon Color"
 msgstr "צבע סמלים"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:205
 msgid "Dialogs and Menus Color"
 msgstr "צבע תיבות דו-שיח ותפריטים"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr "צבעי הווידאו"
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
-msgid "Background Opacity"
-msgstr "אטימות הרקע"
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "אטימות התפריט"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:51
 msgid "Icon and Text Shadow"
 msgstr "צל סמלים וטקסט"
 
@@ -5405,6 +5434,9 @@ msgstr "השלט הרחוק באינטרנט נעצר: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "לא ניתן היה להפעיל את השרת"
+
+#~ msgid "No episodes found"
+#~ msgstr "לא נמצאו פרקים"
 
 #~ msgid ""
 #~ "Move existing account credentials to your desktop keyring. This does not "

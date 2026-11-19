@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 15:02-0300\n"
+"POT-Creation-Date: 2026-11-19 06:10-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -169,7 +169,7 @@ msgid "Library"
 msgstr "Kütüphane"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
@@ -394,7 +394,7 @@ msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "Panel temasını izleyen, oynatma denetimleri olan tek renkli bir simge"
 
 #: crates/big-audio-player/src/audio/preferences.rs:183
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "Preferences"
@@ -402,22 +402,22 @@ msgstr "Tercihler"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:151
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:176
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:215
 msgid "Radio"
 msgstr "Radyo"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:163
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
 msgid "Sleep Timer"
 msgstr "Uyku zamanlayıcısı"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:693
 msgid "Timer Active"
 msgstr "Zamanlayıcı etkin"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:174
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:694
 msgid "Cancel Timer"
 msgstr "Zamanlayıcıyı iptal et"
@@ -442,22 +442,22 @@ msgid "Files"
 msgstr "Dosyalar"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:154
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:183
 msgid "Podcasts"
 msgstr "Podcast'ler"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:231
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:302
 msgid "Album art"
 msgstr "Albüm kapağı"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:233
 #: crates/big-audio-player/src/lib.rs:26
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
 msgid "Select a song to start"
 msgstr "Başlamak için bir şarkı seçin"
 
@@ -466,7 +466,7 @@ msgstr "Başlamak için bir şarkı seçin"
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "“{file}” çalınamadı: desteklenmiyor veya bozuk olabilir."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:214
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -497,15 +497,15 @@ msgstr ""
 "Bu klasör adı henüz kütüphanede saklanamıyor. Hiçbir yol değiştirilmedi veya "
 "içe aktarılmadı."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:303
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:304
 msgid "The playlist could not be saved."
 msgstr "Çalma listesi kaydedilemedi."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
 msgid "Save Episode"
 msgstr "Bölümü kaydet"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:406
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
@@ -513,11 +513,11 @@ msgstr "Bölümü kaydet"
 msgid "Save"
 msgstr "Kaydet"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:413
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:414
 msgid "Save Episodes"
 msgstr "Bölümleri kaydet"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:433
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -607,7 +607,7 @@ msgid "Voice Enhancement"
 msgstr "Ses iyileştirme"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
 msgid "Trim & Export"
 msgstr "Kırp ve dışa aktar"
 
@@ -739,48 +739,52 @@ msgstr "İstasyon kaydedilemedi."
 msgid "The station could not be removed."
 msgstr "İstasyon kaldırılamadı."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:232
 msgid "There is no Music or home folder to save recordings in."
 msgstr "Kayıtların saklanacağı bir Müzik veya ev klasörü yok."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:286
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:317
 msgid "Recording was not saved"
 msgstr "Kayıt kaydedilmedi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:291
 msgid "Recording to"
 msgstr "Kayıt hedefi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:366
-msgid "No episodes found"
-msgstr "Bölüm bulunamadı"
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:361
+msgid "The podcast could not be loaded. Check your connection and try again."
+msgstr "Podcast yüklenemedi. Bağlantınızı denetleyip yeniden deneyin."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:450
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:380
+msgid "This podcast has no episodes to play."
+msgstr "Bu podcast'te oynatılacak bölüm yok."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
 msgid "Recording saved"
 msgstr "Kayıt kaydedildi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:456
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
 msgid "The recording was saved and is ready to open."
 msgstr "Kayıt kaydedildi ve açılmaya hazır."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:460
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:90
 msgid "File"
 msgstr "Dosya"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 msgid "Folder"
 msgstr "Klasör"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:484
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Klasörü aç"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:154
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:201
@@ -789,12 +793,12 @@ msgstr "Klasörü aç"
 msgid "Close"
 msgstr "Kapat"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Dosyayı aç"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:542
 msgid "Saved radio stations could not be read."
 msgstr "Kaydedilen radyo istasyonları okunamadı."
 
@@ -806,25 +810,25 @@ msgstr "Big Audio Player'ı göster"
 msgid "The TV's track is no longer in the queue."
 msgstr "TV'deki parça artık kuyrukta değil."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
 msgid "Scan cancelled"
 msgstr "Tarama iptal edildi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid "Scan incomplete"
 msgstr "Tarama tamamlanamadı"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 #, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
 msgstr[0] "{count} parça içe aktarıldı"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "Kütüphane güncellendi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -832,32 +836,32 @@ msgstr ""
 "İşlem tamamlanamadı. İçe aktarılan parçalar korundu; klasörü denetleyip "
 "yeniden deneyin."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
 msgstr "Kütüphane okunamadı. Önceki sonuçlar korundu; yeniden aramayı deneyin."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr "Çalma listesi değiştirilemedi. Önceki çalma listeniz korundu."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:205
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "Çalma listeleri açılamadı. Lütfen yeniden deneyin."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:239
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Çalma listesi güvenli biçimde okunamadı. Biçimini ve izinlerini denetleyin."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:312
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:309
 msgid "tracks imported"
 msgstr "parça içe aktarıldı"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:322
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -926,7 +930,7 @@ msgstr "Kütüphanede ara"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:57
 #: crates/big-audio-player/src/audio/ui/library_io.rs:72
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 msgid "Music Folders"
 msgstr "Müzik klasörleri"
 
@@ -1151,60 +1155,60 @@ msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
 msgstr[0] "{count} parça · {duration}"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:36
 msgid "Drag and drop files to create a playlist"
 msgstr "Çalma listesi oluşturmak için dosyaları sürükleyip bırakın"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:39
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:40
 msgid "Use the Music tab on the left to browse your library"
 msgstr "Kütüphanenize göz atmak için soldaki Müzik sekmesini kullanın"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:43
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:44
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Kenar çubuğu sekmelerinde Radyo ve Podcast'leri keşfedin"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:65
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:429
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:450
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:25
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:151
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "Çalma listesi"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:80
 msgid "Main Menu"
 msgstr "Ana menü"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:91
 msgid "Show Sidebar"
 msgstr "Kenar çubuğunu göster"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:175
 msgid "Save Queue as Playlist"
 msgstr "Kuyruğu çalma listesi olarak kaydet"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 msgid "Remove Duplicates"
 msgstr "Yinelenenleri kaldır"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
 msgid "Clear Queue"
 msgstr "Kuyruğu temizle"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 msgid "Manage Playlists"
 msgstr "Çalma listelerini yönet"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:140
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:660
 msgid "Convert…"
 msgstr "Dönüştür…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:136
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:618
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
@@ -1212,51 +1216,63 @@ msgstr "Dönüştür…"
 msgid "Play on a TV"
 msgstr "TV'de oynat"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:147
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:24
 msgid "Smartphone"
 msgstr "Akıllı telefon"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:152
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:559
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Görünüm"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:25
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Klavye kısayolları"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:156
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:567
 msgid "About"
 msgstr "Hakkında"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "No episodes queued"
 msgstr "Kuyrukta bölüm yok"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:246
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr "Bölümlerini kuyruğa eklemek için soldan bir podcast seçin."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
 msgid "Drop tracks here"
 msgstr "Parçaları buraya bırakın"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:257
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
 "Ya da kütüphanede bir parçaya çift tıklayın veya parçayı seçip Enter tuşuna "
 "basın."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+msgid "Listening to the radio"
+msgstr "Radyo dinliyorsunuz"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:302
+msgid "The list is not playing."
+msgstr "Liste çalmıyor."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:306
+msgid "Play the list"
+msgstr "Listeyi oynat"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:351
 msgid "Welcome to Big Audio Player"
 msgstr "Big Audio Player'a hoş geldiniz"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:359
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1266,23 +1282,23 @@ msgstr ""
 "sekmesinden ekleyin.\n"
 "Desteklenen biçimler: MP3, FLAC, OGG, M4A, OPUS, WAV ve daha fazlası."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:372
 msgid "Open Files"
 msgstr "Dosyaları aç"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:305
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:373
 msgid "Open files"
 msgstr "Dosyaları aç"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:383
 msgid "Open Audio Files"
 msgstr "Ses dosyalarını aç"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:317
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:385
 msgid "Audio Files"
 msgstr "Ses dosyaları"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:409
 msgid "Quick tips"
 msgstr "Hızlı ipuçları"
 
@@ -1433,7 +1449,11 @@ msgstr "Çalma listesi silinsin mi?"
 msgid "This will permanently delete"
 msgstr "Bu işlem kalıcı olarak silecek:"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:303
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:319
+msgid "Loading episodes…"
+msgstr "Bölümler yükleniyor…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:321
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:474
 msgid "Loading…"
 msgstr "Yükleniyor…"
@@ -1609,7 +1629,7 @@ msgstr "Uzak veya desteklenmeyen konum — burada kaldırmaya uygun değil"
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:124
+#: crates/big-video-player/src/video/app.rs:128
 msgid "Open a separate player window instead of using the running one"
 msgstr "Çalışan oynatıcıyı kullanmak yerine ayrı bir oynatıcı penceresi aç"
 
@@ -4669,9 +4689,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
-"Ses çıkışından ses verilemedi. Hoparlörlerinizin veya kulaklığınızın "
-"bağlı olduğunu denetleyin ya da Tercihler'de başka bir Ses çıkışı seçip "
-"oynatıcıyı yeniden açın."
+"Ses çıkışından ses verilemedi. Hoparlörlerinizin veya kulaklığınızın bağlı "
+"olduğunu denetleyin ya da Tercihler'de başka bir Ses çıkışı seçip oynatıcıyı "
+"yeniden açın."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4912,36 +4932,51 @@ msgid "Voice enhancement"
 msgstr "Ses iyileştirme"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr "Renk kaynağı"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr "Sistemi izle"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr "Açık tema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr "Koyu tema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:173
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr "Özel renkler"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:45
+msgid "Transparent Background with Blur"
+msgstr "Bulanıklaştırmalı saydam arka plan"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:47
+msgid "Shows what is behind the window, blurred where the desktop supports it"
+msgstr ""
+"Pencerenin arkasındakini gösterir; masaüstünün desteklediği yerlerde "
+"bulanıklaştırır"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:53
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Arka plan opaklığı"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:101
 msgid "Accessibility"
 msgstr "Erişilebilirlik"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:104
 msgid "High Contrast Text"
 msgstr "Yüksek karşıtlıklı metin"
 
@@ -4965,39 +5000,35 @@ msgstr "Açık Pembe"
 msgid "Colors"
 msgstr "Renkler"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:177
 msgid "Color Preset"
 msgstr "Renk ön ayarı"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:184
 msgid "Background Color"
 msgstr "Arka plan rengi"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:191
 msgid "Font Color"
 msgstr "Yazı rengi"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:198
 msgid "Icon Color"
 msgstr "Simge rengi"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:205
 msgid "Dialogs and Menus Color"
 msgstr "İletişim kutuları ve menü rengi"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr "Video renkleri"
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
-msgid "Background Opacity"
-msgstr "Arka plan opaklığı"
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Menü opaklığı"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:51
 msgid "Icon and Text Shadow"
 msgstr "Simge ve metin gölgesi"
 
@@ -5441,6 +5472,9 @@ msgstr "Web uzaktan kumandası durdu: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Sunucu başlatılamadı"
+
+#~ msgid "No episodes found"
+#~ msgstr "Bölüm bulunamadı"
 
 #~ msgid ""
 #~ "Move existing account credentials to your desktop keyring. This does not "

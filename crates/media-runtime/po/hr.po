@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 15:02-0300\n"
+"POT-Creation-Date: 2026-11-19 06:10-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -168,7 +168,7 @@ msgid "Library"
 msgstr "Biblioteka"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
@@ -392,7 +392,7 @@ msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "Jednobojna ikona koja prati temu ploče, s kontrolama reprodukcije"
 
 #: crates/big-audio-player/src/audio/preferences.rs:183
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "Preferences"
@@ -400,22 +400,22 @@ msgstr "Postavke"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:151
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:176
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:215
 msgid "Radio"
 msgstr "Radio"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:163
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
 msgid "Sleep Timer"
 msgstr "Odbrojavanje do isključivanja"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:693
 msgid "Timer Active"
 msgstr "Odbrojavanje je aktivno"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:174
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:694
 msgid "Cancel Timer"
 msgstr "Otkaži odbrojavanje"
@@ -440,22 +440,22 @@ msgid "Files"
 msgstr "Datoteke"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:154
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:183
 msgid "Podcasts"
 msgstr "Podcasti"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:231
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:302
 msgid "Album art"
 msgstr "Omot albuma"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:233
 #: crates/big-audio-player/src/lib.rs:26
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
 msgid "Select a song to start"
 msgstr "Odaberite pjesmu za početak"
 
@@ -466,7 +466,7 @@ msgstr ""
 "Nije moguće reproducirati „{file}“: datoteka možda nije podržana ili je "
 "oštećena."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:214
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -497,15 +497,15 @@ msgstr ""
 "Naziv ove mape još se ne može pohraniti u biblioteku. Nijedna putanja nije "
 "promijenjena ni uvezena."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:303
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:304
 msgid "The playlist could not be saved."
 msgstr "Popis za reprodukciju nije bilo moguće spremiti."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
 msgid "Save Episode"
 msgstr "Spremi epizodu"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:406
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
@@ -513,11 +513,11 @@ msgstr "Spremi epizodu"
 msgid "Save"
 msgstr "Spremi"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:413
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:414
 msgid "Save Episodes"
 msgstr "Spremi epizode"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:433
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -609,7 +609,7 @@ msgid "Voice Enhancement"
 msgstr "Poboljšanje glasa"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
 msgid "Trim & Export"
 msgstr "Izreži i izvezi"
 
@@ -743,48 +743,52 @@ msgstr "Postaju nije bilo moguće spremiti."
 msgid "The station could not be removed."
 msgstr "Postaju nije bilo moguće ukloniti."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:232
 msgid "There is no Music or home folder to save recordings in."
 msgstr "Ne postoji mapa Glazba ni osobna mapa u koju bi se spremale snimke."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:286
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:317
 msgid "Recording was not saved"
 msgstr "Snimka nije spremljena"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:291
 msgid "Recording to"
 msgstr "Snimanje u"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:366
-msgid "No episodes found"
-msgstr "Nisu pronađene epizode"
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:361
+msgid "The podcast could not be loaded. Check your connection and try again."
+msgstr "Podcast nije bilo moguće učitati. Provjerite vezu i pokušajte ponovno."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:450
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:380
+msgid "This podcast has no episodes to play."
+msgstr "Ovaj podcast nema epizoda za reprodukciju."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
 msgid "Recording saved"
 msgstr "Snimka je spremljena"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:456
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
 msgid "The recording was saved and is ready to open."
 msgstr "Snimka je spremljena i spremna za otvaranje."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:460
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:90
 msgid "File"
 msgstr "Datoteka"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 msgid "Folder"
 msgstr "Mapa"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:484
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Otvori mapu"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:154
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:201
@@ -793,12 +797,12 @@ msgstr "Otvori mapu"
 msgid "Close"
 msgstr "Zatvori"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Otvori datoteku"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:542
 msgid "Saved radio stations could not be read."
 msgstr "Spremljene radiopostaje nije bilo moguće pročitati."
 
@@ -810,15 +814,15 @@ msgstr "Prikaži Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "Pjesma s televizora više nije u redu čekanja."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
 msgid "Scan cancelled"
 msgstr "Skeniranje otkazano"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid "Scan incomplete"
 msgstr "Skeniranje nije dovršeno"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 #, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
@@ -826,11 +830,11 @@ msgstr[0] "Uvezena {count} pjesma"
 msgstr[1] "Uvezene {count} pjesme"
 msgstr[2] "Uvezeno {count} pjesama"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "Biblioteka je ažurirana"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -838,7 +842,7 @@ msgstr ""
 "Radnja nije dovršena. Uvezene pjesme su sačuvane; provjerite mapu i "
 "pokušajte ponovno."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -846,29 +850,29 @@ msgstr ""
 "Biblioteku nije bilo moguće pročitati. Prethodni rezultati su sačuvani; "
 "pokušajte ponovno pretraživati."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "Popis za reprodukciju nije bilo moguće promijeniti. Vaš prethodni popis je "
 "sačuvan."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:205
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "Popise za reprodukciju nije bilo moguće otvoriti. Pokušajte ponovno."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:239
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Popis za reprodukciju nije bilo moguće sigurno pročitati. Provjerite njegov "
 "format i dozvole."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:312
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:309
 msgid "tracks imported"
 msgstr "pjesama uvezeno"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:322
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -937,7 +941,7 @@ msgstr "Pretraži biblioteku"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:57
 #: crates/big-audio-player/src/audio/ui/library_io.rs:72
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 msgid "Music Folders"
 msgstr "Mape glazbe"
 
@@ -1165,60 +1169,60 @@ msgstr[0] "{count} pjesma · {duration}"
 msgstr[1] "{count} pjesme · {duration}"
 msgstr[2] "{count} pjesama · {duration}"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:36
 msgid "Drag and drop files to create a playlist"
 msgstr "Povucite i ispustite datoteke za stvaranje popisa za reprodukciju"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:39
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:40
 msgid "Use the Music tab on the left to browse your library"
 msgstr "Koristite karticu Glazba s lijeve strane za pregledavanje biblioteke"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:43
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:44
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Istražite Radio i Podcaste na karticama bočne trake"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:65
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:429
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:450
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:25
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:151
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "Popis za reprodukciju"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:80
 msgid "Main Menu"
 msgstr "Glavni izbornik"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:91
 msgid "Show Sidebar"
 msgstr "Prikaži bočnu traku"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:175
 msgid "Save Queue as Playlist"
 msgstr "Spremi red čekanja kao popis za reprodukciju"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 msgid "Remove Duplicates"
 msgstr "Ukloni duplikate"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
 msgid "Clear Queue"
 msgstr "Očisti red čekanja"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 msgid "Manage Playlists"
 msgstr "Upravljaj popisima za reprodukciju"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:140
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:660
 msgid "Convert…"
 msgstr "Pretvori…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:136
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:618
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
@@ -1226,52 +1230,64 @@ msgstr "Pretvori…"
 msgid "Play on a TV"
 msgstr "Reproduciraj na televizoru"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:147
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:24
 msgid "Smartphone"
 msgstr "Pametni telefon"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:152
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:559
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Izgled"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:25
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Tipkovnički prečaci"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:156
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:567
 msgid "About"
 msgstr "O aplikaciji"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "No episodes queued"
 msgstr "Nema epizoda u redu čekanja"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:246
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr ""
 "Odaberite podcast s lijeve strane kako biste njegove epizode dodali u red "
 "čekanja."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
 msgid "Drop tracks here"
 msgstr "Ispustite pjesme ovdje"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:257
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
 "Ili dvaput kliknite pjesmu u biblioteci ili je odaberite i pritisnite Enter."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+msgid "Listening to the radio"
+msgstr "Slušate radio"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:302
+msgid "The list is not playing."
+msgstr "Popis se ne reproducira."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:306
+msgid "Play the list"
+msgstr "Reproduciraj popis"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:351
 msgid "Welcome to Big Audio Player"
 msgstr "Dobrodošli u Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:359
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1281,23 +1297,23 @@ msgstr ""
 "mapu s glazbom na kartici Glazba.\n"
 "Podržani formati: MP3, FLAC, OGG, M4A, OPUS, WAV i drugi."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:372
 msgid "Open Files"
 msgstr "Otvori datoteke"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:305
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:373
 msgid "Open files"
 msgstr "Otvori datoteke"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:383
 msgid "Open Audio Files"
 msgstr "Otvori audio datoteke"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:317
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:385
 msgid "Audio Files"
 msgstr "Audio datoteke"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:409
 msgid "Quick tips"
 msgstr "Brzi savjeti"
 
@@ -1448,7 +1464,11 @@ msgstr "Izbrisati popis za reprodukciju?"
 msgid "This will permanently delete"
 msgstr "Ovime će se trajno izbrisati"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:303
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:319
+msgid "Loading episodes…"
+msgstr "Učitavanje epizoda…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:321
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:474
 msgid "Loading…"
 msgstr "Učitavanje…"
@@ -1624,7 +1644,7 @@ msgstr "Udaljena ili nepodržana lokacija — ovdje nije moguće ukloniti"
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:124
+#: crates/big-video-player/src/video/app.rs:128
 msgid "Open a separate player window instead of using the running one"
 msgstr "Otvori zaseban prozor playera umjesto korištenja pokrenutog"
 
@@ -4947,36 +4967,51 @@ msgid "Voice enhancement"
 msgstr "Poboljšanje glasa"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr "Izvor boja"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr "Prema sustavu"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr "Svijetla tema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr "Tamna tema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:173
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr "Prilagođene boje"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:45
+msgid "Transparent Background with Blur"
+msgstr "Prozirna pozadina sa zamućenjem"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:47
+msgid "Shows what is behind the window, blurred where the desktop supports it"
+msgstr ""
+"Prikazuje ono što je iza prozora, zamućeno ondje gdje radna površina to "
+"podržava"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:53
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Neprozirnost pozadine"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:101
 msgid "Accessibility"
 msgstr "Pristupačnost"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:104
 msgid "High Contrast Text"
 msgstr "Tekst visokog kontrasta"
 
@@ -5000,39 +5035,35 @@ msgstr "Svijetloružičasto"
 msgid "Colors"
 msgstr "Boje"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:177
 msgid "Color Preset"
 msgstr "Predložak boja"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:184
 msgid "Background Color"
 msgstr "Boja pozadine"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:191
 msgid "Font Color"
 msgstr "Boja fonta"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:198
 msgid "Icon Color"
 msgstr "Boja ikona"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:205
 msgid "Dialogs and Menus Color"
 msgstr "Boja dijaloga i izbornika"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr "Boje videa"
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
-msgid "Background Opacity"
-msgstr "Neprozirnost pozadine"
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Neprozirnost izbornika"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:51
 msgid "Icon and Text Shadow"
 msgstr "Sjena ikona i teksta"
 
@@ -5478,23 +5509,22 @@ msgstr "Web daljinski upravljač zaustavljen je: {error}"
 msgid "Could not start server"
 msgstr "Poslužitelj nije bilo moguće pokrenuti"
 
+#~ msgid "No episodes found"
+#~ msgstr "Nisu pronađene epizode"
+
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "pixelformat"
 #~ msgstr "Format piksela"
 
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "hw-pixelformat"
 #~ msgstr "Format piksela"
 
 #, fuzzy
-#~| msgid "Primaries"
 #~ msgid "primaries"
 #~ msgstr "Primarne boje"
 
 #, fuzzy
-#~| msgid "Gamma"
 #~ msgid "gamma"
 #~ msgstr "Gama"
 

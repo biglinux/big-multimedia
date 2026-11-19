@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 15:02-0300\n"
+"POT-Creation-Date: 2026-11-19 06:10-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -167,7 +167,7 @@ msgid "Library"
 msgstr "Kogu"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
@@ -392,7 +392,7 @@ msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "Ühevärviline ikoon, mis järgib paneeli teemat ja sisaldab esitusnuppe"
 
 #: crates/big-audio-player/src/audio/preferences.rs:183
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "Preferences"
@@ -400,22 +400,22 @@ msgstr "Eelistused"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:151
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:176
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:215
 msgid "Radio"
 msgstr "Raadio"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:163
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
 msgid "Sleep Timer"
 msgstr "Uinumistaimer"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:693
 msgid "Timer Active"
 msgstr "Taimer on aktiivne"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:174
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:694
 msgid "Cancel Timer"
 msgstr "Tühista taimer"
@@ -440,22 +440,22 @@ msgid "Files"
 msgstr "Failid"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:154
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:183
 msgid "Podcasts"
 msgstr "Podcastid"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:231
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:302
 msgid "Album art"
 msgstr "Albumi kaanepilt"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:233
 #: crates/big-audio-player/src/lib.rs:26
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
 msgid "Select a song to start"
 msgstr "Alustamiseks valige laul"
 
@@ -464,7 +464,7 @@ msgstr "Alustamiseks valige laul"
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "Faili „{file}“ ei saanud esitada: see võib olla toetamata või rikutud."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:214
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -496,15 +496,15 @@ msgstr ""
 "Selle kausta nime ei saa veel kogusse salvestada. Ühtegi asukohta ei "
 "muudetud ega imporditud."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:303
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:304
 msgid "The playlist could not be saved."
 msgstr "Esitusloendit ei saanud salvestada."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
 msgid "Save Episode"
 msgstr "Salvesta episood"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:406
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
@@ -512,11 +512,11 @@ msgstr "Salvesta episood"
 msgid "Save"
 msgstr "Salvesta"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:413
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:414
 msgid "Save Episodes"
 msgstr "Salvesta episoodid"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:433
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -606,7 +606,7 @@ msgid "Voice Enhancement"
 msgstr "Kõne parandus"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
 msgid "Trim & Export"
 msgstr "Lõika ja ekspordi"
 
@@ -736,48 +736,52 @@ msgstr "Jaama ei saanud salvestada."
 msgid "The station could not be removed."
 msgstr "Jaama ei saanud eemaldada."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:232
 msgid "There is no Music or home folder to save recordings in."
 msgstr "Salvestuste jaoks pole kausta Muusika ega kodukausta."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:286
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:317
 msgid "Recording was not saved"
 msgstr "Salvestust ei salvestatud"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:291
 msgid "Recording to"
 msgstr "Salvestamine kohta"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:366
-msgid "No episodes found"
-msgstr "Episoode ei leitud"
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:361
+msgid "The podcast could not be loaded. Check your connection and try again."
+msgstr "Podcasti ei saanud laadida. Kontrollige ühendust ja proovige uuesti."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:450
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:380
+msgid "This podcast has no episodes to play."
+msgstr "Selles podcastis pole esitatavaid episoode."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
 msgid "Recording saved"
 msgstr "Salvestis salvestatud"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:456
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
 msgid "The recording was saved and is ready to open."
 msgstr "Salvestis salvestati ja on avamiseks valmis."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:460
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:90
 msgid "File"
 msgstr "Fail"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 msgid "Folder"
 msgstr "Kaust"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:484
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Ava kaust"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:154
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:201
@@ -786,12 +790,12 @@ msgstr "Ava kaust"
 msgid "Close"
 msgstr "Sulge"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Ava fail"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:542
 msgid "Saved radio stations could not be read."
 msgstr "Salvestatud raadiojaamu ei saanud lugeda."
 
@@ -803,26 +807,26 @@ msgstr "Näita Big Audio Playerit"
 msgid "The TV's track is no longer in the queue."
 msgstr "Teleri lugu pole enam järjekorras."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
 msgid "Scan cancelled"
 msgstr "Skannimine tühistati"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid "Scan incomplete"
 msgstr "Skannimine jäi poolikuks"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 #, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
 msgstr[0] "{count} lugu imporditud"
 msgstr[1] "{count} lugu imporditud"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "Kogu uuendatud"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -830,7 +834,7 @@ msgstr ""
 "Toiming jäi poolikuks. Imporditud lood säilitati; kontrollige kausta ja "
 "proovige uuesti."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -838,27 +842,27 @@ msgstr ""
 "Kogu ei õnnestunud lugeda. Eelmised tulemused säilitati; proovige uuesti "
 "otsida."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr "Esitusloendit ei saanud muuta. Teie eelmine esitusloend säilitati."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:205
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "Esitusloendeid ei saanud avada. Palun proovige uuesti."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:239
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Esitusloendit ei saanud turvaliselt lugeda. Kontrollige selle vormingut ja "
 "õigusi."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:312
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:309
 msgid "tracks imported"
 msgstr "lugu imporditud"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:322
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -927,7 +931,7 @@ msgstr "Otsi kogust"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:57
 #: crates/big-audio-player/src/audio/ui/library_io.rs:72
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 msgid "Music Folders"
 msgstr "Muusikakaustad"
 
@@ -1152,60 +1156,60 @@ msgid_plural "{count} tracks · {duration}"
 msgstr[0] "{count} lugu · {duration}"
 msgstr[1] "{count} lugu · {duration}"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:36
 msgid "Drag and drop files to create a playlist"
 msgstr "Esitusloendi loomiseks lohistage failid siia"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:39
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:40
 msgid "Use the Music tab on the left to browse your library"
 msgstr "Kogu sirvimiseks kasutage vasakul vahekaarti Muusika"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:43
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:44
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Avastage raadiot ja podcaste külgriba vahekaartidel"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:65
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:429
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:450
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:25
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:151
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "Esitusloend"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:80
 msgid "Main Menu"
 msgstr "Peamenüü"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:91
 msgid "Show Sidebar"
 msgstr "Näita külgriba"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:175
 msgid "Save Queue as Playlist"
 msgstr "Salvesta järjekord esitusloendina"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 msgid "Remove Duplicates"
 msgstr "Eemalda duplikaadid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
 msgid "Clear Queue"
 msgstr "Tühjenda järjekord"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 msgid "Manage Playlists"
 msgstr "Halda esitusloendeid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:140
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:660
 msgid "Convert…"
 msgstr "Teisenda…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:136
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:618
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
@@ -1213,49 +1217,61 @@ msgstr "Teisenda…"
 msgid "Play on a TV"
 msgstr "Esita teleris"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:147
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:24
 msgid "Smartphone"
 msgstr "Nutitelefon"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:152
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:559
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Välimus"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:25
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Klaviatuuri kiirklahvid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:156
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:567
 msgid "About"
 msgstr "Teave"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "No episodes queued"
 msgstr "Järjekorras pole episoode"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:246
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr "Valige vasakult podcast, et selle episoodid järjekorda lisada."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
 msgid "Drop tracks here"
 msgstr "Lohistage lood siia"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:257
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr "Või topeltklõpsake kogus lool või valige see ja vajutage Enter."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+msgid "Listening to the radio"
+msgstr "Kuulate raadiot"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:302
+msgid "The list is not playing."
+msgstr "Loendit ei esitata."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:306
+msgid "Play the list"
+msgstr "Esita loend"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:351
 msgid "Welcome to Big Audio Player"
 msgstr "Tere tulemast Big Audio Playeri kasutajaks"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:359
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1265,23 +1281,23 @@ msgstr ""
 "vahekaardil Muusika.\n"
 "Toetatud vormingud: MP3, FLAC, OGG, M4A, OPUS, WAV ja veel."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:372
 msgid "Open Files"
 msgstr "Ava failid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:305
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:373
 msgid "Open files"
 msgstr "Ava failid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:383
 msgid "Open Audio Files"
 msgstr "Ava helifailid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:317
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:385
 msgid "Audio Files"
 msgstr "Helifailid"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:409
 msgid "Quick tips"
 msgstr "Kiirnäpunäited"
 
@@ -1432,7 +1448,11 @@ msgstr "Kas kustutada esitusloend?"
 msgid "This will permanently delete"
 msgstr "See kustutab jäädavalt"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:303
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:319
+msgid "Loading episodes…"
+msgstr "Episoodide laadimine…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:321
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:474
 msgid "Loading…"
 msgstr "Laadimine…"
@@ -1608,7 +1628,7 @@ msgstr "Kaug- või toetamata asukoht – siin eemaldamiseks sobimatu"
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:124
+#: crates/big-video-player/src/video/app.rs:128
 msgid "Open a separate player window instead of using the running one"
 msgstr "Ava töötava esitaja asemel eraldi esitaja aken"
 
@@ -4918,36 +4938,49 @@ msgid "Voice enhancement"
 msgstr "Kõne parandus"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr "Värviallikas"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr "Järgi süsteemi"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr "Hele teema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr "Tume teema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:173
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr "Kohandatud värvid"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:45
+msgid "Transparent Background with Blur"
+msgstr "Läbipaistev taust hägustusega"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:47
+msgid "Shows what is behind the window, blurred where the desktop supports it"
+msgstr "Näitab akna taga olevat, hägustatuna seal, kus töölaud seda toetab"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:53
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Tausta läbipaistmatus"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:101
 msgid "Accessibility"
 msgstr "Hõlbustus"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:104
 msgid "High Contrast Text"
 msgstr "Kõrge kontrastsusega tekst"
 
@@ -4971,39 +5004,35 @@ msgstr "Heleroosa"
 msgid "Colors"
 msgstr "Värvid"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:177
 msgid "Color Preset"
 msgstr "Värvide eelseadistus"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:184
 msgid "Background Color"
 msgstr "Taustavärv"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:191
 msgid "Font Color"
 msgstr "Fondi värv"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:198
 msgid "Icon Color"
 msgstr "Ikoonide värv"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:205
 msgid "Dialogs and Menus Color"
 msgstr "Dialoogide ja menüüde värv"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr "Video värvid"
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
-msgid "Background Opacity"
-msgstr "Tausta läbipaistmatus"
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Menüü läbipaistmatus"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:51
 msgid "Icon and Text Shadow"
 msgstr "Ikoonide ja teksti vari"
 
@@ -5445,23 +5474,22 @@ msgstr "Veebikaugjuhtimine peatus: {error}"
 msgid "Could not start server"
 msgstr "Serverit ei saanud käivitada"
 
+#~ msgid "No episodes found"
+#~ msgstr "Episoode ei leitud"
+
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "pixelformat"
 #~ msgstr "Pikslivorming"
 
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "hw-pixelformat"
 #~ msgstr "Pikslivorming"
 
 #, fuzzy
-#~| msgid "Primaries"
 #~ msgid "primaries"
 #~ msgstr "Põhivärvid"
 
 #, fuzzy
-#~| msgid "Gamma"
 #~ msgid "gamma"
 #~ msgstr "Gamma"
 

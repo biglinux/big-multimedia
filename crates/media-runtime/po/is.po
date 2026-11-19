@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 15:02-0300\n"
+"POT-Creation-Date: 2026-11-19 06:10-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -168,7 +168,7 @@ msgid "Library"
 msgstr "Safn"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
@@ -391,7 +391,7 @@ msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "Einlit táknmynd sem fylgir þema spjaldsins, með spilunarstýringum"
 
 #: crates/big-audio-player/src/audio/preferences.rs:183
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "Preferences"
@@ -399,22 +399,22 @@ msgstr "Kjörstillingar"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:151
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:176
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:215
 msgid "Radio"
 msgstr "Útvarp"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:163
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
 msgid "Sleep Timer"
 msgstr "Svefntímamælir"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:693
 msgid "Timer Active"
 msgstr "Tímamælir virkur"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:174
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:694
 msgid "Cancel Timer"
 msgstr "Hætta við tímamæli"
@@ -439,22 +439,22 @@ msgid "Files"
 msgstr "Skrár"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:154
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:183
 msgid "Podcasts"
 msgstr "Hlaðvörp"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:231
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:302
 msgid "Album art"
 msgstr "Plötuumslag"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:233
 #: crates/big-audio-player/src/lib.rs:26
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
 msgid "Select a song to start"
 msgstr "Veldu lag til að byrja"
 
@@ -463,7 +463,7 @@ msgstr "Veldu lag til að byrja"
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "Ekki var hægt að spila „{file}“: skráin gæti verið óstudd eða skemmd."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:214
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -494,15 +494,15 @@ msgstr ""
 "Ekki er enn hægt að geyma þetta möppuheiti í safninu. Engri slóð var breytt "
 "eða flutt inn."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:303
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:304
 msgid "The playlist could not be saved."
 msgstr "Ekki var hægt að vista spilunarlistann."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
 msgid "Save Episode"
 msgstr "Vista þátt"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:405
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:406
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
@@ -510,11 +510,11 @@ msgstr "Vista þátt"
 msgid "Save"
 msgstr "Vista"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:413
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:414
 msgid "Save Episodes"
 msgstr "Vista þætti"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:433
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -605,7 +605,7 @@ msgid "Voice Enhancement"
 msgstr "Röddunarbætur"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:138
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
 msgid "Trim & Export"
 msgstr "Klippa og flytja út"
 
@@ -738,48 +738,52 @@ msgstr "Ekki var hægt að vista stöðina."
 msgid "The station could not be removed."
 msgstr "Ekki var hægt að fjarlægja stöðina."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:232
 msgid "There is no Music or home folder to save recordings in."
 msgstr "Engin tónlistarmappa eða heimamappa er til að vista upptökur í."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:286
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:317
 msgid "Recording was not saved"
 msgstr "Upptakan var ekki vistuð"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:291
 msgid "Recording to"
 msgstr "Tek upp í"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:366
-msgid "No episodes found"
-msgstr "Engir þættir fundust"
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:361
+msgid "The podcast could not be loaded. Check your connection and try again."
+msgstr "Ekki tókst að hlaða hlaðvarpinu. Athugaðu tenginguna og reyndu aftur."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:450
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:380
+msgid "This podcast has no episodes to play."
+msgstr "Þetta hlaðvarp hefur enga þætti til að spila."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
 msgid "Recording saved"
 msgstr "Upptaka vistuð"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:456
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
 msgid "The recording was saved and is ready to open."
 msgstr "Upptakan var vistuð og er tilbúin til opnunar."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:460
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:90
 msgid "File"
 msgstr "Skrá"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:464
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 msgid "Folder"
 msgstr "Mappa"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:470
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:484
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Opna möppu"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:154
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:201
@@ -788,12 +792,12 @@ msgstr "Opna möppu"
 msgid "Close"
 msgstr "Loka"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:489
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Opna skrá"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:542
 msgid "Saved radio stations could not be read."
 msgstr "Ekki var hægt að lesa vistaðar útvarpsstöðvar."
 
@@ -805,26 +809,26 @@ msgstr "Sýna Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "Lag sjónvarpsins er ekki lengur í biðröðinni."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
 msgid "Scan cancelled"
 msgstr "Hætt við skönnun"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid "Scan incomplete"
 msgstr "Skönnun ekki lokið"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 #, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
 msgstr[0] "{count} lag flutt inn"
 msgstr[1] "{count} lög flutt inn"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "Safn uppfært"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -832,7 +836,7 @@ msgstr ""
 "Aðgerðin var ófullgerð. Innflutt lög voru látin halda sér; athugaðu möppuna "
 "og reyndu aftur."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -840,29 +844,29 @@ msgstr ""
 "Ekki var hægt að lesa safnið. Fyrri niðurstöður voru látnar halda sér; "
 "reyndu að leita aftur."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "Ekki var hægt að breyta spilunarlistanum. Fyrri spilunarlistinn var látinn "
 "halda sér."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:205
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "Ekki var hægt að opna spilunarlista. Reyndu aftur."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:239
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Ekki var hægt að lesa spilunarlistann með öruggum hætti. Athugaðu snið hans "
 "og heimildir."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:312
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:309
 msgid "tracks imported"
 msgstr "lög flutt inn"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:322
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -931,7 +935,7 @@ msgstr "Leita í safni"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:57
 #: crates/big-audio-player/src/audio/ui/library_io.rs:72
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 msgid "Music Folders"
 msgstr "Tónlistarmöppur"
 
@@ -1159,60 +1163,60 @@ msgid_plural "{count} tracks · {duration}"
 msgstr[0] "{count} lag · {duration}"
 msgstr[1] "{count} lög · {duration}"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:36
 msgid "Drag and drop files to create a playlist"
 msgstr "Dragðu og slepptu skrám til að búa til spilunarlista"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:39
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:40
 msgid "Use the Music tab on the left to browse your library"
 msgstr "Notaðu flipann Tónlist til vinstri til að fletta í safninu þínu"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:43
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:44
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Skoðaðu útvarp og hlaðvörp í flipunum á hliðarstikunni"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:65
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:429
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:450
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:25
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:151
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "Spilunarlisti"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:80
 msgid "Main Menu"
 msgstr "Aðalvalmynd"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:91
 msgid "Show Sidebar"
 msgstr "Sýna hliðarstiku"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:175
 msgid "Save Queue as Playlist"
 msgstr "Vista biðröð sem spilunarlista"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 msgid "Remove Duplicates"
 msgstr "Fjarlægja afrit"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
 msgid "Clear Queue"
 msgstr "Hreinsa biðröð"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 msgid "Manage Playlists"
 msgstr "Sýsla með spilunarlista"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:140
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:660
 msgid "Convert…"
 msgstr "Umbreyta…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:136
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:618
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
@@ -1220,49 +1224,61 @@ msgstr "Umbreyta…"
 msgid "Play on a TV"
 msgstr "Spila í sjónvarpi"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:147
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:24
 msgid "Smartphone"
 msgstr "Snjallsími"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:152
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:559
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Útlit"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:154
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:25
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Flýtilyklar"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:155
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:156
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:567
 msgid "About"
 msgstr "Um forritið"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "No episodes queued"
 msgstr "Engir þættir í biðröð"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:246
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr "Veldu hlaðvarp vinstra megin til að setja þætti þess í biðröð."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
 msgid "Drop tracks here"
 msgstr "Slepptu lögum hér"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:257
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr "Eða tvísmelltu á lag í safninu, eða veldu það og ýttu á Enter."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+msgid "Listening to the radio"
+msgstr "Þú ert að hlusta á útvarp"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:302
+msgid "The list is not playing."
+msgstr "Listinn er ekki í spilun."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:306
+msgid "Play the list"
+msgstr "Spila listann"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:351
 msgid "Welcome to Big Audio Player"
 msgstr "Velkomin í Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:359
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1272,23 +1288,23 @@ msgstr ""
 "þinni við í flipanum Tónlist.\n"
 "Studd snið: MP3, FLAC, OGG, M4A, OPUS, WAV og fleiri."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:372
 msgid "Open Files"
 msgstr "Opna skrár"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:305
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:373
 msgid "Open files"
 msgstr "Opna skrár"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:383
 msgid "Open Audio Files"
 msgstr "Opna hljóðskrár"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:317
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:385
 msgid "Audio Files"
 msgstr "Hljóðskrár"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:409
 msgid "Quick tips"
 msgstr "Fljótleg ráð"
 
@@ -1439,7 +1455,11 @@ msgstr "Eyða spilunarlista?"
 msgid "This will permanently delete"
 msgstr "Þetta mun eyða varanlega"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:303
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:319
+msgid "Loading episodes…"
+msgstr "Hleð þáttum…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:321
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:474
 msgid "Loading…"
 msgstr "Hleð…"
@@ -1615,7 +1635,7 @@ msgstr "Fjarlæg eða óstudd staðsetning — ekki hægt að fjarlægja hér"
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:124
+#: crates/big-video-player/src/video/app.rs:128
 msgid "Open a separate player window instead of using the running one"
 msgstr ""
 "Opna sérstakan spilaraglugga í stað þess að nota spilarann sem er í gangi"
@@ -4923,36 +4943,50 @@ msgid "Voice enhancement"
 msgstr "Röddunarbætur"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr "Litauppspretta"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr "Fylgja kerfinu"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr "Ljóst þema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr "Dökkt þema"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:173
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr "Sérsniðnir litir"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:45
+msgid "Transparent Background with Blur"
+msgstr "Gegnsær bakgrunnur með óskýringu"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:47
+msgid "Shows what is behind the window, blurred where the desktop supports it"
+msgstr ""
+"Sýnir það sem er á bak við gluggann, óskýrt þar sem skjáborðið styður það"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:53
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Ógegnsæi bakgrunns"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:101
 msgid "Accessibility"
 msgstr "Algengi"
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:104
 msgid "High Contrast Text"
 msgstr "Texti með miklum birtuskilum"
 
@@ -4976,39 +5010,35 @@ msgstr "Ljósbleikt"
 msgid "Colors"
 msgstr "Litir"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:177
 msgid "Color Preset"
 msgstr "Litaforstilling"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:184
 msgid "Background Color"
 msgstr "Bakgrunnslitur"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:191
 msgid "Font Color"
 msgstr "Leturlitur"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:198
 msgid "Icon Color"
 msgstr "Táknmyndalitur"
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:205
 msgid "Dialogs and Menus Color"
 msgstr "Litur glugga og valmynda"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr "Myndskeiðslitir"
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
-msgid "Background Opacity"
-msgstr "Ógegnsæi bakgrunns"
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Ógegnsæi valmyndar"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:51
 msgid "Icon and Text Shadow"
 msgstr "Skuggi táknmynda og texta"
 
@@ -5452,23 +5482,22 @@ msgstr "Vefstýring stöðvaðist: {error}"
 msgid "Could not start server"
 msgstr "Ekki var hægt að ræsa netþjón"
 
+#~ msgid "No episodes found"
+#~ msgstr "Engir þættir fundust"
+
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "pixelformat"
 #~ msgstr "Díl-snið"
 
 #, fuzzy
-#~| msgid "Pixel Format"
 #~ msgid "hw-pixelformat"
 #~ msgstr "Díl-snið"
 
 #, fuzzy
-#~| msgid "Primaries"
 #~ msgid "primaries"
 #~ msgstr "Frumlitir"
 
 #, fuzzy
-#~| msgid "Gamma"
 #~ msgid "gamma"
 #~ msgstr "Gamma"
 
