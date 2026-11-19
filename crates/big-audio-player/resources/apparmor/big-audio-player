@@ -161,6 +161,9 @@ profile big-audio-player @{exec_path} flags=(complain) {
 
   # Desktop settings the players follow.
   owner @{HOME}/.config/user-dirs.dirs r,
+  # GTK 4's settings.ini and gtk.css with the theme files it imports;
+  # abstractions/gnome covers only gtk-3.0.
+  owner @{HOME}/.config/gtk-4.0/{,**} r,
   owner @{HOME}/.config/big-shell/shell.json r,
   owner @{HOME}/.config/plasma-org.kde.plasma.desktop-appletsrc r,
   owner @{HOME}/.config/mpv/** r,
