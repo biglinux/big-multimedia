@@ -68,15 +68,21 @@ impl SharedMprisState {
 /// Blocking (`create_dir_all` + `write`): run off the GTK main thread (see
 /// `AudioShell::apply_resolved_art`, which offloads it via `spawn_blocking_result`).
 pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?
+        .join("big-audio-player")
+        .join("mpris-art-cache");
+    write_cached_art(&cache_dir, data)
+}
+
+/// Adds `data` to the art cache at `cache_dir`, first evicting the oldest
+/// entries past 32 or 64 MiB. Pictures over 16 MiB are refused.
+fn write_cached_art(cache_dir: &std::path::Path, data: &[u8]) -> Option<String> {
     use gtk::gio::prelude::FileExt;
     const LIMIT: usize = 16 * 1024 * 1024;
     if data.is_empty() || data.len() > LIMIT {
         return None;
     }
-    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?
-        .join("big-audio-player")
-        .join("mpris-art-cache");
-    std::fs::create_dir_all(&cache_dir).ok()?;
+    std::fs::create_dir_all(cache_dir).ok()?;
     // Cooperative workers/processes share one short nonblocking cache lock.
     // This directory contains cache entries only, never original artwork.
     let _lock = big_app_kit::storage::WriteLock::try_acquire(&cache_dir.join("index")).ok()?;
@@ -84,7 +90,7 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     // Bound the scan, but well above the 32 entries eviction keeps: the lock
     // file and leftovers from interrupted writes also live here, and they must
     // not disable artwork once they pile up. Foreign names are skipped.
-    for entry in std::fs::read_dir(&cache_dir).ok()?.take(1024) {
+    for entry in std::fs::read_dir(cache_dir).ok()?.take(1024) {
         let Ok(entry) = entry else {
             continue;
         };
@@ -139,5 +145,35 @@ mod identity_tests {
         assert_ne!(*state.track_id.lock().unwrap(), first);
         state.invalidate();
         assert!(state.track_id.lock().unwrap().is_none());
+    }
+
+    /// The cache keeps the 32 newest pictures, leaves foreign files alone and
+    /// refuses empty or oversized pictures.
+    #[test]
+    fn art_cache_keeps_newest_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let path_of = |uri: String| {
+            use gtk::gio::prelude::FileExt;
+            gtk::gio::File::for_uri(&uri).path().unwrap()
+        };
+        let foreign = dir.path().join("mpris-art-notes.txt");
+        std::fs::write(&foreign, b"keep").unwrap();
+        let first = path_of(write_cached_art(dir.path(), b"art").unwrap());
+        let mut last = first.clone();
+        for _ in 0..32 {
+            last = path_of(write_cached_art(dir.path(), b"art").unwrap());
+        }
+        let pictures = std::fs::read_dir(dir.path())
+            .unwrap()
+            .filter(|entry| {
+                let name = entry.as_ref().unwrap().file_name();
+                name.to_string_lossy().starts_with("mpris-art-")
+            })
+            .count();
+        assert_eq!(pictures, 33);
+        assert!(!first.exists() && last.exists() && foreign.exists());
+        assert!(write_cached_art(dir.path(), b"").is_none());
+        assert!(write_cached_art(dir.path(), &vec![0; 16 * 1024 * 1024 + 1]).is_none());
+        assert!(write_cached_art(dir.path(), &vec![0; 16 * 1024 * 1024]).is_some());
     }
 }

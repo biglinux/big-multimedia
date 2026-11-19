@@ -449,4 +449,15 @@ mod tests {
         scan_dir.close()?;
         Ok(())
     }
+
+    /// No other test reserves a scan, so the process-wide count starts at zero.
+    #[test]
+    fn scan_admission_caps_concurrent_scans() {
+        let first = ScanAdmission::reserve().expect("first scan admitted");
+        let second = ScanAdmission::reserve().expect("second scan admitted");
+        assert!(ScanAdmission::reserve().is_none());
+        drop(first);
+        let third = ScanAdmission::reserve().expect("a released slot is reused");
+        drop((second, third));
+    }
 }
