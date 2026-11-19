@@ -264,6 +264,8 @@ mod tests {
         assert_eq!(route("/secret", "secret"), Some(""));
         assert_eq!(route("/secreX/status", "secret"), None);
         assert_eq!(route("/secr", "secret"), None);
+        // Two mismatches with equal XOR must not cancel out.
+        assert_eq!(route("/ba/status", "ab"), None);
         let request = |target: &str| {
             let head = format!("GET {target} HTTP/1.1\r\nHost: localhost");
             dispatch(
@@ -277,6 +279,41 @@ mod tests {
         assert!(request("/secret-extra/status").starts_with(b"HTTP/1.1 404"));
         assert!(request("/secret").starts_with(b"HTTP/1.1 308"));
         assert!(request("/secret/status").starts_with(b"HTTP/1.1 200"));
+        for (asset, mime) in [("remote.css", "text/css"), ("remote.js", "text/javascript")] {
+            let reply = String::from_utf8(request(&format!("/secret/{asset}"))).unwrap();
+            assert!(reply.starts_with("HTTP/1.1 200"), "{asset}");
+            assert!(reply.contains(&format!("Content-Type: {mime};")), "{asset}");
+        }
+    }
+
+    /// Each row breaks exactly one rule of the request head.
+    #[test]
+    fn parser_rejects_malformed_heads() {
+        let long_target = |len: usize| format!("/{}", "a".repeat(len - 1));
+        let accepted = [
+            format!("GET {} HTTP/1.1\r\nHost: localhost", long_target(2048)),
+            "POST /t HTTP/1.1\r\nHost: localhost\r\nUser-Agent: a\tb".to_owned(),
+        ];
+        for input in &accepted {
+            assert!(parse_request(input.as_bytes()).is_ok(), "{input}");
+        }
+        let refused = [
+            "GET /t HTTP/1.0\r\nHost: localhost".to_owned(),
+            "GET /t HTTP/1.1 extra\r\nHost: localhost".to_owned(),
+            "PUT /t HTTP/1.1\r\nHost: localhost".to_owned(),
+            "GET t HTTP/1.1\r\nHost: localhost".to_owned(),
+            format!("GET {} HTTP/1.1\r\nHost: localhost", long_target(2049)),
+            format!("GET {} HTTP/1.1\r\nHost: localhost", long_target(4096)),
+            "GET /t\x7f HTTP/1.1\r\nHost: localhost".to_owned(),
+            "GET /t HTTP/1.1\r\nHost: localhost\r\nUser-Agent: a\x01b".to_owned(),
+            "GET /t HTTP/1.1\r\nUser-Agent: a".to_owned(),
+            "GET /t HTTP/1.1\r\nHost: ".to_owned(),
+            "GET /t HTTP/1.1\r\nHost: evil/path".to_owned(),
+            "GET /t HTTP/1.1\r\nHost: user@localhost".to_owned(),
+        ];
+        for input in &refused {
+            assert!(parse_request(input.as_bytes()).is_err(), "{input:?}");
+        }
     }
 
     #[test]

@@ -688,6 +688,30 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
+    fn header_size_capped() {
+        let server = start(handlers(true));
+        let head = |len: usize| {
+            let start = format!(
+                "GET /{}/status HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Pad: ",
+                server.token
+            );
+            let pad = len - start.len() - 4;
+            format!("{start}{}\r\n\r\n", "a".repeat(pad))
+        };
+        let reply = |request: String| {
+            let mut peer = TcpStream::connect(("127.0.0.1", server.port)).unwrap();
+            peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+            peer.write_all(request.as_bytes()).unwrap();
+            let mut reply = Vec::new();
+            let _ = peer.read_to_end(&mut reply);
+            reply
+        };
+        assert!(reply(head(MAX_HEADER)).starts_with(b"HTTP/1.1 200"));
+        assert!(reply(head(MAX_HEADER + 1)).is_empty());
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
     fn slow_peers_leave_server_responsive() {
         let server = start(handlers(true));
         let mut slow: Vec<_> = (0..MAX_PER_IP - 1)
