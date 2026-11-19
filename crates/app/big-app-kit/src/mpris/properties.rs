@@ -235,6 +235,14 @@ mod tests {
             method_command("SetPosition", &args("/br/com/biglinux/Track/2"), &state),
             Ok(Some(C::SetPosition { position_us: 2, .. }))
         ));
+        let past_end = (
+            ObjectPath::try_from("/br/com/biglinux/Track/2").unwrap(),
+            10_000_001_i64,
+        );
+        assert_eq!(
+            method_command("SetPosition", &past_end.to_variant(), &state),
+            Ok(None)
+        );
     }
     /// Oracle: the MPRIS spec. A negative volume means 0.0, a rate of 0.0 means
     /// Pause, and a rate outside MinimumRate..MaximumRate (0.25..4.0) is refused.
@@ -274,6 +282,17 @@ mod tests {
             );
             assert_eq!(accepted, expected.is_some(), "{property} {value}");
         }
+        let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = std::sync::Arc::clone(&sent);
+        let command: CommandCallback = Box::new(move |request| sink.lock().unwrap().push(request));
+        let state: StateCallback = Box::new(PlayerState::default);
+        assert!(set_player_property(
+            "Shuffle",
+            &true.to_variant(),
+            &command,
+            &state
+        ));
+        assert_eq!(*sent.lock().unwrap(), [C::SetShuffle(true)]);
     }
 
     /// Oracle: the MPRIS spec's three LoopStatus values, case-sensitive.
@@ -360,5 +379,130 @@ mod tests {
         );
         assert!(!CHANGING.contains(&"Position"));
         assert!(!CHANGING.contains(&"CanControl"));
+    }
+
+    /// Oracle: the MPRIS Player interface. A method the state cannot honor is
+    /// accepted and ignored; arguments on an argument-less method are refused.
+    #[test]
+    fn methods_follow_capabilities() {
+        let able = PlayerState {
+            can_play: true,
+            can_pause: true,
+            can_next: true,
+            can_prev: true,
+            ..Default::default()
+        };
+        let playing = PlayerState {
+            status: PlaybackStatus::Playing,
+            ..able.clone()
+        };
+        let unable = PlayerState::default();
+        let none = ().to_variant();
+        for (method, state, expected) in [
+            ("Play", &able, Some(C::Play)),
+            ("Play", &unable, None),
+            ("Pause", &able, Some(C::Pause)),
+            ("Pause", &unable, None),
+            ("PlayPause", &able, Some(C::Play)),
+            ("PlayPause", &playing, Some(C::Pause)),
+            ("Stop", &unable, Some(C::Stop)),
+            ("Next", &able, Some(C::Next)),
+            ("Next", &unable, None),
+            ("Previous", &able, Some(C::Previous)),
+            ("Previous", &unable, None),
+        ] {
+            assert_eq!(
+                method_command(method, &none, state),
+                Ok(expected),
+                "{method}"
+            );
+        }
+        assert_eq!(
+            method_command("Play", &(1_i64,).to_variant(), &able),
+            Err("InvalidArgs")
+        );
+        let seekable = PlayerState {
+            track_id: Some("/br/com/biglinux/Track/2".into()),
+            can_seek: true,
+            ..Default::default()
+        };
+        assert!(matches!(
+            method_command("Seek", &(5_i64,).to_variant(), &seekable),
+            Ok(Some(C::Seek { offset_us: 5, .. }))
+        ));
+        assert_eq!(
+            method_command("Seek", &(5_i64,).to_variant(), &unable),
+            Ok(None)
+        );
+    }
+
+    /// Oracle: the MPRIS spec's property names, value types and units.
+    #[test]
+    fn properties_report_state() {
+        let state = PlayerState {
+            status: PlaybackStatus::Paused,
+            volume_pct: 50.0,
+            rate: 8.0,
+            can_seek: true,
+            loop_status: LoopStatus::Playlist,
+            shuffle: true,
+            ..Default::default()
+        };
+        let read = |prop: &str| player_property(prop, &state).unwrap();
+        assert_eq!(read("PlaybackStatus").get::<String>().unwrap(), "Paused");
+        assert_eq!(read("LoopStatus").get::<String>().unwrap(), "Playlist");
+        assert_eq!(read("Volume").get::<f64>(), Some(0.5));
+        assert_eq!(read("Rate").get::<f64>(), Some(4.0));
+        assert_eq!(read("MinimumRate").get::<f64>(), Some(0.25));
+        assert_eq!(read("MaximumRate").get::<f64>(), Some(4.0));
+        assert_eq!(read("Shuffle").get::<bool>(), Some(true));
+        assert_eq!(read("CanSeek").get::<bool>(), Some(true));
+        assert_eq!(read("CanControl").get::<bool>(), Some(true));
+        for prop in [
+            "Metadata",
+            "CanPlay",
+            "CanPause",
+            "CanGoNext",
+            "CanGoPrevious",
+        ] {
+            assert!(player_property(prop, &state).is_some(), "{prop}");
+        }
+        let stopped = player_property("PlaybackStatus", &PlayerState::default()).unwrap();
+        assert_eq!(stopped.get::<String>().unwrap(), "Stopped");
+        let unset = PlayerState::default();
+        assert_eq!(
+            player_property("Rate", &unset).unwrap().get::<f64>(),
+            Some(1.0)
+        );
+        assert_eq!(player_property("Nope", &state), None);
+    }
+
+    #[test]
+    fn root_properties_name_the_player() {
+        let read = |prop: &str, desktop: &str| get_root_property(prop, desktop).unwrap();
+        let identity = |desktop: &str| read("Identity", desktop).get::<String>().unwrap();
+        assert_eq!(
+            identity("br.com.biglinux.BigAudioPlayer"),
+            "Big Audio Player"
+        );
+        assert_eq!(
+            identity("br.com.biglinux.BigVideoPlayer"),
+            "Big Video Player"
+        );
+        let types = |desktop: &str| {
+            read("SupportedMimeTypes", desktop)
+                .get::<Vec<String>>()
+                .unwrap()
+        };
+        assert!(types("br.com.biglinux.BigVideoPlayer").contains(&"video/webm".to_owned()));
+        assert!(types("br.com.biglinux.BigAudioPlayer").contains(&"audio/flac".to_owned()));
+        assert_eq!(read("DesktopEntry", "x").get::<String>().unwrap(), "x");
+        assert_eq!(read("CanRaise", "x").get::<bool>(), Some(true));
+        assert_eq!(read("Fullscreen", "x").get::<bool>(), Some(false));
+        let schemes = read("SupportedUriSchemes", "x")
+            .get::<Vec<String>>()
+            .unwrap();
+        assert!(schemes.contains(&"https".to_owned()));
+        assert_eq!(get_root_property("Nope", "x"), None);
     }
 }
