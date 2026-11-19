@@ -44,9 +44,6 @@ crossbeam-utils
 darling
 darling_core
 darling_macro
-defmt
-defmt-macros
-defmt-parser
 dns-lookup
 env_filter
 env_logger
@@ -102,8 +99,6 @@ ignore
 indexmap
 is_terminal_polyfill
 itoa
-jiff
-jiff-static
 jobserver
 js-sys
 lazy_static
@@ -132,14 +127,10 @@ pango-sys
 parking
 pin-project-lite
 pkg-config
-portable-atomic
-portable-atomic-util
 ppv-lite86
 prettyplease
 proc-macro2
 proc-macro-crate
-proc-macro-error2
-proc-macro-error-attr2
 proptest
 qrcode
 quick-error

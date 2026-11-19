@@ -1,4 +1,0 @@
-[advisories]
-# proc-macro-error2 is lock-only: jiff's weak defmt?/alloc feature lists defmt-macros in
-# Cargo.lock, but jiff's defmt feature is never enabled, so it is built for no target.
-ignore = ["RUSTSEC-2026-0173"]
