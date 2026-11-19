@@ -312,3 +312,74 @@ fn restore_defaults_keeps_user_data() {
         assert_eq!(settings.string(key), value, "{key}");
     }
 }
+
+#[test]
+fn requested_flush_reaches_disk() {
+    let name = format!("settings-request-{}.conf", std::process::id());
+    let path = std::env::temp_dir().join(&name);
+    let _ = std::fs::remove_file(&path);
+    let settings = Settings::from_path(path.clone());
+    settings.put_double(keys::VOLUME, 42.0);
+    assert!(Settings::any_unsaved());
+    settings.request_flush().unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while settings.save_status().phase != SavePhase::Saved {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "{:?}",
+            settings.save_status()
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let saved = store::parse(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(saved.get("volume"), Some(&settings.string("volume")));
+    let _ = std::fs::remove_file(&path);
+    let _ = std::fs::remove_file(path.with_file_name(format!("{name}.lock")));
+}
+
+/// Each refused row breaks one rule; the accepted rows sit at the caps.
+#[test]
+fn schema_bounds_keys_and_values() {
+    let long_key = "k".repeat(128);
+    let long_value = "v".repeat(65_536);
+    for (key, value) in [(long_key.as_str(), "x"), ("x-text", long_value.as_str())] {
+        assert_eq!(schema::normalized(key, value), Some(value), "{key}");
+    }
+    let longer_key = "k".repeat(129);
+    let longer_value = "v".repeat(65_537);
+    for (key, value) in [
+        ("", "x"),
+        (longer_key.as_str(), "x"),
+        ("x-text", longer_value.as_str()),
+        ("bad key", "x"),
+        ("x-text", "a\u{7}b"),
+    ] {
+        assert_eq!(schema::normalized(key, value), None, "{key:?}={value:?}");
+    }
+    let invalid = HashMap::from([("volume".to_owned(), "loud".to_owned())]);
+    assert!(store::serialize(&invalid).is_err());
+}
+
+#[test]
+fn noise_voice_only_follows_switch() {
+    let settings = Settings::memory_only();
+    assert!(!settings.get_bool(keys::NOISE_VOICE_ONLY));
+    assert_eq!(settings.noise_voice_only(), None);
+    settings.put_bool(keys::NOISE_VOICE_ONLY, true);
+    assert_eq!(settings.noise_voice_only(), Some(3));
+    assert!(!settings.put_int(keys::NOISE_VOICE_SENSITIVITY, 9));
+    settings.put_int(keys::NOISE_VOICE_SENSITIVITY, 2);
+    assert_eq!(settings.noise_voice_only(), Some(2));
+}
+
+/// The file cap is 1 MiB; one text value is at most 64 KiB.
+#[test]
+fn serialize_refuses_oversized_file() {
+    let map = |count: usize| {
+        (0..count)
+            .map(|i| (format!("x-text-{i:02}"), "v".repeat(65_536)))
+            .collect::<HashMap<_, _>>()
+    };
+    assert!(store::serialize(&map(15)).is_ok());
+    assert!(store::serialize(&map(17)).is_err());
+}
