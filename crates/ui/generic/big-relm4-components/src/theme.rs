@@ -192,6 +192,13 @@ mod tests {
     }
 
     #[test]
+    fn rgba_channels_scale_to_unit() {
+        let rgba = parse_hex_to_rgba("#FF3366");
+        assert_eq!((rgba.red(), rgba.green(), rgba.blue()), (1.0, 0.2, 0.4));
+        assert_eq!(rgba.alpha(), 1.0);
+    }
+
+    #[test]
     fn parse_hex_color_uses_visible_fallback() {
         assert_eq!(parse_hex_color("#FFF"), (42, 42, 48));
         assert_eq!(parse_hex_color(""), (42, 42, 48));

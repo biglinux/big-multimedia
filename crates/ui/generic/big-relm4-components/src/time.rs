@@ -176,7 +176,7 @@ mod tests {
     fn rejects_malformed_times() {
         for input in [
             "inf", "-inf", "1e400", "NaN", "1:99", "1.5:30", "1:60:00", "-1:30", "1:-30", "1:3e1",
-            "1::30", ":30",
+            "1::30", ":30", "1:60",
         ] {
             assert_eq!(parse_playback_time(input), None, "{input}");
         }
