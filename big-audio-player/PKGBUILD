@@ -51,12 +51,12 @@ fi
 
 prepare() {
     if [ -n "${_checkout}" ]; then
-        # The files git sees: tracked and new ones, without ignored output or
-        # this recipe's own src/ and pkg/.
+        # The files git sees: tracked and new ones, without ignored output
+        # (this recipe's src/, pkg/ and packages among it). Tests read the
+        # recipe itself, so it is copied too.
         rm -rf "${srcdir:?}/${_repo}"
         mkdir "${srcdir}/${_repo}"
-        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard \
-            -- ":!:${_recipe_dir#"${_checkout}"/}" |
+        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard |
             tar -C "${_checkout}" --null --files-from=- --ignore-failed-read -cf - |
             tar -C "${srcdir}/${_repo}" -xf -
     fi
