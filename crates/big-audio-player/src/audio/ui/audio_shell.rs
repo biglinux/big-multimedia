@@ -54,6 +54,7 @@ use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
 use crate::i18n::{i18n, ni18n};
+use crate::library::podcast::PodcastFeed;
 use crate::media::iptv::left_out_notice;
 use crate::player::mpv_backend::{
     AudioCacheProfile, EndReason, MpvBackend, PlayerEvent, TargetSource,
@@ -136,6 +137,8 @@ pub struct AudioShell {
     /// Whether the queue currently holds podcast episodes (suppresses the music
     /// queue + toggles the stash/restore on tab switches).
     podcast_mode: bool,
+    /// The latest feed asked for; an older fetch that lands later is dropped.
+    podcast_feed_request: u64,
     /// Music queue stashed on entering podcast mode (tracks + current index).
     saved_music_queue: Option<(Vec<Track>, Option<usize>)>,
     /// Podcast queue stashed on leaving the podcast tab (restored on return).

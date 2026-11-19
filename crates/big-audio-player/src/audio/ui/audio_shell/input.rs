@@ -49,12 +49,10 @@ pub enum AudioShellInput {
     Podcast(PodcastPanelOutput),
     /// A podcast feed fetched (async) → enter podcast mode, queue episodes, play.
     PodcastFeedResolved {
-        /// Feed title (shown in the queue header).
-        title: String,
-        /// `(audio_url, episode_title)` per episode, in feed order.
-        episodes: Vec<(String, String)>,
-        /// Episodes left out for an address that is not a stream URI.
-        skipped: usize,
+        /// The `podcast_feed_request` it answers.
+        request: u64,
+        /// The feed, or `None` when it could not be fetched or read.
+        feed: Option<PodcastFeed>,
     },
     /// The visible view-stack tab changed → enter/leave podcast mode.
     ViewTabChanged(String),

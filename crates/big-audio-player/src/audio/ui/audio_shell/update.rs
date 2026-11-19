@@ -104,15 +104,8 @@ impl AudioShell {
                 }
             }
             AudioShellInput::Podcast(out) => self.handle_podcast(out, &sender),
-            AudioShellInput::PodcastFeedResolved {
-                title,
-                episodes,
-                skipped,
-            } => {
-                if let Some(notice) = left_out_notice(false, skipped) {
-                    self.notify(&notice);
-                }
-                self.enter_podcast_mode(title, episodes);
+            AudioShellInput::PodcastFeedResolved { request, feed } => {
+                self.podcast_feed_resolved(request, feed);
             }
             AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name, &sender),
             AudioShellInput::RadioStationsResolved(stations) => {

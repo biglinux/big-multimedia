@@ -178,6 +178,8 @@ impl AudioShell {
                 self.mpris_state.invalidate();
                 self.is_playing = true;
                 self.is_stream = true;
+                self.playlist
+                    .emit(PlaylistPanelInput::SetStream(Some(name.clone())));
                 self.radio_station_name = name;
                 if let Some(mpv) = &self.mpv {
                     mpv.load_file_with_audio_profile(
@@ -330,28 +332,15 @@ impl AudioShell {
     ) {
         match out {
             PodcastPanelOutput::LoadFeed(url) => {
+                self.podcast_feed_request = self.podcast_feed_request.wrapping_add(1);
+                let request = self.podcast_feed_request;
+                self.playlist
+                    .emit(PlaylistPanelInput::LoadingEpisodes(true));
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(
                     move || crate::library::podcast::fetch_feed(&url),
                     move |feed| {
-                        let Some(feed) = feed else {
-                            let _ = input.send(AudioShellInput::PodcastFeedResolved {
-                                title: String::new(),
-                                episodes: Vec::new(),
-                                skipped: 0,
-                            });
-                            return;
-                        };
-                        let episodes = feed
-                            .episodes
-                            .into_iter()
-                            .map(|ep| (ep.audio_url, ep.title))
-                            .collect();
-                        let _ = input.send(AudioShellInput::PodcastFeedResolved {
-                            title: feed.title,
-                            episodes,
-                            skipped: feed.skipped,
-                        });
+                        let _ = input.send(AudioShellInput::PodcastFeedResolved { request, feed });
                     },
                 );
             }
@@ -359,11 +348,36 @@ impl AudioShell {
         }
     }
 
+    /// Answer the latest feed request: say why nothing loaded, or enter
+    /// podcast mode with its episodes. An older request is ignored.
+    pub(super) fn podcast_feed_resolved(&mut self, request: u64, feed: Option<PodcastFeed>) {
+        if request != self.podcast_feed_request {
+            return;
+        }
+        self.playlist
+            .emit(PlaylistPanelInput::LoadingEpisodes(false));
+        let Some(feed) = feed else {
+            self.notify(&i18n(
+                "The podcast could not be loaded. Check your connection and try again.",
+            ));
+            return;
+        };
+        if let Some(notice) = left_out_notice(false, feed.skipped) {
+            self.notify(&notice);
+        }
+        let episodes = feed
+            .episodes
+            .into_iter()
+            .map(|episode| (episode.audio_url, episode.title))
+            .collect();
+        self.enter_podcast_mode(feed.title, episodes);
+    }
+
     /// Enter podcast mode: stash the music queue (first entry), rebuild the queue
     /// from the feed's episodes, and start the first one.
     pub(super) fn enter_podcast_mode(&mut self, title: String, episodes: Vec<(String, String)>) {
         if episodes.is_empty() {
-            self.notify(&i18n("No episodes found"));
+            self.notify(&i18n("This podcast has no episodes to play."));
             return;
         }
         self.cancel_pending_opens();

@@ -52,7 +52,14 @@ impl AudioShell {
         };
         self.mpris_state.invalidate();
         self.current_file.clone_from(&path);
-        self.is_stream = false;
+        if self.is_stream {
+            self.is_stream = false;
+            self.playlist.emit(PlaylistPanelInput::SetStream(None));
+            self.radio.emit(RadioPanelInput::NowPlayingChanged {
+                url: String::new(),
+                is_stream: false,
+            });
+        }
         self.is_playing = status == PlaybackStatus::Playing;
         if status == PlaybackStatus::Stopped {
             // Select the next item without starting decoder/audio output.

@@ -4,5 +4,6 @@
     <file>illustrations/sleep_timer.svg</file>
     <file>illustrations/timer_clock.svg</file>
     <file>illustrations/sleep_action.svg</file>
+    <file>icons/scalable/actions/big-radio-symbolic.svg</file>
   </gresource>
 </gresources>

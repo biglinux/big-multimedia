@@ -65,7 +65,8 @@ impl AudioShell {
             self.np_title.set_label(&self.radio_station_name);
             self.np_artist.set_label(&i18n("Radio"));
             self.np_album.set_visible(false);
-            self.np_art.set_icon_name(Some("icon_radio"));
+            self.np_art
+                .set_icon_name(Some(big_player_ui::radio_panel::RADIO_ICON));
             return;
         }
         let Some(track) = self.queue.current() else {

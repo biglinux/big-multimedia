@@ -153,6 +153,10 @@ pub enum PlaylistPanelInput {
     ApplyColumnWidths(String),
     /// Restoring the saved queue ended, read or not: an empty queue is final.
     QueueRestored,
+    /// A podcast feed is being fetched: the list shows loading until false.
+    LoadingEpisodes(bool),
+    /// The radio station the player holds instead of the list, if any.
+    SetStream(Option<String>),
 }
 
 /// Intents the playlist panel emits for the shell to act on.
@@ -234,6 +238,8 @@ pub enum PlaylistPanelOutput {
     /// Persist the queue column widths (`key=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
+    /// Play the list's current entry instead of the radio.
+    PlayQueue,
 }
 
 /// Relm4 playlist/queue panel component.
@@ -260,6 +266,12 @@ pub struct PlaylistPanel {
     podcasts: bool,
     /// Until the saved queue arrives, an empty queue shows loading instead.
     restoring: bool,
+    /// A podcast feed is being fetched; the list shows loading instead.
+    loading_episodes: bool,
+    /// Over the list while a radio station holds the player.
+    radio_card: playlist_chrome::RadioCard,
+    /// The list's page, dimmed under the radio card.
+    page: gtk::Box,
 }
 
 impl PlaylistPanel {
@@ -297,10 +309,19 @@ impl PlaylistPanel {
     /// (re)attach the list. The view is reattached, never rebuilt.
     fn refresh_empty_state(&self, sender: &ComponentSender<Self>) {
         let empty = self.store.n_items() == 0;
-        self.list.header.set_visible(!empty);
-        if empty && self.restoring {
+        self.list
+            .header
+            .set_visible(!empty && !self.loading_episodes);
+        // Nothing to play from an empty list.
+        self.radio_card.play_list.set_visible(!empty);
+        if self.loading_episodes || (empty && self.restoring) {
+            let title = if self.loading_episodes {
+                i18n("Loading episodes…")
+            } else {
+                i18n("Loading…")
+            };
             let loading = adw::StatusPage::builder()
-                .title(i18n("Loading…"))
+                .title(title)
                 .vexpand(true)
                 .build();
             loading.set_paintable(Some(&adw::SpinnerPaintable::new(Some(&loading))));
@@ -486,7 +507,11 @@ impl Component for PlaylistPanel {
 
         let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender, &split_view);
         root.add_top_bar(&toolbar);
-        root.set_content(Some(&page));
+        let radio_card = playlist_chrome::build_radio_card(&sender);
+        let content = gtk::Overlay::new();
+        content.set_child(Some(&page));
+        content.add_overlay(&radio_card.root);
+        root.set_content(Some(&content));
 
         let model = Self {
             store,
@@ -500,6 +525,9 @@ impl Component for PlaylistPanel {
             library_has_items: false,
             podcasts: false,
             restoring: true,
+            loading_episodes: false,
+            radio_card,
+            page,
         };
         // Empty queue at boot → show loading until the shell pushes the saved
         // queue or reports there is none.
@@ -588,6 +616,19 @@ impl Component for PlaylistPanel {
             PlaylistPanelInput::QueueRestored => {
                 self.restoring = false;
                 self.refresh_empty_state(&sender);
+            }
+            PlaylistPanelInput::LoadingEpisodes(loading) => {
+                self.loading_episodes = loading;
+                self.refresh_empty_state(&sender);
+            }
+            PlaylistPanelInput::SetStream(station) => {
+                if let Some(station) = &station {
+                    self.radio_card.station.set_label(station);
+                }
+                self.radio_card.root.set_visible(station.is_some());
+                // Dimmed, the list reads as not playing; it still takes clicks.
+                self.page
+                    .set_opacity(if station.is_some() { 0.35 } else { 1.0 });
             }
         }
     }

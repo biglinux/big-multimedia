@@ -17,6 +17,7 @@ use crate::i18n::i18n;
 
 use super::playlist_library_dialog::save_queue_prompt_spec;
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
+use big_player_ui::radio_panel::RADIO_ICON;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct WelcomeTipSpec {
@@ -39,7 +40,7 @@ fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
             text: i18n("Use the Music tab on the left to browse your library"),
         },
         WelcomeTipSpec {
-            icon_name: "icon_radio",
+            icon_name: RADIO_ICON,
             text: i18n("Explore Radio and Podcasts in the sidebar tabs"),
         },
     ]
@@ -259,6 +260,73 @@ fn build_drop_hint() -> adw::StatusPage {
         .build()
 }
 
+/// The card over the list while a radio station holds the player.
+pub(super) struct RadioCard {
+    pub(super) root: gtk::Box,
+    pub(super) station: gtk::Label,
+    /// Hidden while the list is empty: there is nothing to play.
+    pub(super) play_list: gtk::Button,
+}
+
+/// Says the radio, not the list, is playing, and offers to play the list.
+pub(super) fn build_radio_card(sender: &ComponentSender<PlaylistPanel>) -> RadioCard {
+    let root = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Start)
+        .spacing(6)
+        .margin_top(48)
+        .margin_start(24)
+        .margin_end(24)
+        .visible(false)
+        .accessible_role(gtk::AccessibleRole::Group)
+        .css_classes(["card", "radio-now-playing"])
+        .build();
+    let icon = gtk::Image::builder()
+        .icon_name(RADIO_ICON)
+        .pixel_size(48)
+        .margin_bottom(6)
+        .build();
+    root.append(&icon);
+    let listening = gtk::Label::new(Some(&i18n("Listening to the radio")));
+    listening.add_css_class("caption-heading");
+    listening.add_css_class("dim-label");
+    root.append(&listening);
+    let station = gtk::Label::builder()
+        .wrap(true)
+        .justify(gtk::Justification::Center)
+        .max_width_chars(32)
+        .build();
+    station.add_css_class("title-2");
+    root.append(&station);
+    let note = gtk::Label::new(Some(&i18n("The list is not playing.")));
+    note.add_css_class("dim-label");
+    root.append(&note);
+    let play_list = build_button(
+        &BigButtonContentSpec::new("media-playback-start-symbolic", i18n("Play the list"))
+            .css_classes(["suggested-action", "pill"]),
+    );
+    play_list.set_halign(gtk::Align::Center);
+    play_list.set_margin_top(12);
+    {
+        let out = sender.clone();
+        play_list.connect_clicked(move |_| {
+            let _ = out.output(PlaylistPanelOutput::PlayQueue);
+        });
+    }
+    root.append(&play_list);
+    big_gtk_kit::accessible::relate(
+        &root,
+        gtk::AccessibleRelation::LabelledBy,
+        &[listening.upcast_ref(), station.upcast_ref()],
+    );
+    RadioCard {
+        root,
+        station,
+        play_list,
+    }
+}
+
 /// First run (empty library + empty queue): welcome with an Open Files action
 /// (emits `OpenFiles`) and a few orientation tips.
 fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
@@ -430,10 +498,7 @@ mod tests {
                     "emblem-music-symbolic",
                     "Use the Music tab on the left to browse your library",
                 ),
-                (
-                    "icon_radio",
-                    "Explore Radio and Podcasts in the sidebar tabs",
-                ),
+                (RADIO_ICON, "Explore Radio and Podcasts in the sidebar tabs",),
             ]
         );
     }

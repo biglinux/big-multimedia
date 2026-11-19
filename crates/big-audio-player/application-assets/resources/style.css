@@ -424,6 +424,15 @@ paned > separator {
     margin-bottom: 2px;
 }
 
+/* Card over the list while a radio station plays. */
+.radio-now-playing {
+    padding: 28px 48px 24px;
+    border-radius: 18px;
+    background-color: var(--popover-bg-color);
+    color: var(--popover-fg-color);
+    box-shadow: 0 4px 18px alpha(black, 0.22), 0 0 0 1px alpha(black, 0.06);
+}
+
 /* ── Download manager panel ── */
 .download-panel-row progressbar trough {
     min-height: 6px;

@@ -149,7 +149,7 @@ impl Component for AudioShell {
             .set_icon_name("folder-symbolic");
         view_stack
             .add_titled(radio.widget(), Some("radio"), &i18n("Radio"))
-            .set_icon_name("icon_radio");
+            .set_icon_name(big_player_ui::radio_panel::RADIO_ICON);
         view_stack
             .add_titled(podcast.widget(), Some("podcast"), &i18n("Podcasts"))
             .set_icon_name("microphone-sensitivity-high-symbolic");
@@ -173,7 +173,11 @@ impl Component for AudioShell {
         let tabs: [(&str, String, &str); 4] = [
             ("emblem-music-symbolic", i18n("Music"), "music"),
             ("folder-symbolic", i18n("Files"), "files"),
-            ("icon_radio", i18n("Radio"), "radio"),
+            (
+                big_player_ui::radio_panel::RADIO_ICON,
+                i18n("Radio"),
+                "radio",
+            ),
             (
                 "microphone-sensitivity-high-symbolic",
                 i18n("Podcasts"),
@@ -348,6 +352,12 @@ impl Component for AudioShell {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        // Icons the resources ship (the radio's); once per display.
+        let icons = gtk::IconTheme::for_display(&root.display());
+        let icon_path = format!("{}/icons", crate::config::audio::RESOURCE_PREFIX);
+        if !icons.resource_path().iter().any(|path| *path == icon_path) {
+            icons.add_resource_path(&icon_path);
+        }
 
         for action in PLAYBACK_SHORTCUT_ACTIONS {
             let input = sender.input_sender().clone();
@@ -536,6 +546,7 @@ impl Component for AudioShell {
                 _podcast: podcast,
                 notice,
                 podcast_mode: false,
+                podcast_feed_request: 0,
                 saved_music_queue: None,
                 saved_podcast_queue: None,
                 queue: PlayQueue::new(),

@@ -27,6 +27,10 @@ use crate::media_list::MediaListView;
 use big_media_data::db::models::RadioStation;
 use big_media_data::radio::RadioExploreEntry;
 
+/// The radio icon, shipped in the audio resources (`icons/scalable/actions`)
+/// so it is symbolic and takes the palette's text color in every icon theme.
+pub const RADIO_ICON: &str = "big-radio-symbolic";
+
 mod methods;
 mod widgets;
 

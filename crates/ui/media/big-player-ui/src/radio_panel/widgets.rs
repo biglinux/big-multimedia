@@ -302,7 +302,7 @@ pub(super) fn build_empty_state(sender: &ComponentSender<RadioPanel>) -> gtk::Bo
         .build();
     empty_state.append(
         &gtk::Image::builder()
-            .icon_name("icon_radio")
+            .icon_name(super::RADIO_ICON)
             .pixel_size(64)
             .css_classes(["dim-label"])
             .build(),

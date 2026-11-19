@@ -98,6 +98,7 @@ impl AudioShell {
                 self.queue.jump_to(index);
                 self.play_current();
             }
+            PlaylistPanelOutput::PlayQueue => self.play_current(),
             PlaylistPanelOutput::RemoveTracks { mut indices } => {
                 self.snapshot_queue();
                 // Highest first, once each, so earlier removals keep the rest valid.
