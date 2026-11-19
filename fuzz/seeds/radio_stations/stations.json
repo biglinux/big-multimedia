@@ -1,0 +1,3 @@
+[{"name":"Radio A","url":"http://a.example/stream","url_resolved":"https://a.example/live","country":"Brazil","tags":"rock,pop","favicon":"https://a.example/i.png","votes":12},
+ {"name":"","url":"http://b.example/","url_resolved":"","favicon":"null","votes":1},
+ {"name":"Spam","url":"ftp://c.example/","url_resolved":"http://c.example/","favicon":"javascript:x","votes":90000}]

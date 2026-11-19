@@ -210,6 +210,25 @@ regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 the pinned versions, each with its replacement. `docs/native-library-limits.md`
 lists the native defects behind those bans and what the project still inherits.
 
+### Fuzzing
+
+`fuzz/` holds cargo-fuzz targets for the parsers that read bytes from the
+network or from files other programs write: the phone remote's requests, curl's
+headers, podcast feeds, Radio Browser replies, IPTV lists, playlist files and
+URLs. Each target asserts the parser's contract, not only that it survives. The
+package stays out of the workspace because libFuzzer needs nightly; it reaches
+private parsers through `fuzz_*` functions that exist only under `cfg(fuzzing)`.
+Campaigns run by hand, never in the per-commit gate:
+
+```sh
+cd fuzz
+cargo +nightly fuzz run -O remote_request corpus/remote_request seeds/remote_request -- -max_total_time=3600
+```
+
+`seeds/` holds small reviewed inputs; the grown corpus and crashes stay
+untracked. A crash becomes a named test with the minimized input in the
+parser's own crate, so the fix stays proved without the fuzzer.
+
 ## Resource lifetimes
 
 A widget that is closed must finalize, and every GLib source it armed must be

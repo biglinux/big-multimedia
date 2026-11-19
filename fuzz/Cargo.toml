@@ -1,0 +1,80 @@
+# cargo-fuzz targets over the parsers that read bytes from the network or from
+# files other programs write. Run with `cargo +nightly fuzz run TARGET`; see
+# CONTRIBUTING.md (Fuzzing).
+[package]
+name = "big-multimedia-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "GPL-3.0-or-later"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Kept out of the player workspace: libFuzzer needs nightly and sanitizer flags.
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+big-app-kit-core = { path = "../crates/app/big-app-kit-core", features = ["remote-control"] }
+big-os-kit = { path = "../crates/foundation/big-os-kit" }
+big-media-data = { path = "../crates/foundation/big-media-data", default-features = false, features = ["library"] }
+big-media-engines = { path = "../crates/foundation/big-media-engines", features = ["radio-browser"] }
+# The playlist parsers sit in the GTK-backed `media` module.
+big-media-runtime = { path = "../crates/media-runtime", features = ["ui-core"] }
+
+# The players build against the vendored relm4 (see ../Cargo.toml).
+[patch.crates-io]
+relm4 = { path = "../third_party/relm4" }
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "remote_request"
+path = "fuzz_targets/remote_request.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "http_headers"
+path = "fuzz_targets/http_headers.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "podcast_feed"
+path = "fuzz_targets/podcast_feed.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "radio_stations"
+path = "fuzz_targets/radio_stations.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "iptv_playlist"
+path = "fuzz_targets/iptv_playlist.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "playlist_file"
+path = "fuzz_targets/playlist_file.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "url_parsing"
+path = "fuzz_targets/url_parsing.rs"
+test = false
+doc = false
+bench = false

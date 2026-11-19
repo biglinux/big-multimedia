@@ -584,6 +584,14 @@ fn read_capped(reader: &mut dyn Read, max_bytes: u64) -> Result<Vec<u8>, String>
     Ok(body)
 }
 
+/// Reads curl's header blocks as a download does, following redirects.
+/// The fuzz targets' entry to the private header parser.
+#[cfg(fuzzing)]
+#[doc(hidden)]
+pub fn fuzz_read_headers(mut input: &[u8]) {
+    let _ = read_final_headers(&mut input, true);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

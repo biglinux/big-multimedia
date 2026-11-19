@@ -394,6 +394,14 @@ fn serve(
     failure.map_or(Ok(()), Err)
 }
 
+/// Answers one request head as the server does, every rate check admitted.
+/// The fuzz targets' entry to the private request parser.
+#[cfg(fuzzing)]
+#[doc(hidden)]
+pub fn fuzz_respond(input: &[u8], token: &str, handlers: &RemoteHandlers) -> Vec<u8> {
+    respond(input, token, handlers, &AtomicBool::new(false), || true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

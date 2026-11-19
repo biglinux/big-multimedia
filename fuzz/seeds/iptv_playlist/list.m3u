@@ -1,0 +1,6 @@
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://e.example/l.png" group-title="News",Channel One
+https://e.example/one.m3u8
+#EXTINF:-1,Local
+file:///etc/shadow
+rtmp://e.example/live

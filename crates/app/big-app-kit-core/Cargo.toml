@@ -23,3 +23,7 @@ libc = { workspace = true, optional = true }
 [features]
 default = []
 remote-control = ["dep:log", "dep:libc"]
+
+[lints.rust]
+# cargo-fuzz sets cfg(fuzzing) for the entry points the fuzz targets call.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }

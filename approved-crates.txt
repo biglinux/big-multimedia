@@ -4,6 +4,7 @@ anstyle
 anstyle-parse
 anstyle-query
 anstyle-wincon
+arbitrary
 async-channel
 autocfg
 big-app-kit
@@ -17,6 +18,7 @@ big-media-data
 big-media-engines
 big-media-runtime
 big-mpv-render
+big-multimedia-fuzz
 big-os-kit
 big-player-ui
 big-relm4-components
@@ -102,11 +104,13 @@ is_terminal_polyfill
 itoa
 jiff
 jiff-static
+jobserver
 js-sys
 lazy_static
 libadwaita
 libadwaita-sys
 libc
+libfuzzer-sys
 libmpv2-sys
 libsqlite3-sys
 linux-raw-sys

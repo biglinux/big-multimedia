@@ -7,7 +7,7 @@
 # the players link the GPL engine.
 [workspace]
 resolver = "3"
-exclude = ["third_party/relm4"]
+exclude = ["fuzz", "third_party/relm4"]
 members = [
     "crates/big-audio-player",
     "crates/big-video-player",

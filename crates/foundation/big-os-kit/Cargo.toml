@@ -28,3 +28,7 @@ default = []
 # Link jemalloc in as the allocator of the whole process. Only executables
 # enable it; they must also export the symbols (see src/allocator.rs).
 jemalloc = ["dep:tikv-jemalloc-sys"]
+
+[lints.rust]
+# cargo-fuzz sets cfg(fuzzing) for the entry points the fuzz targets call.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
