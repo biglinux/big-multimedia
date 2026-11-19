@@ -4,6 +4,10 @@
 # where `/tmp` is noexec.
 test_tool = "nextest"
 
+# Test modules split into their own file; some sit behind
+# `cfg(all(test, not(miri)))`, which cargo-mutants does not read as test-only.
+exclude_globs = ["**/tests.rs"]
+
 # Mutation debt is tracked for production behavior. Helpers compiled only inside
 # `#[cfg(test)] mod tests` are fixtures, not shipped logic, and mutating them
 # creates false debt that does not represent application behavior.
