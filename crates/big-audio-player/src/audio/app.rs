@@ -165,6 +165,7 @@ mod imp {
             big_media_runtime::app::apply_startup_color_scheme(
                 &settings,
                 keys::AUDIO_UI_COLOR_SOURCE,
+                keys::AUDIO_UI_BG_COLOR,
             );
 
             let app = self.obj();

@@ -446,7 +446,11 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
 /// `slot`. Call at boot and from the Appearance dialog's `on_changed`.
 pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
-    big_media_runtime::theming::apply_color_scheme(&osd_css_config.color_source);
+    big_media_runtime::theming::apply_color_scheme(
+        settings,
+        &osd_css_config.color_source,
+        keys::UI_BG_COLOR,
+    );
     slot.set(&build_osd_css(settings, &osd_css_config));
 }
 

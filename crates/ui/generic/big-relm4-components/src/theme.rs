@@ -40,6 +40,16 @@ pub fn build_adwaita_color_overrides(palette: &ColorPalette) -> String {
     let (fg_r, fg_g, fg_b) = palette.fg;
     let (ic_r, ic_g, ic_b) = palette.icon;
     let (dl_r, dl_g, dl_b) = palette.dialog;
+    // The sidebar sits a shade toward the text color, as libadwaita's does.
+    let toward_fg = |bg: u8, fg: u8| {
+        let shifted = (i16::from(fg) - i16::from(bg)) * 6 / 100 + i16::from(bg);
+        u8::try_from(shifted).unwrap_or(bg)
+    };
+    let (sb_r, sb_g, sb_b) = (
+        toward_fg(bg_r, fg_r),
+        toward_fg(bg_g, fg_g),
+        toward_fg(bg_b, fg_b),
+    );
 
     format!(
         "@define-color window_bg_color rgb({bg_r},{bg_g},{bg_b});\n\
@@ -54,8 +64,13 @@ pub fn build_adwaita_color_overrides(palette: &ColorPalette) -> String {
          @define-color card_fg_color rgb({fg_r},{fg_g},{fg_b});\n\
          @define-color view_bg_color rgb({bg_r},{bg_g},{bg_b});\n\
          @define-color view_fg_color rgb({fg_r},{fg_g},{fg_b});\n\
-         @define-color sidebar_bg_color rgb({bg_r},{bg_g},{bg_b});\n\
+         @define-color sidebar_bg_color rgb({sb_r},{sb_g},{sb_b});\n\
          @define-color sidebar_fg_color rgb({fg_r},{fg_g},{fg_b});\n\
+         @define-color sidebar_backdrop_color rgb({sb_r},{sb_g},{sb_b});\n\
+         @define-color secondary_sidebar_bg_color rgb({sb_r},{sb_g},{sb_b});\n\
+         @define-color secondary_sidebar_fg_color rgb({fg_r},{fg_g},{fg_b});\n\
+         @define-color secondary_sidebar_backdrop_color rgb({sb_r},{sb_g},{sb_b});\n\
+         @define-color headerbar_backdrop_color rgb({bg_r},{bg_g},{bg_b});\n\
          :root {{\n\
          --window-bg-color: rgb({bg_r},{bg_g},{bg_b});\n\
          --window-fg-color: rgb({fg_r},{fg_g},{fg_b});\n\
@@ -69,6 +84,13 @@ pub fn build_adwaita_color_overrides(palette: &ColorPalette) -> String {
          --card-fg-color: rgb({fg_r},{fg_g},{fg_b});\n\
          --view-bg-color: rgb({bg_r},{bg_g},{bg_b});\n\
          --view-fg-color: rgb({fg_r},{fg_g},{fg_b});\n\
+         --sidebar-bg-color: rgb({sb_r},{sb_g},{sb_b});\n\
+         --sidebar-fg-color: rgb({fg_r},{fg_g},{fg_b});\n\
+         --sidebar-backdrop-color: rgb({sb_r},{sb_g},{sb_b});\n\
+         --secondary-sidebar-bg-color: rgb({sb_r},{sb_g},{sb_b});\n\
+         --secondary-sidebar-fg-color: rgb({fg_r},{fg_g},{fg_b});\n\
+         --secondary-sidebar-backdrop-color: rgb({sb_r},{sb_g},{sb_b});\n\
+         --headerbar-backdrop-color: rgb({bg_r},{bg_g},{bg_b});\n\
          }}\n\
          @define-color player_icon_color rgb({ic_r},{ic_g},{ic_b});\n"
     )
@@ -77,14 +99,31 @@ pub fn build_adwaita_color_overrides(palette: &ColorPalette) -> String {
 /// Switch the default [`adw::StyleManager`] color scheme by string key.
 ///
 /// Maps `"gtk-light"` to `ForceLight`, `"gtk-dark"` and `"gradient"` to
-/// `ForceDark`, and any other value to `Default` (follow system).
-pub fn apply_color_scheme(color_source: &str) {
-    let style_manager = adw::StyleManager::default();
-    match color_source {
-        "gtk-light" => style_manager.set_color_scheme(adw::ColorScheme::ForceLight),
-        "gtk-dark" | "gradient" => style_manager.set_color_scheme(adw::ColorScheme::ForceDark),
-        _ => style_manager.set_color_scheme(adw::ColorScheme::Default),
-    }
+/// `ForceDark`, `"custom"` to the scheme `custom_bg` reads as, and any other
+/// value to `Default` (follow system).
+pub fn apply_color_scheme(color_source: &str, custom_bg: (u8, u8, u8)) {
+    let scheme = match color_source {
+        "gtk-light" => adw::ColorScheme::ForceLight,
+        "gtk-dark" | "gradient" => adw::ColorScheme::ForceDark,
+        "custom" if is_dark(custom_bg) => adw::ColorScheme::ForceDark,
+        "custom" => adw::ColorScheme::ForceLight,
+        _ => adw::ColorScheme::Default,
+    };
+    adw::StyleManager::default().set_color_scheme(scheme);
+}
+
+/// Whether `rgb` is darker than the point where black and white text contrast
+/// with it equally: WCAG relative luminance below 0.179.
+fn is_dark((r, g, b): (u8, u8, u8)) -> bool {
+    let linear = |channel: u8| {
+        let value = f64::from(channel) / 255.0;
+        if value <= 0.040_45 {
+            value / 12.92
+        } else {
+            ((value + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b) < 0.179
 }
 
 /// Display CSS owned by one widget: registered on its display until the widget
@@ -216,5 +255,18 @@ mod tests {
         assert!(css.contains("@define-color window_bg_color rgb(30,30,30);"));
         assert!(css.contains("@define-color player_icon_color rgb(100,150,200);"));
         assert!(css.contains("--dialog-fg-color: rgb(220,220,220);"));
+        // 6% of the way from 30 to 220.
+        assert!(css.contains("--sidebar-bg-color: rgb(41,41,41);"));
+    }
+
+    /// Oracle: WCAG 2 relative luminance against the 0.179 midpoint.
+    #[test]
+    fn presets_read_as_their_scheme() {
+        for dark in [(0x1C, 0x1C, 0x1C), (0x00, 0x2B, 0x36), (0x75, 0x75, 0x75)] {
+            assert!(is_dark(dark), "{dark:?}");
+        }
+        for light in [(0xFF, 0xFF, 0xFF), (0xFD, 0xF6, 0xE3), (0x76, 0x76, 0x76)] {
+            assert!(!is_dark(light), "{light:?}");
+        }
     }
 }

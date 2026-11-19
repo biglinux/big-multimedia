@@ -219,8 +219,9 @@ pub fn register_resource_bytes(resource_bytes: &'static [u8]) {
 pub fn apply_startup_color_scheme(
     settings: &settings::Settings,
     color_source_key: keys::StringKey,
+    bg_key: keys::StringKey,
 ) {
-    theming::apply_color_scheme(&settings.get_string(color_source_key));
+    theming::apply_color_scheme(settings, &settings.get_string(color_source_key), bg_key);
 }
 
 /// Bring the player forward for files opened from outside: present its

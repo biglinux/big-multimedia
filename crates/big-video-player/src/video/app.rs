@@ -59,7 +59,11 @@ mod imp {
             big_media_runtime::app::strip_decoration_icon();
 
             let settings = crate::settings::Settings::for_video();
-            big_media_runtime::app::apply_startup_color_scheme(&settings, keys::UI_COLOR_SOURCE);
+            big_media_runtime::app::apply_startup_color_scheme(
+                &settings,
+                keys::UI_COLOR_SOURCE,
+                keys::UI_BG_COLOR,
+            );
 
             let app = self.obj();
             Self::setup_actions(&app);

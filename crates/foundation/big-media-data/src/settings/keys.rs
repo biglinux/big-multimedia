@@ -234,6 +234,8 @@ catalog! {
     AUDIO_UI_FONT_COLOR: StringKey("audio-ui-font-color") = "#FFFFFF";
     AUDIO_UI_ICON_COLOR: StringKey("audio-ui-icon-color") = "#FFFFFF";
     AUDIO_UI_DIALOG_COLOR: StringKey("audio-ui-dialog-color") = "#2A2A30";
+    AUDIO_UI_TRANSLUCENT: BoolKey("audio-ui-translucent") = "false";
+    AUDIO_UI_BG_OPACITY: DoubleKey("audio-ui-bg-opacity") = "0.75";
 
     // Music mode
     REPLAYGAIN: StringKey("replaygain") = "track";

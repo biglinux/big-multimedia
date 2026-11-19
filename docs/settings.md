@@ -235,6 +235,8 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `audio-ui-font-color` | string | `#FFFFFF` |  |
 | `audio-ui-icon-color` | string | `#FFFFFF` |  |
 | `audio-ui-dialog-color` | string | `#2A2A30` |  |
+| `audio-ui-translucent` | bool | `false` | The window shows what is behind it, blurred where the compositor blurs (big-compositor, KWin). Works with every color source. |
+| `audio-ui-bg-opacity` | number | `0.75` | How opaque the translucent window's background is, 0.3 to 1; read only while `audio-ui-translucent` is on. |
 | `audio-high-contrast` | bool | `false` |  |
 | `audio-album-art-bg` | bool | `true` |  |
 

@@ -1,8 +1,8 @@
 //! App settings adapter for shared libadwaita theme helpers.
 
 pub use big_relm4_components::theme::{
-    ColorPalette, HIGH_CONTRAST_CSS, apply_color_scheme, build_adwaita_color_overrides,
-    parse_hex_color, parse_hex_to_rgba,
+    ColorPalette, HIGH_CONTRAST_CSS, build_adwaita_color_overrides, parse_hex_color,
+    parse_hex_to_rgba,
 };
 
 /// libadwaita's palette for the scheme in force. libadwaita derives these
@@ -47,9 +47,22 @@ const SCHEME_PALETTE_CSS: &str = "\
 @define-color player_icon_color @window_fg_color;
 ";
 
-/// The palette CSS for `color_source`: the user's colors for `"custom"`,
-/// libadwaita's own for a forced light or dark scheme, `None` to follow the
-/// system.
+/// Force the scheme `color_source` names; custom colors take the scheme their
+/// background (`bg_key`) reads as, so what they do not color follows it.
+pub fn apply_color_scheme(
+    settings: &crate::settings::Settings,
+    color_source: &str,
+    bg_key: crate::settings::keys::StringKey,
+) {
+    big_relm4_components::theme::apply_color_scheme(
+        color_source,
+        parse_hex_color(&settings.get_string(bg_key)),
+    );
+}
+
+/// The palette CSS for `color_source`: the user's colors over libadwaita's
+/// palette for `"custom"`, libadwaita's own for a forced light or dark scheme,
+/// `None` to follow the system.
 pub fn build_palette_css(
     settings: &crate::settings::Settings,
     color_source: &str,
@@ -59,12 +72,15 @@ pub fn build_palette_css(
     dialog_key: crate::settings::keys::StringKey,
 ) -> Option<String> {
     match color_source {
-        "custom" => Some(build_adwaita_color_overrides(&ColorPalette {
-            bg: parse_hex_color(&settings.get_string(bg_key)),
-            fg: parse_hex_color(&settings.get_string(fg_key)),
-            icon: parse_hex_color(&settings.get_string(icon_key)),
-            dialog: parse_hex_color(&settings.get_string(dialog_key)),
-        })),
+        "custom" => Some(
+            SCHEME_PALETTE_CSS.to_owned()
+                + &build_adwaita_color_overrides(&ColorPalette {
+                    bg: parse_hex_color(&settings.get_string(bg_key)),
+                    fg: parse_hex_color(&settings.get_string(fg_key)),
+                    icon: parse_hex_color(&settings.get_string(icon_key)),
+                    dialog: parse_hex_color(&settings.get_string(dialog_key)),
+                }),
+        ),
         "gtk-light" | "gtk-dark" | "gradient" => Some(SCHEME_PALETTE_CSS.to_owned()),
         _ => None,
     }

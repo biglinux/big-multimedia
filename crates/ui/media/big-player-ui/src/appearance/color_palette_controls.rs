@@ -113,6 +113,49 @@ pub(super) fn color_source_group() -> adw::PreferencesGroup {
     adw::PreferencesGroup::new()
 }
 
+/// A row that edits the fraction `key` holds in percent, from `min` to 100.
+pub(super) fn opacity_row(
+    title: &str,
+    min: f64,
+    key: big_media_data::settings::keys::DoubleKey,
+    settings: &Settings,
+    on_changed: &Rc<dyn Fn()>,
+) -> adw::SpinRow {
+    let row = big_relm4_components::input::spin_row::accessible_spin_row()
+        .title(title)
+        .digits(0)
+        .adjustment(&gtk::Adjustment::new(
+            (settings.get_double(key) * 100.0).round().clamp(min, 100.0),
+            min,
+            100.0,
+            5.0,
+            10.0,
+            0.0,
+        ))
+        .build();
+    row.connect_output(|row| {
+        row.set_text(&format!("{}%", row.value()));
+        true
+    });
+    row.connect_input(|row| {
+        Some(
+            row.text()
+                .trim()
+                .trim_end_matches('%')
+                .trim_end()
+                .parse::<f64>()
+                .map_err(|_| ()),
+        )
+    });
+    let settings = settings.clone();
+    let on_changed = on_changed.clone();
+    row.connect_value_notify(move |row| {
+        let _ = settings.put_double(key, row.value() / 100.0);
+        on_changed();
+    });
+    row
+}
+
 pub(super) struct CustomColorKeys {
     pub(super) background: &'static str,
     pub(super) font: &'static str,
