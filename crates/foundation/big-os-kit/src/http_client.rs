@@ -644,6 +644,35 @@ mod tests {
         assert!(validate_header_value("Bearer ok\nInjected: yes").is_err());
     }
 
+    /// Each refused row breaks one rule; the accepted rows sit at the caps.
+    #[test]
+    fn request_fields_validated() {
+        let url = |len: usize| format!("https://h/{}", "a".repeat(len - 10));
+        assert!(validate_url(&url(65_536)).is_ok());
+        for url in [
+            url(65_537),
+            "ftp://h/a".into(),
+            "https://h/a b".into(),
+            "https://h/a\u{7}".into(),
+        ] {
+            assert!(validate_url(&url).is_err(), "{url:?}");
+        }
+        assert!(validate_header_name(&"X".repeat(256)).is_ok());
+        for name in [
+            String::new(),
+            "X".repeat(257),
+            "X Token".into(),
+            "X:Token".into(),
+        ] {
+            assert!(validate_header_name(&name).is_err(), "{name:?}");
+        }
+        assert!(validate_header_value(&"v".repeat(65_536)).is_ok());
+        assert!(validate_header_value("a\tb").is_ok());
+        for value in ["v".repeat(65_537), "a\u{7f}b".into()] {
+            assert!(validate_header_value(&value).is_err(), "{value:?}");
+        }
+    }
+
     #[test]
     fn parses_status_from_last_http_header_block() {
         let headers =

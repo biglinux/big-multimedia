@@ -583,6 +583,40 @@ mod tests {
             "https media"
         );
     }
+    /// `%6b` and `%6B` both decode to `k`; a key over 512 bytes is redacted unread.
+    #[test]
+    fn redaction_decodes_key_escapes() {
+        assert_eq!(
+            redact_url("https://h/?%6bey=a&%6Bey=b"),
+            "https://h/?%6bey=***&%6Bey=***"
+        );
+        // A malformed escape counts as sensitive, so a clean decode must stay visible.
+        let escaped = "https://h/?%71%6a=v";
+        assert_eq!(redact_url(escaped), escaped);
+        let plain = "q".repeat(512);
+        let url = format!("https://h/?{plain}=v");
+        assert_eq!(redact_url(&url), url);
+        let long = "q".repeat(513);
+        assert_eq!(
+            redact_url(&format!("https://h/?{long}=v")),
+            format!("https://h/?{long}=***")
+        );
+    }
+
+    #[test]
+    fn scheme_follows_rfc_3986() {
+        for (value, scheme) in [
+            ("svn+ssh://h", Some("svn+ssh")),
+            ("a1-.b:x", Some("a1-.b")),
+            ("1http://h", None),
+            ("ht_tp://h", None),
+            (":x", None),
+            ("no-colon", None),
+        ] {
+            assert_eq!(uri_scheme(value), scheme, "{value:?}");
+        }
+    }
+
     #[test]
     fn stream_and_http_schemes() {
         // (value, is_http_url, is_stream_uri)

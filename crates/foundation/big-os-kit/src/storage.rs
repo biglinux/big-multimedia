@@ -163,6 +163,22 @@ mod tests {
     }
 
     #[test]
+    fn staging_names_recognized() {
+        for (name, staging) in [
+            (".big-media-1-2.tmp", true),
+            (".big-state.tmp.7", true),
+            ("song.mp3", false),
+            (".big-other", false),
+        ] {
+            assert_eq!(
+                is_staging_name(std::ffi::OsStr::new(name)),
+                staging,
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
     fn modified_secs_reads_whole_seconds() {
         let path = storage_test_path("modified-secs");
         let file = fs::File::create(&path).unwrap();
