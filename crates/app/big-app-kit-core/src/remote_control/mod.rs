@@ -57,6 +57,59 @@ pub struct RemoteHandlers {
     /// Read in-memory state.
     pub status: Arc<dyn Fn() -> StatusSnapshot + Send + Sync>,
 }
+/// The phone page's words, in the player's language: the app translates them.
+#[derive(Debug, Clone)]
+pub struct RemoteLabels {
+    /// BCP 47 tag of the language they are in (`pt-BR`).
+    pub language: String,
+    /// The page heading.
+    pub heading: String,
+    /// Accessible name of the playing-media card.
+    pub media: String,
+    /// Accessible name of the progress bar.
+    pub progress: String,
+    /// The previous-track button.
+    pub previous: String,
+    /// The next-track button.
+    pub next: String,
+    /// The play button.
+    pub play: String,
+    /// The pause button.
+    pub pause: String,
+    /// The volume slider.
+    pub volume: String,
+    /// Status while the page first reaches the player.
+    pub connecting: String,
+    /// Status while the player answers.
+    pub connected: String,
+    /// Status once the player stops answering.
+    pub disconnected: String,
+    /// The note that the connection is unencrypted.
+    pub warning: String,
+}
+
+impl Default for RemoteLabels {
+    /// The page's own English text.
+    fn default() -> Self {
+        Self {
+            language: "en".into(),
+            heading: "Remote control".into(),
+            media: "Media".into(),
+            progress: "Playback progress".into(),
+            previous: "Previous".into(),
+            next: "Next".into(),
+            play: "Play".into(),
+            pause: "Pause".into(),
+            volume: "Volume".into(),
+            connecting: "Connecting…".into(),
+            connected: "Connected to your computer".into(),
+            disconnected: "Disconnected. Check the network and keep the player open.".into(),
+            warning: "Use only on a trusted local network. This HTTP connection is not encrypted."
+                .into(),
+        }
+    }
+}
+
 /// Owner of a LAN-only control service. Drop revokes dispatch and wakes shutdown.
 pub struct ServerHandle {
     /// Bound TCP port.
@@ -131,6 +184,7 @@ fn pick_lan_address(candidates: impl Iterator<Item = (Ipv4Addr, bool)>) -> Optio
 pub fn start_scoped(
     address: SocketAddr,
     handlers: RemoteHandlers,
+    labels: &RemoteLabels,
     stop: Arc<AtomicBool>,
     on_failure: impl FnOnce(String) + Send + 'static,
 ) -> Result<ServerHandle, String> {
@@ -147,11 +201,12 @@ pub fn start_scoped(
     let (woken, wake) = std::io::pipe().map_err(|e| format!("wake pipe: {e}"))?;
     let flag = stop.clone();
     let secret = token.clone();
+    let page = request::page(labels);
     // Detached: Drop on the GTK thread must not join.
     thread::Builder::new()
         .name("media-remote".into())
         .spawn(move || {
-            if let Err(error) = serve(&listener, &woken, &secret, &handlers, &flag) {
+            if let Err(error) = serve(&listener, &woken, &secret, &page, &handlers, &flag) {
                 warn!("web-remote accept failed: {error}");
                 on_failure(error.to_string());
             }
@@ -350,6 +405,7 @@ fn serve(
     listener: &TcpListener,
     woken: &std::io::PipeReader,
     token: &str,
+    page: &str,
     handlers: &RemoteHandlers,
     stop: &AtomicBool,
 ) -> std::io::Result<()> {
@@ -382,7 +438,8 @@ fn serve(
                     Ok(true) => {
                         let ip = client.ip;
                         let admit = || limits.admit(ip, now);
-                        client.output = Some(respond(&client.input, token, handlers, stop, admit));
+                        client.output =
+                            Some(respond(&client.input, token, page, handlers, stop, admit));
                         client.write_started = Some(now);
                         client.input.clear();
                     }
@@ -406,7 +463,15 @@ fn serve(
 #[cfg(fuzzing)]
 #[doc(hidden)]
 pub fn fuzz_respond(input: &[u8], token: &str, handlers: &RemoteHandlers) -> Vec<u8> {
-    respond(input, token, handlers, &AtomicBool::new(false), || true)
+    let page = request::page(&RemoteLabels::default());
+    respond(
+        input,
+        token,
+        &page,
+        handlers,
+        &AtomicBool::new(false),
+        || true,
+    )
 }
 
 #[cfg(test)]
@@ -472,6 +537,7 @@ mod tests {
         start_scoped(
             "127.0.0.1:0".parse().unwrap(),
             handlers,
+            &RemoteLabels::default(),
             Arc::default(),
             |_| {},
         )
@@ -520,7 +586,7 @@ mod tests {
         let listener = TcpListener::from(std::os::fd::OwnedFd::from(udp));
         let stop = AtomicBool::new(false);
         let (woken, _wake) = std::io::pipe().unwrap();
-        let result = serve(&listener, &woken, "token", &handlers(true), &stop);
+        let result = serve(&listener, &woken, "token", "page", &handlers(true), &stop);
         assert_eq!(result.unwrap_err().kind(), ErrorKind::Unsupported);
         assert!(stop.load(Ordering::Acquire));
     }
@@ -568,6 +634,7 @@ mod tests {
             let reply = respond(
                 b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1\r\n\r\n",
                 "token",
+                "page",
                 &handlers,
                 &AtomicBool::new(false),
                 || limits.admit(IpAddr::from([192, 168, 1, peer]), now),

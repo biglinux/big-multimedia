@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:19-0300\n"
+"POT-Creation-Date: 2026-11-19 21:22-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -543,6 +543,7 @@ msgstr "자르기 타임라인"
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:550
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:219
 msgid "Play"
 msgstr "재생"
 
@@ -550,6 +551,7 @@ msgstr "재생"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:477
 #: crates/media-runtime/src/cast/tv.rs:489
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:220
 msgid "Pause"
 msgstr "일시 정지"
 
@@ -557,6 +559,7 @@ msgstr "일시 정지"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:96
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:162
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:549
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:217
 msgid "Previous"
 msgstr "이전"
 
@@ -564,6 +567,7 @@ msgstr "이전"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:552
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:218
 msgid "Next"
 msgstr "다음"
 
@@ -581,18 +585,19 @@ msgstr "반복"
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:72
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:570
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:340
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:221
 msgid "Volume"
 msgstr "볼륨"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:80
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:273
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Speed"
 msgstr "속도"
 
@@ -4862,19 +4867,19 @@ msgstr "낮음"
 msgid "Studio"
 msgstr "스튜디오"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Volume level"
 msgstr "볼륨 수준"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Playback speed"
 msgstr "재생 속도"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:342
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Voice"
 msgstr "음성"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:344
+#: crates/ui/media/big-media-components/src/player_chrome.rs:337
 msgid "Voice enhancement"
 msgstr "음성 향상"
 
@@ -5364,7 +5369,7 @@ msgid "QR code"
 msgstr "QR 코드"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:180
 msgid "Web remote is off."
 msgstr "웹 리모컨이 꺼져 있습니다."
 
@@ -5403,18 +5408,54 @@ msgid "No local network found. Connect to a network and try again."
 msgstr ""
 "로컬 네트워크를 찾을 수 없습니다. 네트워크에 연결한 다음 다시 시도하세요."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:145
 msgid "Scan the code with the phone's camera."
 msgstr "휴대폰 카메라로 코드를 스캔하세요."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:164
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "웹 리모컨이 중지되었습니다: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:172
 msgid "Could not start server"
 msgstr "서버를 시작할 수 없습니다"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:213
+msgctxt "BCP 47 language tag of this translation"
+msgid "en"
+msgstr "ko"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:214
+msgid "Remote control"
+msgstr "리모컨"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:215
+msgid "Media"
+msgstr "미디어"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:216
+msgid "Playback progress"
+msgstr "재생 진행률"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:222
+msgid "Connecting…"
+msgstr "연결 중…"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:223
+msgid "Connected to your computer"
+msgstr "컴퓨터에 연결됨"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:224
+msgid "Disconnected. Check the network and keep the player open."
+msgstr "연결이 끊어졌습니다. 네트워크를 확인하고 플레이어를 열어 두세요."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:226
+msgid ""
+"Use only on a trusted local network. This HTTP connection is not encrypted."
+msgstr ""
+"신뢰할 수 있는 로컬 네트워크에서만 사용하세요. 이 HTTP 연결은 암호화되지 않습"
+"니다."
 
 #~ msgid "Retry saving"
 #~ msgstr "다시 저장"

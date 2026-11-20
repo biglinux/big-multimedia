@@ -1,22 +1,11 @@
 (() => {
   'use strict';
-  const pt = (navigator.language || '').toLowerCase().startsWith('pt');
-  const words = pt ? {
-    heading: 'Controle remoto', prev: 'Anterior', next: 'Próxima', play: 'Reproduzir', pause: 'Pausar',
-    volume: 'Volume', progress: 'Progresso da reprodução', connecting: 'Conectando…',
-    connected: 'Conectado ao computador', failed: 'Sem conexão. Verifique a rede e mantenha o player aberto.',
-    warning: 'Use somente em uma rede local confiável. Esta conexão HTTP não é criptografada.'
-  } : {
-    heading: 'Remote control', prev: 'Previous', next: 'Next', play: 'Play', pause: 'Pause',
-    volume: 'Volume', progress: 'Playback progress', connecting: 'Connecting…',
-    connected: 'Connected to your computer', failed: 'Disconnected. Check the network and keep the player open.',
-    warning: 'Use only on a trusted local network. This HTTP connection is not encrypted.'
-  };
+  // The player puts its words, in its own language, on the root element.
+  const words = JSON.parse(document.documentElement.dataset.words);
   const el = id => document.getElementById(id);
-  document.documentElement.lang = pt ? 'pt-BR' : 'en';
   for (const id of ['heading', 'prev', 'next', 'warning']) el(id).textContent = words[id];
   el('volume-label').textContent = words.volume;
-  el('media').setAttribute('aria-label', pt ? 'Mídia' : 'Media');
+  el('media').setAttribute('aria-label', words.media);
   el('progress').setAttribute('aria-label', words.progress);
   el('pp').textContent = words.play;
   el('connection').textContent = words.connecting;

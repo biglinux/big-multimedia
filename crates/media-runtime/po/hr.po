@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:19-0300\n"
+"POT-Creation-Date: 2026-11-19 21:22-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -549,6 +549,7 @@ msgstr "Vremenska crta rezova"
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:550
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:219
 msgid "Play"
 msgstr "Reproduciraj"
 
@@ -556,6 +557,7 @@ msgstr "Reproduciraj"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:477
 #: crates/media-runtime/src/cast/tv.rs:489
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:220
 msgid "Pause"
 msgstr "Pauziraj"
 
@@ -563,6 +565,7 @@ msgstr "Pauziraj"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:96
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:162
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:549
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:217
 msgid "Previous"
 msgstr "Prethodno"
 
@@ -570,6 +573,7 @@ msgstr "Prethodno"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:552
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:218
 msgid "Next"
 msgstr "Sljedeće"
 
@@ -587,18 +591,19 @@ msgstr "Ponovi"
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:72
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:570
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:340
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:221
 msgid "Volume"
 msgstr "Glasnoća"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:80
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:273
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Speed"
 msgstr "Brzina"
 
@@ -4939,19 +4944,19 @@ msgstr "Niska"
 msgid "Studio"
 msgstr "Studio"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Volume level"
 msgstr "Razina glasnoće"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Playback speed"
 msgstr "Brzina reprodukcije"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:342
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Voice"
 msgstr "Glas"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:344
+#: crates/ui/media/big-media-components/src/player_chrome.rs:337
 msgid "Voice enhancement"
 msgstr "Poboljšanje glasa"
 
@@ -5446,7 +5451,7 @@ msgid "QR code"
 msgstr "QR kod"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:180
 msgid "Web remote is off."
 msgstr "Web daljinski upravljač je isključen."
 
@@ -5485,18 +5490,53 @@ msgid "No local network found. Connect to a network and try again."
 msgstr ""
 "Nije pronađena lokalna mreža. Povežite se s mrežom i pokušajte ponovno."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:145
 msgid "Scan the code with the phone's camera."
 msgstr "Skenirajte kod kamerom telefona."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:164
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "Web daljinski upravljač zaustavljen je: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:172
 msgid "Could not start server"
 msgstr "Poslužitelj nije bilo moguće pokrenuti"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:213
+msgctxt "BCP 47 language tag of this translation"
+msgid "en"
+msgstr "hr"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:214
+msgid "Remote control"
+msgstr "Daljinski upravljač"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:215
+msgid "Media"
+msgstr "Mediji"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:216
+msgid "Playback progress"
+msgstr "Napredak reprodukcije"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:222
+msgid "Connecting…"
+msgstr "Povezivanje…"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:223
+msgid "Connected to your computer"
+msgstr "Povezano s vašim računalom"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:224
+msgid "Disconnected. Check the network and keep the player open."
+msgstr "Veza je prekinuta. Provjerite mrežu i ostavite player otvoren."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:226
+msgid ""
+"Use only on a trusted local network. This HTTP connection is not encrypted."
+msgstr ""
+"Koristite samo na pouzdanoj lokalnoj mreži. Ova HTTP veza nije šifrirana."
 
 #~ msgid "Retry saving"
 #~ msgstr "Pokušaj ponovno spremiti"

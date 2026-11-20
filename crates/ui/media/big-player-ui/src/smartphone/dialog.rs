@@ -6,8 +6,8 @@ use std::rc::Rc;
 use std::sync::{Arc, atomic::AtomicBool};
 
 use adw::prelude::*;
-use big_app_kit::remote_control::{self, RemoteHandlers, ServerHandle};
-use big_media_data::i18n::i18n;
+use big_app_kit::remote_control::{self, RemoteHandlers, RemoteLabels, ServerHandle};
+use big_media_data::i18n::{i18n, pi18n};
 use big_relm4_components::{
     layout::{dialog_page::BigDialogPage, preferences::BigPreferencesGroupSpec},
     list::navigation_row::{BigNavigationRow, BigNavigationRowSpec},
@@ -127,6 +127,7 @@ where
             match remote_control::start_scoped(
                 SocketAddr::new(ip, 0),
                 (build_for_toggle)(revoked.clone()),
+                &remote_labels(),
                 revoked,
                 move |error| {
                     let _ = failure_sender.send(error);
@@ -203,5 +204,26 @@ fn clear_qr(parent: &gtk::Box) {
             parent.remove(&widget);
         }
         child = next;
+    }
+}
+
+/// The phone page's words in the player's language.
+fn remote_labels() -> RemoteLabels {
+    RemoteLabels {
+        language: pi18n("BCP 47 language tag of this translation", "en"),
+        heading: i18n("Remote control"),
+        media: i18n("Media"),
+        progress: i18n("Playback progress"),
+        previous: i18n("Previous"),
+        next: i18n("Next"),
+        play: i18n("Play"),
+        pause: i18n("Pause"),
+        volume: i18n("Volume"),
+        connecting: i18n("Connecting…"),
+        connected: i18n("Connected to your computer"),
+        disconnected: i18n("Disconnected. Check the network and keep the player open."),
+        warning: i18n(
+            "Use only on a trusted local network. This HTTP connection is not encrypted.",
+        ),
     }
 }

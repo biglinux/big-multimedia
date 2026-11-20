@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:19-0300\n"
+"POT-Creation-Date: 2026-11-19 21:22-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -552,6 +552,7 @@ msgstr "Χρονολόγιο αποκοπής"
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:550
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:219
 msgid "Play"
 msgstr "Αναπαραγωγή"
 
@@ -559,6 +560,7 @@ msgstr "Αναπαραγωγή"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:477
 #: crates/media-runtime/src/cast/tv.rs:489
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:220
 msgid "Pause"
 msgstr "Παύση"
 
@@ -566,6 +568,7 @@ msgstr "Παύση"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:96
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:162
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:549
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:217
 msgid "Previous"
 msgstr "Προηγούμενο"
 
@@ -573,6 +576,7 @@ msgstr "Προηγούμενο"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:552
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:218
 msgid "Next"
 msgstr "Επόμενο"
 
@@ -590,18 +594,19 @@ msgstr "Επανάληψη"
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:72
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:570
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:340
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:221
 msgid "Volume"
 msgstr "Ένταση"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:80
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:273
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Speed"
 msgstr "Ταχύτητα"
 
@@ -5010,19 +5015,19 @@ msgstr "Χαμηλή"
 msgid "Studio"
 msgstr "Στούντιο"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Volume level"
 msgstr "Επίπεδο έντασης"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Playback speed"
 msgstr "Ταχύτητα αναπαραγωγής"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:342
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Voice"
 msgstr "Φωνή"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:344
+#: crates/ui/media/big-media-components/src/player_chrome.rs:337
 msgid "Voice enhancement"
 msgstr "Βελτίωση φωνής"
 
@@ -5520,7 +5525,7 @@ msgid "QR code"
 msgstr "Κωδικός QR"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:180
 msgid "Web remote is off."
 msgstr "Ο απομακρυσμένος έλεγχος μέσω web είναι απενεργοποιημένος."
 
@@ -5561,18 +5566,56 @@ msgid "No local network found. Connect to a network and try again."
 msgstr ""
 "Δεν βρέθηκε τοπικό δίκτυο. Συνδεθείτε σε ένα δίκτυο και δοκιμάστε ξανά."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:145
 msgid "Scan the code with the phone's camera."
 msgstr "Σαρώστε τον κωδικό με την κάμερα του κινητού."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:164
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "Ο απομακρυσμένος έλεγχος μέσω web σταμάτησε: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:172
 msgid "Could not start server"
 msgstr "Δεν ήταν δυνατή η εκκίνηση του διακομιστή"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:213
+msgctxt "BCP 47 language tag of this translation"
+msgid "en"
+msgstr "el"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:214
+msgid "Remote control"
+msgstr "Τηλεχειριστήριο"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:215
+msgid "Media"
+msgstr "Πολυμέσα"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:216
+msgid "Playback progress"
+msgstr "Πρόοδος αναπαραγωγής"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:222
+msgid "Connecting…"
+msgstr "Σύνδεση…"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:223
+msgid "Connected to your computer"
+msgstr "Συνδέθηκε στον υπολογιστή σας"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:224
+msgid "Disconnected. Check the network and keep the player open."
+msgstr ""
+"Η σύνδεση διακόπηκε. Ελέγξτε το δίκτυο και κρατήστε την εφαρμογή "
+"αναπαραγωγής ανοιχτή."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:226
+msgid ""
+"Use only on a trusted local network. This HTTP connection is not encrypted."
+msgstr ""
+"Χρησιμοποιήστε μόνο σε αξιόπιστο τοπικό δίκτυο. Αυτή η σύνδεση HTTP δεν "
+"είναι κρυπτογραφημένη."
 
 #~ msgid "Retry saving"
 #~ msgstr "Επανάληψη αποθήκευσης"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:19-0300\n"
+"POT-Creation-Date: 2026-11-19 21:22-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -551,6 +551,7 @@ msgstr "Vágások idővonala"
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:550
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:219
 msgid "Play"
 msgstr "Lejátszás"
 
@@ -558,6 +559,7 @@ msgstr "Lejátszás"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:477
 #: crates/media-runtime/src/cast/tv.rs:489
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:220
 msgid "Pause"
 msgstr "Szünet"
 
@@ -565,6 +567,7 @@ msgstr "Szünet"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:96
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:162
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:549
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:217
 msgid "Previous"
 msgstr "Előző"
 
@@ -572,6 +575,7 @@ msgstr "Előző"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:552
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:218
 msgid "Next"
 msgstr "Következő"
 
@@ -589,18 +593,19 @@ msgstr "Ismétlés"
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:72
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:570
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:340
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:221
 msgid "Volume"
 msgstr "Hangerő"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:80
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:273
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Speed"
 msgstr "Sebesség"
 
@@ -4956,19 +4961,19 @@ msgstr "Alacsony"
 msgid "Studio"
 msgstr "Stúdió"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Volume level"
 msgstr "Hangerőszint"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Playback speed"
 msgstr "Lejátszási sebesség"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:342
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Voice"
 msgstr "Hang"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:344
+#: crates/ui/media/big-media-components/src/player_chrome.rs:337
 msgid "Voice enhancement"
 msgstr "Hangjavítás"
 
@@ -5463,7 +5468,7 @@ msgid "QR code"
 msgstr "QR-kód"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:180
 msgid "Web remote is off."
 msgstr "A webes távirányító ki van kapcsolva."
 
@@ -5504,18 +5509,56 @@ msgid "No local network found. Connect to a network and try again."
 msgstr ""
 "Nem található helyi hálózat. Csatlakozzon egy hálózathoz, és próbálja újra."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:145
 msgid "Scan the code with the phone's camera."
 msgstr "Olvassa be a kódot a telefon kamerájával."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:164
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "A webes távirányító leállt: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:172
 msgid "Could not start server"
 msgstr "A kiszolgálót nem sikerült elindítani"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:213
+msgctxt "BCP 47 language tag of this translation"
+msgid "en"
+msgstr "hu"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:214
+msgid "Remote control"
+msgstr "Távirányító"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:215
+msgid "Media"
+msgstr "Média"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:216
+msgid "Playback progress"
+msgstr "Lejátszás előrehaladása"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:222
+msgid "Connecting…"
+msgstr "Kapcsolódás…"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:223
+msgid "Connected to your computer"
+msgstr "Kapcsolódva a számítógépéhez"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:224
+msgid "Disconnected. Check the network and keep the player open."
+msgstr ""
+"A kapcsolat megszakadt. Ellenőrizze a hálózatot, és hagyja nyitva a "
+"lejátszót."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:226
+msgid ""
+"Use only on a trusted local network. This HTTP connection is not encrypted."
+msgstr ""
+"Csak megbízható helyi hálózaton használja. Ez a HTTP-kapcsolat nincs "
+"titkosítva."
 
 #~ msgid "Retry saving"
 #~ msgstr "Mentés újrapróbálása"

@@ -5,7 +5,7 @@ use big_os_kit::http_client::validate_header_name;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use super::{RemoteHandlers, StatusSnapshot};
+use super::{RemoteHandlers, RemoteLabels, StatusSnapshot};
 
 const MAX_HEADERS: usize = 48;
 const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
@@ -14,6 +14,7 @@ const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
 pub(super) fn respond(
     input: &[u8],
     token: &str,
+    page: &str,
     handlers: &RemoteHandlers,
     stop: &AtomicBool,
     admit: impl FnOnce() -> bool,
@@ -30,7 +31,7 @@ pub(super) fn respond(
         );
     };
     match parse_request(head) {
-        Ok(request) => dispatch(&request, token, handlers, stop, admit),
+        Ok(request) => dispatch(&request, token, page, handlers, stop, admit),
         Err(()) => response(400, "text/plain", "Invalid HTTP request"),
     }
 }
@@ -107,6 +108,7 @@ fn route<'a>(target: &'a str, token: &str) -> Option<&'a str> {
 fn dispatch(
     request: &Request<'_>,
     token: &str,
+    page: &str,
     handlers: &RemoteHandlers,
     stop: &AtomicBool,
     admit: impl FnOnce() -> bool,
@@ -142,7 +144,7 @@ fn dispatch(
         return response(429, "text/plain", "Too Many Requests");
     }
     match path {
-        "" | "index.html" => response(200, "text/html; charset=utf-8", INDEX_HTML),
+        "" | "index.html" => response(200, "text/html; charset=utf-8", page),
         "remote.css" => response(200, "text/css; charset=utf-8", INDEX_CSS),
         "remote.js" => response(200, "text/javascript; charset=utf-8", INDEX_JS),
         "status" => response(
@@ -215,6 +217,40 @@ fn parse_volume(query: &str) -> Option<f64> {
     Some(value.clamp(0.0, 100.0))
 }
 const INDEX_HTML: &str = include_str!("remote_control.html");
+
+/// The page in the language of `labels`: the script reads their words from
+/// the root element; the HTML's English stays for a phone without scripts.
+pub(super) fn page(labels: &RemoteLabels) -> String {
+    let words = serde_json::json!({
+        "heading": labels.heading,
+        "media": labels.media,
+        "progress": labels.progress,
+        "prev": labels.previous,
+        "next": labels.next,
+        "play": labels.play,
+        "pause": labels.pause,
+        "volume": labels.volume,
+        "connecting": labels.connecting,
+        "connected": labels.connected,
+        "failed": labels.disconnected,
+        "warning": labels.warning,
+    });
+    let escape = |text: &str| {
+        text.replace('&', "&amp;")
+            .replace('"', "&quot;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+    };
+    INDEX_HTML.replacen(
+        "<html lang=\"en\">",
+        &format!(
+            "<html lang=\"{}\" data-words=\"{}\">",
+            escape(&labels.language),
+            escape(&words.to_string())
+        ),
+        1,
+    )
+}
 const INDEX_CSS: &str = include_str!("remote_control.css");
 const INDEX_JS: &str = include_str!("remote_control.js");
 
@@ -271,6 +307,7 @@ mod tests {
             dispatch(
                 &parse_request(head.as_bytes()).unwrap(),
                 "secret",
+                "page",
                 &handlers(true),
                 &AtomicBool::new(false),
                 || true,
@@ -287,6 +324,23 @@ mod tests {
     }
 
     /// Each row breaks exactly one rule of the request head.
+    /// Oracle: the words go into the root element, escaped for an HTML
+    /// attribute, and a phone without scripts still reads the page's English.
+    #[test]
+    fn page_carries_translated_words() {
+        let labels = RemoteLabels {
+            language: "pt-BR".into(),
+            heading: "Controle \"remoto\" <& >".into(),
+            ..RemoteLabels::default()
+        };
+        let html = page(&labels);
+        assert!(html.contains("<html lang=\"pt-BR\" data-words=\"{"));
+        assert!(html.contains(
+            "&quot;heading&quot;:&quot;Controle \\&quot;remoto\\&quot; &lt;&amp; &gt;&quot;"
+        ));
+        assert!(html.contains("<h1 id=\"heading\">Remote control</h1>"));
+    }
+
     #[test]
     fn parser_rejects_malformed_heads() {
         let long_target = |len: usize| format!("/{}", "a".repeat(len - 1));
@@ -338,6 +392,7 @@ mod tests {
         let reply = respond(
             request.as_bytes(),
             "t",
+            "page",
             &counting_handlers(&calls),
             &AtomicBool::new(false),
             || {
@@ -376,6 +431,7 @@ mod tests {
         let reply = dispatch(
             &req,
             "token",
+            "page",
             &handlers(false),
             &AtomicBool::new(false),
             || true,

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:19-0300\n"
+"POT-Creation-Date: 2026-11-19 21:22-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -540,6 +540,7 @@ msgstr "ציר זמן החיתוכים"
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:550
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:219
 msgid "Play"
 msgstr "ניגון"
 
@@ -547,6 +548,7 @@ msgstr "ניגון"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:477
 #: crates/media-runtime/src/cast/tv.rs:489
 #: crates/media-runtime/src/cast/tv.rs:749
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:220
 msgid "Pause"
 msgstr "השהיה"
 
@@ -554,6 +556,7 @@ msgstr "השהיה"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:96
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:162
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:549
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:217
 msgid "Previous"
 msgstr "הקודם"
 
@@ -561,6 +564,7 @@ msgstr "הקודם"
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:552
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:218
 msgid "Next"
 msgstr "הבא"
 
@@ -578,18 +582,19 @@ msgstr "חזרה"
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:72
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:570
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:340
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:221
 msgid "Volume"
 msgstr "עוצמת קול"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:80
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:273
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Speed"
 msgstr "מהירות"
 
@@ -4707,7 +4712,7 @@ msgid ""
 "Your changes work for now but could not be saved. Check free disk space, "
 "then retry."
 msgstr ""
-"השינויים שלכם פועלים לעת עתה אך לא ניתן היה לשמור אותם. בדקו שטח פנוי בדיסק "
+"השינויים שלכם תקפים לעת עתה אך לא ניתן היה לשמור אותם. בדקו שטח פנוי בדיסק "
 "ונסו שוב."
 
 #: crates/media-runtime/src/settings/saving.rs:135
@@ -4873,19 +4878,19 @@ msgstr "נמוכה"
 msgid "Studio"
 msgstr "סטודיו"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:319
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Volume level"
 msgstr "רמת עוצמת הקול"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:330
+#: crates/ui/media/big-media-components/src/player_chrome.rs:323
 msgid "Playback speed"
 msgstr "מהירות ניגון"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:342
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Voice"
 msgstr "קול"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:344
+#: crates/ui/media/big-media-components/src/player_chrome.rs:337
 msgid "Voice enhancement"
 msgstr "שיפור קול"
 
@@ -5373,7 +5378,7 @@ msgid "QR code"
 msgstr "קוד QR"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:180
 msgid "Web remote is off."
 msgstr "השלט הרחוק באינטרנט כבוי."
 
@@ -5411,18 +5416,52 @@ msgstr "פתיחת דף ההורדה של KDE Connect"
 msgid "No local network found. Connect to a network and try again."
 msgstr "לא נמצאה רשת מקומית. התחברו לרשת ונסו שוב."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:145
 msgid "Scan the code with the phone's camera."
 msgstr "סרקו את הקוד במצלמת הטלפון."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:164
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "השלט הרחוק באינטרנט נעצר: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:172
 msgid "Could not start server"
 msgstr "לא ניתן היה להפעיל את השרת"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:213
+msgctxt "BCP 47 language tag of this translation"
+msgid "en"
+msgstr "he"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:214
+msgid "Remote control"
+msgstr "שלט רחוק"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:215
+msgid "Media"
+msgstr "מדיה"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:216
+msgid "Playback progress"
+msgstr "התקדמות הניגון"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:222
+msgid "Connecting…"
+msgstr "מתחבר…"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:223
+msgid "Connected to your computer"
+msgstr "מחובר למחשב שלכם"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:224
+msgid "Disconnected. Check the network and keep the player open."
+msgstr "החיבור נותק. בדקו את הרשת והשאירו את הנגן פתוח."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:226
+msgid ""
+"Use only on a trusted local network. This HTTP connection is not encrypted."
+msgstr "השתמשו רק ברשת מקומית מהימנה. חיבור HTTP זה אינו מוצפן."
 
 #~ msgid "Retry saving"
 #~ msgstr "ניסיון נוסף לשמירה"
