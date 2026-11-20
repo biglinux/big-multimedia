@@ -164,6 +164,10 @@ impl VideoShell {
                 }
             }
             MprisCommand::OpenUri(target) => {
+                // A file opens with its folder, as a path does.
+                let target = big_os_kit::url::file_uri_path(&target)
+                    .and_then(|path| path.into_os_string().into_string().ok())
+                    .unwrap_or(target);
                 sender.input(VideoShellInput::OpenFiles(vec![target]));
             }
             command => {

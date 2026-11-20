@@ -694,6 +694,10 @@ impl Component for VideoBrowserSidebar {
                 // Files mode; otherwise reveal the queue in Playlist mode.
                 self.state.queue.replace(paths.clone());
                 if let Some(folder) = folder {
+                    // A scan still running for the folder shown before is stale.
+                    self.state
+                        .scan_generation
+                        .set(self.state.scan_generation.get().wrapping_add(1));
                     self.state.folder.replace(Some(folder));
                     self.state.entries.replace(paths);
                     self.state.subfolders.replace(Vec::new());

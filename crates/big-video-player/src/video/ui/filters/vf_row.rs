@@ -117,7 +117,18 @@ pub(super) fn wire_filter_expander(
             return;
         }
         match &debounce {
-            Some(debounce) => debounce.run(apply.clone()),
+            // Switched off before the delay ends: nothing to reapply.
+            Some(debounce) => {
+                let (apply, expander) = (apply.clone(), expander.clone());
+                debounce.run(move || {
+                    if expander
+                        .upgrade()
+                        .is_some_and(|row| row.enables_expansion())
+                    {
+                        apply();
+                    }
+                });
+            }
             None => apply(),
         }
     })

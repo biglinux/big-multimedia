@@ -24,13 +24,14 @@ impl BrowserState {
         self.rebuild();
     }
 
-    /// Open the folder browsed last time, unless it is gone or another folder
-    /// opened while it was being checked.
+    /// Open the folder browsed last time, unless it is gone or the person
+    /// navigated while it was being checked.
     pub(super) fn restore_last_folder(self: &Rc<Self>) {
         let folder = self.settings.get_string(keys::PLAYLIST_LAST_FOLDER);
         if folder.is_empty() {
             return;
         }
+        let generation = self.scan_generation.get();
         let state = Rc::downgrade(self);
         glib::spawn_future_local(async move {
             let probe = folder.clone();
@@ -39,6 +40,7 @@ impl BrowserState {
                 .unwrap_or(false);
             if let Some(state) = state.upgrade()
                 && exists
+                && state.scan_generation.get() == generation
                 && state.folder.borrow().is_none()
                 && !state.customizing.get()
             {

@@ -11,10 +11,11 @@
 //!
 //! Engine-free helper (no GTK widgets) used by [`super::VideoIptvBrowser`].
 
+use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Once;
+use std::sync::{Mutex, Once, PoisonError};
 
 use crate::config;
 use crate::video::redaction::redact_path;
@@ -54,8 +55,9 @@ fn remove_legacy_files(dir: &Path) {
             .extension()
             .is_some_and(|extension| extension == "m3u")
             && !is_cache_file_name(&name);
+        // The legacy name can hold the credentials: it stays out of the log.
         if legacy && let Err(error) = fs::remove_file(entry.path()) {
-            log::warn!("iptv cache cleanup {}: {error}", redact_path(entry.path()));
+            log::warn!("iptv cache cleanup of a legacy list: {error}");
         }
     }
 }
@@ -70,8 +72,21 @@ pub(super) fn read(provider_id: &str) -> Option<String> {
     fs::read_to_string(cache_path(provider_id)?).ok()
 }
 
+/// Provider identities whose list may hold credentials, retired by moving
+/// them into the keyring. Held across each write, so a fetch that started
+/// before the retirement cannot write that list again after it.
+static RETIRED: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
+
+/// Delete the cached playlist of `provider_id` for good: a fetch still running
+/// under that identity does not write it again.
+pub(super) fn retire(provider_id: &str) {
+    let mut retired = RETIRED.lock().unwrap_or_else(PoisonError::into_inner);
+    retired.insert(provider_id.to_owned());
+    remove(provider_id);
+}
+
 /// Delete the cached playlist of `provider_id` (best-effort).
-pub(super) fn remove(provider_id: &str) {
+fn remove(provider_id: &str) {
     let Some(path) = cache_path(provider_id) else {
         return;
     };
@@ -84,6 +99,10 @@ pub(super) fn remove(provider_id: &str) {
 
 /// Write the fetched content to the cache (best-effort).
 pub(super) fn write(provider_id: &str, content: &str) {
+    let retired = RETIRED.lock().unwrap_or_else(PoisonError::into_inner);
+    if retired.contains(provider_id) {
+        return;
+    }
     let Some(path) = cache_path(provider_id) else {
         log::warn!("iptv cache write: no XDG cache directory");
         return;

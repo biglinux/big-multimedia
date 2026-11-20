@@ -26,7 +26,7 @@ mod providers_dialog;
 mod xtream;
 
 use big_relm4_components::feedback::tooltip;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::atomic::AtomicBool;
 
@@ -77,10 +77,9 @@ pub enum VideoIptvBrowserInput {
         channels: Result<FetchedChannels, FetchError>,
     },
     /// Plain-text secrets moved into the keyring: `(index, original,
-    /// protected)` each, and whether every one moved.
+    /// protected)` each.
     Protected {
         protected: Vec<(usize, IptvProvider, IptvProvider)>,
-        complete: bool,
     },
     /// A channel could not play: the keyring kept its provider's password.
     KeyringUnavailable,
@@ -118,6 +117,16 @@ pub struct VideoIptvBrowser {
     protecting: bool,
     /// Monotonic load token; off-thread results for an older value are dropped.
     load_generation: u64,
+    /// The provider `load_generation` loads, and whether its fresh list is
+    /// already on screen, so a slower cached copy cannot replace it.
+    loading: Option<IptvProvider>,
+    fresh_shown: bool,
+    /// The provider whose rows are on screen: a row plays with its account,
+    /// whatever the dropdown has moved to since.
+    shown: Option<IptvProvider>,
+    /// Bumped by each activation and provider change; a keyring lookup that
+    /// finishes for an older value is dropped.
+    activation: Rc<Cell<u64>>,
 }
 
 impl Component for VideoIptvBrowser {
@@ -247,6 +256,10 @@ impl Component for VideoIptvBrowser {
             keyring_status,
             protecting: false,
             load_generation: 0,
+            loading: None,
+            fresh_shown: false,
+            shown: None,
+            activation: Rc::default(),
         };
         model.protect_plaintext(&sender);
         model.repopulate_provider_dropdown();
@@ -285,7 +298,8 @@ impl Component for VideoIptvBrowser {
                 generation,
                 channels,
             } => {
-                if generation == self.load_generation {
+                if generation == self.load_generation && !self.fresh_shown {
+                    self.shown.clone_from(&self.loading);
                     self.list_view.set_channels(channels);
                     self.status
                         .set_label(&i18n("Showing cached channels, updating…"));
@@ -295,17 +309,17 @@ impl Component for VideoIptvBrowser {
                 generation,
                 channels,
             } => self.on_network_resolved(generation, channels),
-            VideoIptvBrowserInput::Protected {
-                protected,
-                complete,
-            } => {
+            VideoIptvBrowserInput::Protected { protected } => {
                 self.protecting = false;
                 let total = protected.len();
                 let orphaned = self.store.borrow_mut().apply_protected(protected);
                 if orphaned.len() < total {
                     self.store.borrow_mut().save();
                 }
-                self.keyring_status.set_visible(!complete);
+                // From the store, not the snapshot protected: a provider
+                // removed during the move needs no warning.
+                self.keyring_status
+                    .set_visible(!self.store.borrow().unprotected().is_empty());
                 if !orphaned.is_empty() {
                     spawn_blocking_result(
                         move || {
@@ -361,24 +375,21 @@ impl VideoIptvBrowser {
                 for (index, original) in unprotected {
                     let mut provider = original.clone();
                     if provider.protect_secret(&vault).is_err() {
-                        return Ok((protected, false));
+                        break;
                     }
                     // A redacted M3U URL names the cache differently; the old
                     // file would never be read or replaced again.
                     let cached_as = provider_identifier(&original);
                     if provider_identifier(&provider) != cached_as {
-                        cache::remove(&cached_as);
+                        cache::retire(&cached_as);
                     }
                     protected.push((index, original, provider));
                 }
-                Ok((protected, true))
+                Ok(protected)
             },
             move |result| {
-                let (protected, complete) = result.unwrap_or_default();
-                sender.input(VideoIptvBrowserInput::Protected {
-                    protected,
-                    complete,
-                });
+                let protected = result.unwrap_or_default();
+                sender.input(VideoIptvBrowserInput::Protected { protected });
             },
         );
     }
@@ -386,12 +397,14 @@ impl VideoIptvBrowser {
     /// Hand the channel at `url` of the selected provider to the shell, with
     /// the Xtream account's credentials read back from the keyring.
     fn play_channel(&self, url: String, title: String, sender: &ComponentSender<Self>) {
-        let index = self.provider_dropdown.selected() as usize;
-        let Some(provider) = self.store.borrow().providers.get(index).cloned() else {
+        let Some(provider) = self.shown.clone() else {
             return;
         };
         let origin = provider.source.list_origin();
         let sender = sender.clone();
+        let activation = Rc::clone(&self.activation);
+        activation.set(activation.get() + 1);
+        let this_activation = activation.get();
         spawn_blocking_result(
             move || {
                 let cancelled = AtomicBool::new(false);
@@ -401,6 +414,7 @@ impl VideoIptvBrowser {
                 channel_urls(&provider, &url, &vault)
             },
             move |urls: std::io::Result<ChannelUrls>| match urls {
+                _ if activation.get() != this_activation => {}
                 Ok(urls) => {
                     let _ = sender.output(VideoIptvBrowserOutput::PlayChannel {
                         urls,
@@ -449,6 +463,11 @@ impl VideoIptvBrowser {
         if self.provider_model.n_items() > 0 {
             sender.input(VideoIptvBrowserInput::ProviderSelected(0));
         } else {
+            // Nothing a load still running for a removed provider returns
+            // may come back.
+            self.load_generation += 1;
+            self.activation.set(self.activation.get() + 1);
+            self.shown = None;
             self.list_view.set_channels(Vec::new());
             self.status.set_label(&i18n(
                 "No providers configured. Click \u{201C}Manage\u{2026}\u{201D} to add one.",
@@ -470,6 +489,9 @@ impl VideoIptvBrowser {
 
         self.load_generation += 1;
         let generation = self.load_generation;
+        self.loading = Some(provider.clone());
+        self.fresh_shown = false;
+        self.activation.set(self.activation.get() + 1);
         let provider_id = provider_identifier(&provider);
 
         if force_network {
@@ -509,8 +531,10 @@ impl VideoIptvBrowser {
                     );
                 }
                 status.extend(left_out_notice(false, channels.skipped));
-                self.list_view.set_channels(channels.entries);
                 self.list_view.rename_favorites(favorite_renames);
+                self.list_view.set_channels(channels.entries);
+                self.shown.clone_from(&self.loading);
+                self.fresh_shown = true;
                 self.status.set_label(&status.join(" "));
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),
