@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-20 12:30-0300\n"
+"POT-Creation-Date: 2026-11-20 18:20-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -510,7 +510,7 @@ msgstr "エピソードを保存"
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 msgid "Save"
 msgstr "保存"
 
@@ -1052,7 +1052,7 @@ msgstr "トラック情報"
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:202
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:213
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
 #: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:85
@@ -1643,9 +1643,13 @@ msgstr "リモートまたは非対応の場所のため、ここでは削除で
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:128
+#: crates/big-video-player/src/video/app.rs:138
 msgid "Open a separate player window instead of using the running one"
 msgstr "実行中のプレーヤーを使わずに、別のプレーヤーウィンドウを開く"
+
+#: crates/big-video-player/src/video/app.rs:148
+msgid "Open the player window maximized"
+msgstr "プレーヤーウィンドウを最大化して開く"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -2305,44 +2309,52 @@ msgstr "ゆっくり消えていく残像エフェクト"
 msgid "Decay"
 msgstr "減衰"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:83
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:88
 msgid "Toggle favorite"
 msgstr "お気に入りを切り替え"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:96
+msgid ""
+"This channel's address holds the provider's password, so it cannot be a "
+"favorite."
+msgstr ""
+"このチャンネルのアドレスにはプロバイダーのパスワードが含まれているため、お気"
+"に入りにできません。"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:187
 msgid "No channels"
 msgstr "チャンネルなし"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:177
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:195
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} 個のチャンネル"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:224
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:242
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "グループなし"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:166
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:175
 msgid "Provider"
 msgstr "プロバイダー"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:174
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:183
 msgid "Manage…"
 msgstr "管理…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:179
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:188
 msgid "Reload from provider"
 msgstr "プロバイダーから再読み込み"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:186
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:191
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:195
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:200
 msgid "Search channels"
 msgstr "チャンネルを検索"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:204
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:213
 msgid ""
 "Some provider passwords are kept only until the player closes because your "
 "keyring could not be reached. Unlock your keyring, then reload the channels."
@@ -2351,30 +2363,30 @@ msgstr ""
 "ヤーを閉じるまでしか保持されません。キーリングのロックを解除してから、チャン"
 "ネルを再読み込みしてください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:270
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:472
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "プロバイダーが設定されていません。「管理…」をクリックして追加してください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:291
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
 msgid "Showing cached channels, updating…"
 msgstr "キャッシュ済みのチャンネルを表示しています — 更新中…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:497
 msgid "Reloading channels…"
 msgstr "チャンネルを再読み込みしています…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:499
 msgid "Loading channels…"
 msgstr "チャンネルを読み込んでいます…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:539
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "先頭の {} チャンネルを表示しています。リストには続きがあります。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:559
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2382,7 +2394,7 @@ msgstr ""
 "プロバイダーに接続できませんでした。アドレスとネットワーク接続を確認してくだ"
 "さい。保存済みのリストは画面に残ります。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:562
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2390,41 +2402,41 @@ msgstr ""
 "プロバイダーがアクセスを拒否しました。ユーザー名とパスワード、またはプロバイ"
 "ダーが要求する User-Agent を確認してください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:565
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr ""
 "プロバイダーのサーバーでエラーが発生しました (エラー {})。しばらくしてからも"
 "う一度お試しください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:569
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "プロバイダーからエラー {} が返されました。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:571
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "チャンネルリストが {} MB を超えています。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:575
 msgid "The provider sent no channels."
 msgstr "プロバイダーからチャンネルが送信されませんでした。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:576
 msgid "The provider rejected the user name or password."
 msgstr "プロバイダーがユーザー名またはパスワードを拒否しました。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:578
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "このアカウントは有効ではありません (プロバイダーからの応答: {})。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:580
 msgid "Could not read the playlist file."
 msgstr "プレイリストファイルを読み込めませんでした。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:582
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2432,7 +2444,7 @@ msgstr ""
 "このプロバイダーのパスワードをキーリングから読み取れませんでした。キーリング"
 "のロックを解除してから、チャンネルを再読み込みしてください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:585
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -2483,15 +2495,15 @@ msgstr "編集"
 msgid "Remove"
 msgstr "削除"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:254
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:286
 msgid "IPTV Provider"
 msgstr "IPTV プロバイダー"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:335
 msgid "Saving the password in your keyring…"
 msgstr "パスワードをキーリングに保存しています…"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
@@ -2499,69 +2511,69 @@ msgstr ""
 "パスワードをキーリングに保存できなかったため、何も保存されませんでした。キー"
 "リングのロックを解除してから、もう一度保存してください。"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
 msgid "Name"
 msgstr "名前"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:375
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:415
 msgid "Type"
 msgstr "種類"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:377
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:417
 msgid "M3U URL"
 msgstr "M3U URL"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:378
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:418
 msgid "Local M3U file"
 msgstr "ローカルの M3U ファイル"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:379
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:419
 msgid "Xtream Codes"
 msgstr "Xtream Codes"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:389
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:429
 msgid "URL"
 msgstr "URL"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:393
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "File path"
 msgstr "ファイルパス"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:397
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:437
 msgid "Server URL"
 msgstr "サーバー URL"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:398
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:438
 msgid "Username"
 msgstr "ユーザー名"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:400
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:440
 msgid "Password"
 msgstr "パスワード"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:422
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:462
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
 "完全なアドレスはキーリングに保存されています。保持するには、表示されているま"
 "まにしてください。"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:465
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
 "パスワードはキーリングに保存されています。保持するには、パスワード欄を空のま"
 "まにしてください。"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:473
 msgid "HTTP headers (optional)"
 msgstr "HTTP ヘッダー (任意)"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:434
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:474
 msgid "User-Agent"
 msgstr "User-Agent"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:436
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:476
 msgid "Referer"
 msgstr "Referer"
 
@@ -3768,7 +3780,7 @@ msgstr "{} に終了"
 msgid "Search your videos…"
 msgstr "ビデオを検索…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:175
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:177
 msgid "Scanning…"
 msgstr "スキャンしています…"
 
@@ -4009,7 +4021,7 @@ msgid "On the TV"
 msgstr "TV で"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:234
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:44
 #: crates/media-runtime/src/cast/tv/card.rs:261
 msgid "The TV is still playing"
 msgstr "TV ではまだ再生中です"
@@ -4359,7 +4371,7 @@ msgstr "このカットを削除"
 msgid "Open a local video to cut it"
 msgstr "ローカルのビデオを開くとカットできます"
 
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:42
 #: crates/media-runtime/src/cast/tv/card.rs:233
 msgid "On the TV and here"
 msgstr "TV とこの画面で"
