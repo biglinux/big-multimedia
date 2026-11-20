@@ -75,6 +75,7 @@ pub fn channel_urls(
     url: &str,
     vault: &dyn Vault,
 ) -> io::Result<ChannelUrls> {
+    let unredacted = |text: &str| big_os_kit::url::redact_url(text) == text;
     Ok(match provider.resolved_source(vault)? {
         IptvKind::Xtream {
             username, password, ..
@@ -84,11 +85,11 @@ pub fn channel_urls(
         },
         IptvKind::M3uUrl { url: list } => ChannelUrls {
             played: url.to_owned(),
-            stored: (big_os_kit::url::redact_url(&list) == list).then(|| url.to_owned()),
+            stored: (unredacted(&list) && unredacted(url)).then(|| url.to_owned()),
         },
         IptvKind::M3uLocal { .. } => ChannelUrls {
             played: url.to_owned(),
-            stored: Some(url.to_owned()),
+            stored: unredacted(url).then(|| url.to_owned()),
         },
     })
 }
@@ -314,6 +315,21 @@ mod tests {
         let channel = channel_urls(&list, "http://srv/ana/s3cret/7", &keyring).unwrap();
         assert_eq!(channel.played, "http://srv/ana/s3cret/7");
         assert_eq!(channel.stored, None);
+        // A public list, local or remote, can name a channel with a password.
+        let channel_secret = "http://srv/7.ts?password=s3cret";
+        for list in [
+            IptvKind::M3uUrl {
+                url: "http://srv/free.m3u".into(),
+            },
+            IptvKind::M3uLocal {
+                path: "/home/ana/free.m3u".into(),
+            },
+        ] {
+            let channel =
+                channel_urls(&provider("Free", list), channel_secret, &Keyring(None)).unwrap();
+            assert_eq!(channel.played, channel_secret);
+            assert_eq!(channel.stored, None);
+        }
     }
 
     #[test]
