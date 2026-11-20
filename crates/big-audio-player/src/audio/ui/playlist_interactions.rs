@@ -230,7 +230,7 @@ fn show_delete_confirm(
     let group = BigPreferencesGroupSpec::untitled().build();
     let perm_row = adw::SwitchRow::builder()
         .title(i18n("Delete permanently"))
-        .subtitle(i18n("Skip trash — cannot be undone"))
+        .subtitle(i18n("Skip trash: cannot be undone"))
         .active(false)
         .build();
     group.add(&perm_row);

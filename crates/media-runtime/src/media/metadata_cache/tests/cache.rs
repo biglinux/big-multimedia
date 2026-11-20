@@ -1,7 +1,7 @@
 use super::super::cache::parse_meta_cache;
 
-/// Oracle: files the earlier hand-written saver produced (absent fields for
-/// unknown values) and the derived one (nulls), plus one entry of the wrong type.
+/// Oracle: cache files with absent fields for unknown values and with nulls,
+/// both written by released versions, plus one entry of the wrong type.
 #[test]
 fn cache_file_entries_read_alone() {
     let cache = parse_meta_cache(

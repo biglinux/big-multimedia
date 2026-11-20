@@ -113,7 +113,7 @@ pub(super) fn wire_realize(
             other => other,
         };
         if render_mode == "sw" {
-            log::info!("video: render-mode=sw — forcing the software render path");
+            log::info!("video: render-mode=sw, forcing the software render path");
             video_backend.replace(None);
             wire_software_fallback(
                 &mpv_backend,

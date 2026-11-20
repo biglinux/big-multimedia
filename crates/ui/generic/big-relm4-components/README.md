@@ -10,15 +10,15 @@ GTK/libadwaita widget already solves it.
 
 ## Modules
 
-- `display` — sleep timer dialog and texture conversion.
-- `feedback` — context/hover popovers and icon buttons with their tooltip (drawn by `big_gtk_kit::tooltip`).
-- `input` — slider, dropdown and spin rows, shortcut capture/dialog, and the
+- `display`: sleep timer dialog and texture conversion.
+- `feedback`: context/hover popovers and icon buttons with their tooltip (drawn by `big_gtk_kit::tooltip`).
+- `input`: slider, dropdown and spin rows, shortcut capture/dialog, and the
   zone-layout editor.
-- `layout` — media window chrome and sidebar, dialogs, hamburger menu, toolbar
+- `layout`: media window chrome and sidebar, dialogs, hamburger menu, toolbar
   panes, zone applier.
-- `list` — `AdwActionRow` derivatives.
-- `task` — off-main-thread work with main-thread delivery.
-- `text`, `time`, `theme`, `i18n` — small shared helpers.
+- `list`: `AdwActionRow` derivatives.
+- `task`: off-main-thread work with main-thread delivery.
+- `text`, `time`, `theme`, `i18n`: small shared helpers.
 
 ## Validate a change
 

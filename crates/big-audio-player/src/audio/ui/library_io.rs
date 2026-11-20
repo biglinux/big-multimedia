@@ -305,7 +305,7 @@ fn build_tips_card() -> gtk::Box {
 
     for text in [
         i18n("• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"),
-        i18n("• Subfolders are included automatically — no need to add each one"),
+        i18n("• Subfolders are included automatically; no need to add each one"),
         i18n(
             "• Use the Files tab to play files from any folder without adding them to the library",
         ),

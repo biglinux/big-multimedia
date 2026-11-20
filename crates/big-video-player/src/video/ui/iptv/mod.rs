@@ -288,7 +288,7 @@ impl Component for VideoIptvBrowser {
                 if generation == self.load_generation {
                     self.list_view.set_channels(channels);
                     self.status
-                        .set_label(&i18n("Showing cached channels — updating…"));
+                        .set_label(&i18n("Showing cached channels, updating…"));
                 }
             }
             VideoIptvBrowserInput::NetworkResolved {

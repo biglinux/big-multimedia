@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:02-0300\n"
+"POT-Creation-Date: 2026-11-19 21:18-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1023,7 +1023,7 @@ msgid ""
 msgstr "• Studd snið: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:308
-msgid "• Subfolders are included automatically — no need to add each one"
+msgid "• Subfolders are included automatically; no need to add each one"
 msgstr ""
 "• Undirmöppur eru teknar með sjálfkrafa — ekki þarf að bæta hverri þeirra við"
 
@@ -1343,7 +1343,7 @@ msgid "Delete permanently"
 msgstr "Eyða varanlega"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:233
-msgid "Skip trash — cannot be undone"
+msgid "Skip trash: cannot be undone"
 msgstr "Sleppa ruslinu — ekki hægt að afturkalla"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
@@ -1629,7 +1629,7 @@ msgid "Select"
 msgstr "Velja"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
-msgid "Remote or unsupported location — not eligible for removal here"
+msgid "Remote or unsupported location: not eligible for removal here"
 msgstr "Fjarlæg eða óstudd staðsetning — ekki hægt að fjarlægja hér"
 
 #: crates/big-video-player/src/lib.rs:29
@@ -2061,7 +2061,7 @@ msgstr "RAVU tauganetsstækkari"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:361
 msgid ""
-"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"Reconstructs detail lost during video compression, using RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 "Endurgerir smáatriði sem töpuðust við þjöppun myndskeiða — notar RAVU r4, "
@@ -2080,19 +2080,19 @@ msgid "Disabled"
 msgstr "Óvirkt"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
-msgid "Quality A — Best (1080p sources)"
+msgid "Quality A: Best (1080p sources)"
 msgstr "Gæði A — Best (frumgögn í 1080p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
-msgid "Quality B — Soft Restore (720p sources)"
+msgid "Quality B: Soft Restore (720p sources)"
 msgstr "Gæði B — Mjúk endurheimt (frumgögn í 720p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
-msgid "Quality C — Fast (low-end GPU)"
+msgid "Quality C: Fast (low-end GPU)"
 msgstr "Gæði C — Hröð (veikt skjákort)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:404
-msgid "Select a quality preset — higher quality uses more GPU power"
+msgid "Select a quality preset; higher quality uses more GPU power"
 msgstr "Veldu gæðaforstillingu — meiri gæði nota meira af afli skjákortsins"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
@@ -2144,7 +2144,7 @@ msgid "Sharpen (CAS)"
 msgstr "Skerping (CAS)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
-msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgid "Software contrast-adaptive sharpening that works at any resolution"
 msgstr ""
 "Hugbúnaðarleg birtuskilaaðlöguð skerping — virkar í hvaða upplausn sem er"
 
@@ -2349,7 +2349,7 @@ msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Engar veitur stilltar. Smelltu á „Sýsla…“ til að bæta einni við."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:291
-msgid "Showing cached channels — updating…"
+msgid "Showing cached channels, updating…"
 msgstr "Sýni rásir úr skyndiminni — uppfæri…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:459
@@ -3665,7 +3665,7 @@ msgstr "Skrá með þessu heiti er þegar til"
 msgid "Rename failed"
 msgstr "Endurnefning mistókst"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:319
 #, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
@@ -4222,7 +4222,7 @@ msgid "The screenshot took too long and was not saved"
 msgstr "Skjámyndatakan tók of langan tíma og myndin var ekki vistuð"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
-msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play this file: it may be unsupported or corrupt."
 msgstr "Ekki var hægt að spila þessa skrá — hún gæti verið óstudd eða skemmd."
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:256
@@ -4275,7 +4275,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
-msgid "Cut start: {t} — mark the other end"
+msgid "Cut start: {t}. Mark the other end"
 msgstr "Upphaf klippingar: {t} — merktu hinn endann"
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
@@ -4705,7 +4705,7 @@ msgstr ""
 "spilarann aftur."
 
 #: crates/media-runtime/src/settings/messages.rs:6
-msgid "Access could not be verified — check permissions before reviewing"
+msgid "Access could not be verified; check permissions before reviewing"
 msgstr ""
 "Ekki var hægt að sannreyna aðgang — athugaðu heimildir áður en yfirferð hefst"
 
@@ -4728,7 +4728,7 @@ msgstr ""
 "aftur."
 
 #: crates/media-runtime/src/settings/messages.rs:12
-msgid "Not found — select only if you want to forget this library record"
+msgid "Not found; select only if you want to forget this library record"
 msgstr "Fannst ekki — veldu aðeins ef þú vilt gleyma þessari færslu í safninu"
 
 #: crates/media-runtime/src/settings/messages.rs:13
@@ -5238,7 +5238,7 @@ msgid "Podcast Subscriptions Unavailable"
 msgstr "Hlaðvarpsáskriftir ekki tiltækar"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
-msgid "Connection error — try again"
+msgid "Connection error; try again"
 msgstr "Tengingarvilla — reyndu aftur"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:288
@@ -5419,7 +5419,7 @@ msgid "QR code"
 msgstr "QR-kóði"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:187
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Web remote is off."
 msgstr "Vefstýring er óvirk."
 
@@ -5454,20 +5454,20 @@ msgstr ""
 msgid "Open KDE Connect download page"
 msgstr "Opna niðurhalssíðu KDE Connect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:121
 msgid "No local network found. Connect to a network and try again."
 msgstr "Ekkert staðarnet fannst. Tengstu neti og reyndu aftur."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
 msgid "Scan the code with the phone's camera."
 msgstr "Skannaðu kóðann með myndavél símans."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "Vefstýring stöðvaðist: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 msgid "Could not start server"
 msgstr "Ekki var hægt að ræsa netþjón"
 

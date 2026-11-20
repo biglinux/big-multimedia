@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:02-0300\n"
+"POT-Creation-Date: 2026-11-19 21:18-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1006,7 +1006,7 @@ msgid ""
 msgstr "• 지원 형식: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:308
-msgid "• Subfolders are included automatically — no need to add each one"
+msgid "• Subfolders are included automatically; no need to add each one"
 msgstr "• 하위 폴더는 자동으로 포함되므로 하나씩 추가할 필요가 없습니다"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:310
@@ -1323,7 +1323,7 @@ msgid "Delete permanently"
 msgstr "영구 삭제"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:233
-msgid "Skip trash — cannot be undone"
+msgid "Skip trash: cannot be undone"
 msgstr "휴지통을 거치지 않고 삭제합니다. 되돌릴 수 없습니다"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
@@ -1605,7 +1605,7 @@ msgid "Select"
 msgstr "선택"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
-msgid "Remote or unsupported location — not eligible for removal here"
+msgid "Remote or unsupported location: not eligible for removal here"
 msgstr "원격 또는 지원되지 않는 위치라서 여기서는 제거할 수 없습니다"
 
 #: crates/big-video-player/src/lib.rs:29
@@ -2036,7 +2036,7 @@ msgstr "RAVU 신경망 업스케일러"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:361
 msgid ""
-"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"Reconstructs detail lost during video compression, using RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 "비디오 압축 중 손실된 세부 묘사를 복원합니다. 사용 가능한 최고의 프래그먼트 "
@@ -2055,19 +2055,19 @@ msgid "Disabled"
 msgstr "사용 안 함"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
-msgid "Quality A — Best (1080p sources)"
+msgid "Quality A: Best (1080p sources)"
 msgstr "품질 A — 최고 (1080p 원본)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
-msgid "Quality B — Soft Restore (720p sources)"
+msgid "Quality B: Soft Restore (720p sources)"
 msgstr "품질 B — 부드러운 복원 (720p 원본)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
-msgid "Quality C — Fast (low-end GPU)"
+msgid "Quality C: Fast (low-end GPU)"
 msgstr "품질 C — 빠름 (저사양 GPU)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:404
-msgid "Select a quality preset — higher quality uses more GPU power"
+msgid "Select a quality preset; higher quality uses more GPU power"
 msgstr "품질 프리셋을 선택하세요. 품질이 높을수록 GPU를 더 많이 사용합니다"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
@@ -2117,7 +2117,7 @@ msgid "Sharpen (CAS)"
 msgstr "선명화 (CAS)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
-msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgid "Software contrast-adaptive sharpening that works at any resolution"
 msgstr "소프트웨어 대비 적응형 선명화로, 모든 해상도에서 작동합니다"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:68
@@ -2319,7 +2319,7 @@ msgid "No providers configured. Click “Manage…” to add one."
 msgstr "설정된 제공업체가 없습니다. “관리…”를 눌러 추가하세요."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:291
-msgid "Showing cached channels — updating…"
+msgid "Showing cached channels, updating…"
 msgstr "캐시된 채널을 표시하는 중 — 업데이트 중…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:459
@@ -3628,7 +3628,7 @@ msgstr "같은 이름의 파일이 이미 있습니다"
 msgid "Rename failed"
 msgstr "이름 바꾸기 실패"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:319
 #, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
@@ -4179,7 +4179,7 @@ msgid "The screenshot took too long and was not saved"
 msgstr "스크린샷이 너무 오래 걸려 저장하지 못했습니다"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
-msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play this file: it may be unsupported or corrupt."
 msgstr ""
 "이 파일을 재생할 수 없습니다. 지원되지 않거나 손상된 파일일 수 있습니다."
 
@@ -4232,7 +4232,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
-msgid "Cut start: {t} — mark the other end"
+msgid "Cut start: {t}. Mark the other end"
 msgstr "자르기 시작: {t} — 다른 쪽 끝을 표시하세요"
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
@@ -4653,7 +4653,7 @@ msgstr ""
 "확인하거나, 환경 설정에서 다른 오디오 출력을 선택하고 플레이어를 다시 여세요."
 
 #: crates/media-runtime/src/settings/messages.rs:6
-msgid "Access could not be verified — check permissions before reviewing"
+msgid "Access could not be verified; check permissions before reviewing"
 msgstr "접근 권한을 확인할 수 없습니다 — 검토하기 전에 권한을 확인하세요"
 
 #: crates/media-runtime/src/settings/messages.rs:7
@@ -4675,7 +4675,7 @@ msgstr ""
 "요."
 
 #: crates/media-runtime/src/settings/messages.rs:12
-msgid "Not found — select only if you want to forget this library record"
+msgid "Not found; select only if you want to forget this library record"
 msgstr "찾을 수 없음 — 이 라이브러리 레코드를 삭제하려는 경우에만 선택하세요"
 
 #: crates/media-runtime/src/settings/messages.rs:13
@@ -5185,7 +5185,7 @@ msgid "Podcast Subscriptions Unavailable"
 msgstr "팟캐스트 구독을 사용할 수 없음"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
-msgid "Connection error — try again"
+msgid "Connection error; try again"
 msgstr "연결 오류 — 다시 시도하세요"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:288
@@ -5364,7 +5364,7 @@ msgid "QR code"
 msgstr "QR 코드"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:187
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Web remote is off."
 msgstr "웹 리모컨이 꺼져 있습니다."
 
@@ -5398,21 +5398,21 @@ msgstr ""
 msgid "Open KDE Connect download page"
 msgstr "KDE Connect 다운로드 페이지 열기"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:121
 msgid "No local network found. Connect to a network and try again."
 msgstr ""
 "로컬 네트워크를 찾을 수 없습니다. 네트워크에 연결한 다음 다시 시도하세요."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
 msgid "Scan the code with the phone's camera."
 msgstr "휴대폰 카메라로 코드를 스캔하세요."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "웹 리모컨이 중지되었습니다: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 msgid "Could not start server"
 msgstr "서버를 시작할 수 없습니다"
 

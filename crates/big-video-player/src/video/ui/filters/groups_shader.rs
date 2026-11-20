@@ -358,8 +358,8 @@ pub(super) fn build_neural_group(
     let row = adw::SwitchRow::builder()
         .title(i18n("RAVU Neural Upscaler"))
         .subtitle(i18n(
-            "Reconstructs detail lost during video compression — \
-             uses RAVU r4, the best fragment-shader neural upscaler available",
+            "Reconstructs detail lost during video compression, \
+             using RAVU r4, the best fragment-shader neural upscaler available",
         ))
         .active(is_active)
         .build();
@@ -395,13 +395,13 @@ pub(super) fn build_anime4k_group(
             i18n("Anime4K Preset"),
             [
                 i18n("Disabled"),
-                i18n("Quality A — Best (1080p sources)"),
-                i18n("Quality B — Soft Restore (720p sources)"),
-                i18n("Quality C — Fast (low-end GPU)"),
+                i18n("Quality A: Best (1080p sources)"),
+                i18n("Quality B: Soft Restore (720p sources)"),
+                i18n("Quality C: Fast (low-end GPU)"),
             ],
         )
         .subtitle(i18n(
-            "Select a quality preset — higher quality uses more GPU power",
+            "Select a quality preset; higher quality uses more GPU power",
         )),
     )
     .into_parts();

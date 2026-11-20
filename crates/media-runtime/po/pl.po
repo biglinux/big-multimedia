@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:02-0300\n"
+"POT-Creation-Date: 2026-11-19 21:18-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1029,7 +1029,7 @@ msgstr ""
 "• Obsługiwane formaty: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:308
-msgid "• Subfolders are included automatically — no need to add each one"
+msgid "• Subfolders are included automatically; no need to add each one"
 msgstr ""
 "• Podfoldery są dołączane automatycznie — nie trzeba dodawać każdego z nich"
 
@@ -1353,7 +1353,7 @@ msgid "Delete permanently"
 msgstr "Usuń trwale"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:233
-msgid "Skip trash — cannot be undone"
+msgid "Skip trash: cannot be undone"
 msgstr "Pomiń kosz — nie można cofnąć"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
@@ -1639,7 +1639,7 @@ msgid "Select"
 msgstr "Zaznacz"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
-msgid "Remote or unsupported location — not eligible for removal here"
+msgid "Remote or unsupported location: not eligible for removal here"
 msgstr "Lokalizacja zdalna lub nieobsługiwana — nie można tu usunąć"
 
 #: crates/big-video-player/src/lib.rs:29
@@ -2074,7 +2074,7 @@ msgstr "Powiększacz neuronowy RAVU"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:361
 msgid ""
-"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"Reconstructs detail lost during video compression, using RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 "Odtwarza szczegóły utracone podczas kompresji wideo — używa RAVU r4, "
@@ -2094,19 +2094,19 @@ msgid "Disabled"
 msgstr "Wyłączone"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
-msgid "Quality A — Best (1080p sources)"
+msgid "Quality A: Best (1080p sources)"
 msgstr "Jakość A — najlepsza (źródła 1080p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
-msgid "Quality B — Soft Restore (720p sources)"
+msgid "Quality B: Soft Restore (720p sources)"
 msgstr "Jakość B — łagodna rekonstrukcja (źródła 720p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
-msgid "Quality C — Fast (low-end GPU)"
+msgid "Quality C: Fast (low-end GPU)"
 msgstr "Jakość C — szybka (słabsze GPU)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:404
-msgid "Select a quality preset — higher quality uses more GPU power"
+msgid "Select a quality preset; higher quality uses more GPU power"
 msgstr "Wybierz ustawienie jakości — wyższa jakość zużywa więcej mocy GPU"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
@@ -2159,7 +2159,7 @@ msgid "Sharpen (CAS)"
 msgstr "Wyostrzanie (CAS)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
-msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgid "Software contrast-adaptive sharpening that works at any resolution"
 msgstr ""
 "Programowe adaptacyjne wyostrzanie kontrastu — działa w każdej rozdzielczości"
 
@@ -2365,7 +2365,7 @@ msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Nie skonfigurowano dostawców. Kliknij „Zarządzaj…”, aby dodać."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:291
-msgid "Showing cached channels — updating…"
+msgid "Showing cached channels, updating…"
 msgstr "Wyświetlanie kanałów z pamięci podręcznej — aktualizowanie…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:459
@@ -3695,7 +3695,7 @@ msgstr "Plik o tej nazwie już istnieje"
 msgid "Rename failed"
 msgstr "Zmiana nazwy nie powiodła się"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:319
 #, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
@@ -4257,7 +4257,7 @@ msgstr ""
 "Wykonywanie zrzutu ekranu trwało zbyt długo, więc nie został on zapisany"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
-msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play this file: it may be unsupported or corrupt."
 msgstr ""
 "Nie można odtworzyć tego pliku — może być nieobsługiwany lub uszkodzony."
 
@@ -4312,7 +4312,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
-msgid "Cut start: {t} — mark the other end"
+msgid "Cut start: {t}. Mark the other end"
 msgstr "Początek cięcia: {t} — oznacz drugi koniec"
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
@@ -4753,7 +4753,7 @@ msgstr ""
 "otwórz ponownie odtwarzacz."
 
 #: crates/media-runtime/src/settings/messages.rs:6
-msgid "Access could not be verified — check permissions before reviewing"
+msgid "Access could not be verified; check permissions before reviewing"
 msgstr "Nie można zweryfikować dostępu — sprawdź uprawnienia przed przeglądem"
 
 #: crates/media-runtime/src/settings/messages.rs:7
@@ -4775,7 +4775,7 @@ msgstr ""
 "Spróbuj zapisać ponownie."
 
 #: crates/media-runtime/src/settings/messages.rs:12
-msgid "Not found — select only if you want to forget this library record"
+msgid "Not found; select only if you want to forget this library record"
 msgstr ""
 "Nie znaleziono — zaznacz tylko wtedy, gdy chcesz zapomnieć ten rekord "
 "biblioteki"
@@ -5290,7 +5290,7 @@ msgid "Podcast Subscriptions Unavailable"
 msgstr "Subskrypcje podcastów są niedostępne"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
-msgid "Connection error — try again"
+msgid "Connection error; try again"
 msgstr "Błąd połączenia — spróbuj ponownie"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:288
@@ -5470,7 +5470,7 @@ msgid "QR code"
 msgstr "Kod QR"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:187
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Web remote is off."
 msgstr "Zdalne sterowanie przez sieć jest wyłączone."
 
@@ -5506,20 +5506,20 @@ msgstr ""
 msgid "Open KDE Connect download page"
 msgstr "Otwórz stronę pobierania KDE Connect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:121
 msgid "No local network found. Connect to a network and try again."
 msgstr "Nie znaleziono sieci lokalnej. Połącz się z siecią i spróbuj ponownie."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
 msgid "Scan the code with the phone's camera."
 msgstr "Zeskanuj kod aparatem telefonu."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "Zdalne sterowanie przez sieć zostało zatrzymane: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 msgid "Could not start server"
 msgstr "Nie można uruchomić serwera"
 

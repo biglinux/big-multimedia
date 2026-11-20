@@ -30,7 +30,7 @@ SOURCES=(
 # Fail loudly if a tree is missing rather than silently dropping its strings.
 for dir in "${SOURCES[@]}"; do
   if [[ ! -d "$dir" ]]; then
-    echo "error: missing source tree '$dir' — run from the big-multimedia workspace" >&2
+    echo "error: missing source tree '$dir'; run from the big-multimedia workspace" >&2
     exit 1
   fi
 done

@@ -200,7 +200,7 @@ impl Settings {
                 .read()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             if !inner.settings_values.contains_key(key) {
-                log::warn!("Settings: unknown key {key:?} — add it to the catalog in keys.rs");
+                log::warn!("Settings: unknown key {key:?}; add it to the catalog in keys.rs");
             }
         }
     }

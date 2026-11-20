@@ -1,4 +1,4 @@
-# cargo-deny — policy: advisories (CVEs), licenses, bans, sources.
+# cargo-deny policy: advisories (CVEs), licenses, bans, sources.
 # Run: cargo deny check
 #
 # big-media-runtime links libmpv (Arch build = GPL-2.0-or-later + LGPL-2.1).

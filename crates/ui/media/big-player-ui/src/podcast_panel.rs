@@ -271,7 +271,7 @@ impl Component for PodcastPanel {
                 self.search_spinner.set_spinning(false);
                 self.search_spinner.set_visible(false);
                 let _ = sender.output(PodcastPanelOutput::Notify(i18n(
-                    "Connection error — try again",
+                    "Connection error; try again",
                 )));
             }
             PodcastPanelInput::ClearSearch => {

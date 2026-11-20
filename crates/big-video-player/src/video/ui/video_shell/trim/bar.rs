@@ -128,7 +128,7 @@ impl VideoTrimBar {
 
         self.hint_label.set_label(&match pending {
             Some(start) => {
-                i18n("Cut start: {t} — mark the other end").replace("{t}", &playback_time(start))
+                i18n("Cut start: {t}. Mark the other end").replace("{t}", &playback_time(start))
             }
             None if has_segments => i18n("Mark more cuts or export"),
             None => i18n("Press M (or Mark) at the start and end of a cut"),

@@ -13,9 +13,9 @@ the installed LADSPA plugins: mpv's `af` chain loads them by these names.
 
 ## Modules
 
-- `noise_reduction` — LADSPA plugin paths, control-port ordering and
+- `noise_reduction`: LADSPA plugin paths, control-port ordering and
   noise-reduction model identifiers.
-- `equalizer` — the canonical 10-band equalizer center frequencies and labels.
+- `equalizer`: the canonical 10-band equalizer center frequencies and labels.
 
 ## Validate a change
 

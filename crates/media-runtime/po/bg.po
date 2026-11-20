@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:02-0300\n"
+"POT-Creation-Date: 2026-11-19 21:18-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1030,7 +1030,7 @@ msgstr ""
 "• Поддържани формати: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:308
-msgid "• Subfolders are included automatically — no need to add each one"
+msgid "• Subfolders are included automatically; no need to add each one"
 msgstr ""
 "• Подпапките се включват автоматично — не е нужно да добавяте всяка поотделно"
 
@@ -1352,7 +1352,7 @@ msgid "Delete permanently"
 msgstr "Изтриване завинаги"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:233
-msgid "Skip trash — cannot be undone"
+msgid "Skip trash: cannot be undone"
 msgstr "Пропуска кошчето — не може да бъде отменено"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
@@ -1638,7 +1638,7 @@ msgid "Select"
 msgstr "Избиране"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
-msgid "Remote or unsupported location — not eligible for removal here"
+msgid "Remote or unsupported location: not eligible for removal here"
 msgstr ""
 "Отдалечено или неподдържано местоположение — не може да се премахне оттук"
 
@@ -2073,7 +2073,7 @@ msgstr "Невронно уголемяване RAVU"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:361
 msgid ""
-"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"Reconstructs detail lost during video compression, using RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 "Възстановява детайли, загубени при компресирането на видеото — използва RAVU "
@@ -2092,19 +2092,19 @@ msgid "Disabled"
 msgstr "Изключено"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
-msgid "Quality A — Best (1080p sources)"
+msgid "Quality A: Best (1080p sources)"
 msgstr "Качество A — най-добро (източници 1080p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
-msgid "Quality B — Soft Restore (720p sources)"
+msgid "Quality B: Soft Restore (720p sources)"
 msgstr "Качество B — меко възстановяване (източници 720p)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
-msgid "Quality C — Fast (low-end GPU)"
+msgid "Quality C: Fast (low-end GPU)"
 msgstr "Качество C — бързо (слаб графичен процесор)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:404
-msgid "Select a quality preset — higher quality uses more GPU power"
+msgid "Select a quality preset; higher quality uses more GPU power"
 msgstr ""
 "Изберете предварителна настройка за качество — по-високото качество използва "
 "повече мощ на графичния процесор"
@@ -2160,7 +2160,7 @@ msgid "Sharpen (CAS)"
 msgstr "Изостряне (CAS)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
-msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgid "Software contrast-adaptive sharpening that works at any resolution"
 msgstr ""
 "Софтуерно контрастно-адаптивно изостряне — работи при всяка разделителна "
 "способност"
@@ -2366,7 +2366,7 @@ msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Няма настроени доставчици. Натиснете „Управление…“, за да добавите."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:291
-msgid "Showing cached channels — updating…"
+msgid "Showing cached channels, updating…"
 msgstr "Показват се кеширани канали — обновяване…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:459
@@ -3699,7 +3699,7 @@ msgstr "Файл с това име вече съществува"
 msgid "Rename failed"
 msgstr "Преименуването е неуспешно"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:319
 #, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
@@ -4259,7 +4259,7 @@ msgstr ""
 "Създаването на снимката на екрана отне твърде дълго и тя не беше запазена"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
-msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play this file: it may be unsupported or corrupt."
 msgstr ""
 "Този файл не може да бъде изпълнен — може да е неподдържан или повреден."
 
@@ -4313,7 +4313,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
-msgid "Cut start: {t} — mark the other end"
+msgid "Cut start: {t}. Mark the other end"
 msgstr "Начало на изрязването: {t} — маркирайте другия край"
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
@@ -4742,7 +4742,7 @@ msgstr ""
 "изход“ в настройките и отворете плейъра отново."
 
 #: crates/media-runtime/src/settings/messages.rs:6
-msgid "Access could not be verified — check permissions before reviewing"
+msgid "Access could not be verified; check permissions before reviewing"
 msgstr ""
 "Достъпът не можа да бъде проверен — проверете правата, преди да прегледате"
 
@@ -4765,7 +4765,7 @@ msgstr ""
 "Опитайте да запазите отново."
 
 #: crates/media-runtime/src/settings/messages.rs:12
-msgid "Not found — select only if you want to forget this library record"
+msgid "Not found; select only if you want to forget this library record"
 msgstr ""
 "Не е намерено — изберете само ако искате да забравите този запис във "
 "фонотеката"
@@ -5281,7 +5281,7 @@ msgid "Podcast Subscriptions Unavailable"
 msgstr "Абонаментите за подкасти не са достъпни"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
-msgid "Connection error — try again"
+msgid "Connection error; try again"
 msgstr "Грешка при връзката — опитайте отново"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:288
@@ -5462,7 +5462,7 @@ msgid "QR code"
 msgstr "QR код"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:187
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Web remote is off."
 msgstr "Уеб дистанционното е изключено."
 
@@ -5498,20 +5498,20 @@ msgstr ""
 msgid "Open KDE Connect download page"
 msgstr "Отваряне на страницата за изтегляне на KDE Connect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:121
 msgid "No local network found. Connect to a network and try again."
 msgstr "Не е открита локална мрежа. Свържете се с мрежа и опитайте отново."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
 msgid "Scan the code with the phone's camera."
 msgstr "Сканирайте кода с камерата на телефона."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "Уеб дистанционното е спряно: {error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 msgid "Could not start server"
 msgstr "Сървърът не можа да бъде стартиран"
 

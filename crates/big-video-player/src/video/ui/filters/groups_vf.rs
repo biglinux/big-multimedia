@@ -51,7 +51,7 @@ pub(super) fn build_denoise_sharpen_group(
             label: "cas",
             param: "strength",
             title: i18n("Sharpen (CAS)"),
-            subtitle: i18n("Software contrast-adaptive sharpening — works at any resolution"),
+            subtitle: i18n("Software contrast-adaptive sharpening that works at any resolution"),
             spin_title: i18n("Strength"),
             adjustment: (0.5, 0.0, 1.0, 0.05, 0.1),
             digits: 2,

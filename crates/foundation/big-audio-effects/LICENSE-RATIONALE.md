@@ -20,7 +20,7 @@ There is **no**:
 
 LADSPA plugin paths are *referenced* as strings; the actual loading is
 performed by FFmpeg/mpv as separate processes (`Command::new`), which is
-mere aggregation under the GPL FAQ — not derivative work.
+mere aggregation under the GPL FAQ, not derivative work.
 
 ## Effect on the workspace
 

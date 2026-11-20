@@ -74,7 +74,7 @@ pub(super) fn resolve_open_files(
                 let mut folder = playlist::scan_folder_flat(parent);
                 playlist::sort_paths(&mut folder, sort_key, *sort_desc);
                 // A file the scan does not list (an extension it lacks) plays
-                // alone: starting at 0 played the folder's first video instead.
+                // alone, never the folder's first video in its place.
                 match folder.iter().position(|p| p == &paths[0]) {
                     Some(start) => Some(OpenedList {
                         entries: folder,

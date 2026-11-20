@@ -66,8 +66,8 @@ impl VideoShell {
                     self.controls
                         .emit(VideoControlsBarInput::SetPaused(paused || self.ended));
                 }
-                // Old "keep shown while paused": reveal the OSD when paused, and
-                // re-arm the auto-hide when resuming.
+                // The controls stay shown while paused; resuming re-arms the
+                // auto-hide.
                 self.osd.is_paused.set(paused);
                 if paused {
                     self.osd.show();
@@ -220,7 +220,7 @@ impl VideoShell {
                 match reason {
                     EndReason::Error => {
                         self.notify(&i18n(
-                            "Could not play this file — it may be unsupported or corrupt.",
+                            "Could not play this file: it may be unsupported or corrupt.",
                         ));
                         self.reveal_pending_welcome();
                     }

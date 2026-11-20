@@ -326,7 +326,7 @@ fn review_row(list: &gtk::ListBox, item: &ReviewItem) -> gtk::CheckButton {
     title.set_ellipsize(pango::EllipsizeMode::End);
     text.append(&title);
     let path_text = if item.availability == Availability::NotLocal {
-        i18n("Remote or unsupported location — not eligible for removal here")
+        i18n("Remote or unsupported location: not eligible for removal here")
     } else {
         item.track.file_path.clone()
     };
@@ -336,11 +336,9 @@ fn review_row(list: &gtk::ListBox, item: &ReviewItem) -> gtk::CheckButton {
     path.add_css_class("dim-label");
     text.append(&path);
     let reason = i18n(match item.availability {
-        Availability::Missing => {
-            "Not found — select only if you want to forget this library record"
-        }
+        Availability::Missing => "Not found; select only if you want to forget this library record",
         Availability::NoAccess => {
-            "Access could not be verified — check permissions before reviewing"
+            "Access could not be verified; check permissions before reviewing"
         }
         Availability::NotRegular => "This location is not a regular media file",
         Availability::NotLocal => "Remote items are not checked as local files",

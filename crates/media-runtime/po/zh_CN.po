@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:02-0300\n"
+"POT-Creation-Date: 2026-11-19 21:18-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -989,7 +989,7 @@ msgid ""
 msgstr "• 支持的格式：MP3、FLAC、OGG、Opus、M4A、WAV、WMA、AAC、APE、WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:308
-msgid "• Subfolders are included automatically — no need to add each one"
+msgid "• Subfolders are included automatically; no need to add each one"
 msgstr "• 子文件夹会自动包含，无需逐个添加"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:310
@@ -1303,7 +1303,7 @@ msgid "Delete permanently"
 msgstr "永久删除"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:233
-msgid "Skip trash — cannot be undone"
+msgid "Skip trash: cannot be undone"
 msgstr "跳过回收站——无法撤销"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
@@ -1578,7 +1578,7 @@ msgid "Select"
 msgstr "选择"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
-msgid "Remote or unsupported location — not eligible for removal here"
+msgid "Remote or unsupported location: not eligible for removal here"
 msgstr "远程或不受支持的位置——此处不可移除"
 
 #: crates/big-video-player/src/lib.rs:29
@@ -2009,7 +2009,7 @@ msgstr "RAVU 神经网络放大器"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:361
 msgid ""
-"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"Reconstructs detail lost during video compression, using RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 "重建视频压缩过程中丢失的细节——使用 RAVU r4，这是目前最好的片段着色器神经网络"
@@ -2028,19 +2028,19 @@ msgid "Disabled"
 msgstr "已禁用"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
-msgid "Quality A — Best (1080p sources)"
+msgid "Quality A: Best (1080p sources)"
 msgstr "质量 A — 最佳（1080p 源）"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
-msgid "Quality B — Soft Restore (720p sources)"
+msgid "Quality B: Soft Restore (720p sources)"
 msgstr "质量 B — 柔和修复（720p 源）"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
-msgid "Quality C — Fast (low-end GPU)"
+msgid "Quality C: Fast (low-end GPU)"
 msgstr "质量 C — 快速（低端 GPU）"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:404
-msgid "Select a quality preset — higher quality uses more GPU power"
+msgid "Select a quality preset; higher quality uses more GPU power"
 msgstr "选择质量预设——质量越高，占用的 GPU 性能越多"
 
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
@@ -2089,7 +2089,7 @@ msgid "Sharpen (CAS)"
 msgstr "锐化 (CAS)"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
-msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgid "Software contrast-adaptive sharpening that works at any resolution"
 msgstr "软件对比度自适应锐化——适用于任何分辨率"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:68
@@ -2291,7 +2291,7 @@ msgid "No providers configured. Click “Manage…” to add one."
 msgstr "尚未配置提供商。点击“管理…”添加一个。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:291
-msgid "Showing cached channels — updating…"
+msgid "Showing cached channels, updating…"
 msgstr "正在显示缓存的频道——正在更新…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:459
@@ -3570,7 +3570,7 @@ msgstr "已存在同名文件"
 msgid "Rename failed"
 msgstr "重命名失败"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:319
 #, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
@@ -4121,7 +4121,7 @@ msgid "The screenshot took too long and was not saved"
 msgstr "截图耗时过长，未保存"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
-msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play this file: it may be unsupported or corrupt."
 msgstr "无法播放此文件——它可能不受支持或已损坏。"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:256
@@ -4168,7 +4168,7 @@ msgstr "无法显示视频画面。请在“首选项”中尝试“自动”视
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
-msgid "Cut start: {t} — mark the other end"
+msgid "Cut start: {t}. Mark the other end"
 msgstr "剪切起点：{t}——请标记另一端"
 
 #: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
@@ -4584,7 +4584,7 @@ msgstr ""
 "音频输出并重新打开播放器。"
 
 #: crates/media-runtime/src/settings/messages.rs:6
-msgid "Access could not be verified — check permissions before reviewing"
+msgid "Access could not be verified; check permissions before reviewing"
 msgstr "无法验证访问权限——检查前请先确认权限"
 
 #: crates/media-runtime/src/settings/messages.rs:7
@@ -4604,7 +4604,7 @@ msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
 msgstr "更改已应用，但尚未确认已安全存储。请重试保存。"
 
 #: crates/media-runtime/src/settings/messages.rs:12
-msgid "Not found — select only if you want to forget this library record"
+msgid "Not found; select only if you want to forget this library record"
 msgstr "未找到——仅当您想忘记此资料库记录时才选择"
 
 #: crates/media-runtime/src/settings/messages.rs:13
@@ -5108,7 +5108,7 @@ msgid "Podcast Subscriptions Unavailable"
 msgstr "播客订阅不可用"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
-msgid "Connection error — try again"
+msgid "Connection error; try again"
 msgstr "连接错误——请重试"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:288
@@ -5286,7 +5286,7 @@ msgid "QR code"
 msgstr "二维码"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:60
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:187
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Web remote is off."
 msgstr "网页遥控已关闭。"
 
@@ -5319,20 +5319,20 @@ msgstr ""
 msgid "Open KDE Connect download page"
 msgstr "打开 KDE Connect 下载页面"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:121
 msgid "No local network found. Connect to a network and try again."
 msgstr "未找到本地网络。请连接网络后重试。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:144
 msgid "Scan the code with the phone's camera."
 msgstr "用手机相机扫描二维码。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:163
 #, rust-format
 msgid "Web remote stopped: {error}"
 msgstr "网页遥控已停止：{error}"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 msgid "Could not start server"
 msgstr "无法启动服务器"
 
