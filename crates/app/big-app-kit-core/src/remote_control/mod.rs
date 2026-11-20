@@ -18,7 +18,7 @@
 use log::{info, warn};
 use std::collections::HashMap;
 use std::io::{ErrorKind, Read, Write};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -64,14 +64,16 @@ pub struct ServerHandle {
     /// Fresh random capability for this server lifetime.
     pub token: String,
     stop: Arc<AtomicBool>,
-    wake: SocketAddr,
+    /// An idle worker waits on this pipe and the listener; a byte, or the
+    /// pipe closing with the handle, returns it to the stop check.
+    wake: std::io::PipeWriter,
 }
 impl ServerHandle {
     /// Revoke new dispatch immediately; drain no network uploads or writes.
+    /// Never waits, so the GTK thread may call it.
     pub fn stop(&self) {
         self.stop.store(true, Ordering::Release);
-        // An idle worker blocks in accept; a loopback connect returns it to the stop check.
-        let _ = TcpStream::connect_timeout(&self.wake, Duration::from_millis(250));
+        let _ = (&self.wake).write(b"x");
     }
 }
 impl Drop for ServerHandle {
@@ -138,23 +140,18 @@ pub fn start_scoped(
     let token = big_os_kit::random::random_hex_id()
         .map_err(|_| "Secure randomness unavailable".to_owned())?;
     let listener = TcpListener::bind(address).map_err(|e| format!("bind: {e}"))?;
+    listener
+        .set_nonblocking(true)
+        .map_err(|e| format!("listener: {e}"))?;
     let local = listener.local_addr().map_err(|e| format!("address: {e}"))?;
-    let wake = match local.ip() {
-        IpAddr::V4(ip) if ip.is_unspecified() => {
-            SocketAddr::new(Ipv4Addr::LOCALHOST.into(), local.port())
-        }
-        IpAddr::V6(ip) if ip.is_unspecified() => {
-            SocketAddr::new(Ipv6Addr::LOCALHOST.into(), local.port())
-        }
-        _ => local,
-    };
+    let (woken, wake) = std::io::pipe().map_err(|e| format!("wake pipe: {e}"))?;
     let flag = stop.clone();
     let secret = token.clone();
     // Detached: Drop on the GTK thread must not join.
     thread::Builder::new()
         .name("media-remote".into())
         .spawn(move || {
-            if let Err(error) = serve(&listener, &secret, &handlers, &flag) {
+            if let Err(error) = serve(&listener, &woken, &secret, &handlers, &flag) {
                 warn!("web-remote accept failed: {error}");
                 on_failure(error.to_string());
             }
@@ -309,21 +306,30 @@ fn admit_client(
     Accepted::More
 }
 
-/// Waits for a connection without waking while nothing happens.
-fn accept_blocking(listener: &TcpListener) -> std::io::Result<(TcpStream, SocketAddr)> {
-    listener.set_nonblocking(false)?;
-    let accepted = listener.accept();
-    listener.set_nonblocking(true)?;
-    accepted
+/// Waits, without waking while nothing happens, until a peer connects or
+/// `woken` turns readable.
+fn wait_for_peer(listener: &TcpListener, woken: &std::io::PipeReader) -> std::io::Result<()> {
+    use std::os::fd::AsFd;
+    big_os_kit::poll::poll(
+        &[
+            (Some(listener.as_fd()), libc::POLLIN),
+            (Some(woken.as_fd()), libc::POLLIN),
+        ],
+        -1,
+    )
+    .map(drop)
 }
 
 /// Admits pending connections; `Err` once the listener fails for good.
-fn accept_burst(listener: &TcpListener, clients: &mut Vec<Client>) -> std::io::Result<()> {
-    let mut next = if clients.is_empty() {
-        accept_blocking(listener)
-    } else {
-        listener.accept()
-    };
+fn accept_burst(
+    listener: &TcpListener,
+    woken: &std::io::PipeReader,
+    clients: &mut Vec<Client>,
+) -> std::io::Result<()> {
+    if clients.is_empty() {
+        wait_for_peer(listener, woken)?;
+    }
+    let mut next = listener.accept();
     // Finite accept budget per iteration; floods cannot starve existing peers.
     for _ in 0..MAX_CLIENTS {
         match admit_client(next, clients) {
@@ -342,6 +348,7 @@ fn accept_burst(listener: &TcpListener, clients: &mut Vec<Client>) -> std::io::R
 
 fn serve(
     listener: &TcpListener,
+    woken: &std::io::PipeReader,
     token: &str,
     handlers: &RemoteHandlers,
     stop: &AtomicBool,
@@ -356,7 +363,7 @@ fn serve(
         },
     };
     while !stop.load(Ordering::Acquire) {
-        if let Err(error) = accept_burst(listener, &mut clients) {
+        if let Err(error) = accept_burst(listener, woken, &mut clients) {
             stop.store(true, Ordering::Release);
             failure = Some(error);
         }
@@ -506,11 +513,14 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)] // a live socket
     fn failed_listener_stops_and_reports() {
-        // accept on a UDP socket fails with EOPNOTSUPP, which no retry can fix.
+        // accept on a UDP socket fails with EOPNOTSUPP, which no retry can fix;
+        // a datagram makes it readable, so the worker tries.
         let udp = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        udp.send_to(b"x", udp.local_addr().unwrap()).unwrap();
         let listener = TcpListener::from(std::os::fd::OwnedFd::from(udp));
         let stop = AtomicBool::new(false);
-        let result = serve(&listener, "token", &handlers(true), &stop);
+        let (woken, _wake) = std::io::pipe().unwrap();
+        let result = serve(&listener, &woken, "token", &handlers(true), &stop);
         assert_eq!(result.unwrap_err().kind(), ErrorKind::Unsupported);
         assert!(stop.load(Ordering::Acquire));
     }

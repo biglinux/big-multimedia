@@ -2,7 +2,7 @@
 //! Never creates one thread per child, never calls blocking Child::wait():
 //! the collector sleeps in poll(2) on a pidfd per child until one exits.
 use std::io;
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd};
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, ExitStatus};
 use std::sync::{Arc, Mutex, PoisonError};
 
@@ -141,12 +141,12 @@ impl Collector {
                 let collected = before - state.children.len();
                 state.reserved -= collected;
                 watched.clear();
-                watched.push(readable(&self.wake));
+                watched.push(self.wake.as_raw_fd());
                 watched.extend(
                     state
                         .children
                         .iter()
-                        .filter_map(|deferred| deferred.exit.as_ref().map(readable)),
+                        .filter_map(|deferred| deferred.exit.as_ref().map(AsRawFd::as_raw_fd)),
                 );
                 if state
                     .children
@@ -158,11 +158,15 @@ impl Collector {
                     -1
                 }
             };
-            // SAFETY: `watched` is a live array of its length. Its fds stay open
-            // while polling: only this thread drops children and their pidfds.
-            let ready =
-                unsafe { libc::poll(watched.as_mut_ptr(), watched.len() as libc::nfds_t, timeout) };
-            if ready > 0 && watched[0].revents != 0 {
+            // SAFETY: the fds stay open while polling: only this thread drops
+            // children and their pidfds, and `self.wake` lives with `self`.
+            let borrowed: Vec<_> = watched
+                .iter()
+                .map(|&fd| (Some(unsafe { BorrowedFd::borrow_raw(fd) }), libc::POLLIN))
+                .collect();
+            let woken = crate::poll::poll(&borrowed, timeout)
+                .is_ok_and(|ready| ready.first().is_some_and(|revents| *revents != 0));
+            if woken {
                 let mut count = [0_u8; 8];
                 // SAFETY: reads at most 8 bytes into a live buffer of that size,
                 // resetting the non-blocking eventfd's counter.
@@ -175,14 +179,6 @@ impl Collector {
                 }
             }
         }
-    }
-}
-
-fn readable(fd: &OwnedFd) -> libc::pollfd {
-    libc::pollfd {
-        fd: fd.as_raw_fd(),
-        events: libc::POLLIN,
-        revents: 0,
     }
 }
 

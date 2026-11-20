@@ -31,6 +31,7 @@ pub mod deferred;
 pub mod http_client;
 pub mod interface_addresses;
 pub mod keyring;
+pub mod poll;
 pub mod random;
 pub mod storage;
 pub mod subprocess;

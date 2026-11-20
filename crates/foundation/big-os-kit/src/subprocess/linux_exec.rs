@@ -8,7 +8,7 @@ use super::{
     build_command,
 };
 use std::io::{self, Read, Write};
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsFd, BorrowedFd};
 use std::process::ChildStdin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -103,9 +103,9 @@ pub(super) fn run(
             });
         }
         poll_pipes(
-            input.as_ref().map(AsRawFd::as_raw_fd),
-            stdout.as_ref().map(AsRawFd::as_raw_fd),
-            stderr.as_ref().map(AsRawFd::as_raw_fd),
+            input.as_ref().map(AsFd::as_fd),
+            stdout.as_ref().map(AsFd::as_fd),
+            stderr.as_ref().map(AsFd::as_fd),
             deadline,
         )?;
     }
@@ -114,33 +114,23 @@ pub(super) fn run(
 /// Sleep until a pipe is ready or 20 ms pass, whichever is first, so the
 /// caller rechecks cancellation and the deadline regularly.
 fn poll_pipes(
-    input: Option<i32>,
-    stdout: Option<i32>,
-    stderr: Option<i32>,
+    input: Option<BorrowedFd<'_>>,
+    stdout: Option<BorrowedFd<'_>>,
+    stderr: Option<BorrowedFd<'_>>,
     deadline: Instant,
 ) -> Result<(), Error> {
-    let mut fds = [
-        (input, libc::POLLOUT),
-        (stdout, libc::POLLIN),
-        (stderr, libc::POLLIN),
-    ]
-    .map(|(fd, events)| libc::pollfd {
-        fd: fd.unwrap_or(-1),
-        events,
-        revents: 0,
-    });
     let remaining = deadline.saturating_duration_since(Instant::now());
     let millis = remaining.as_millis().clamp(1, 20) as i32;
-    // SAFETY: fds lives through this call; poll ignores negative descriptors and
-    // the others are pipes the caller still owns.
-    let rc = unsafe { libc::poll(fds.as_mut_ptr(), fds.len() as libc::nfds_t, millis) };
-    if rc < 0 {
-        let error = io::Error::last_os_error();
-        if error.kind() != io::ErrorKind::Interrupted {
-            return Err(Error::Io(error));
-        }
-    }
-    Ok(())
+    crate::poll::poll(
+        &[
+            (input, libc::POLLOUT),
+            (stdout, libc::POLLIN),
+            (stderr, libc::POLLIN),
+        ],
+        millis,
+    )
+    .map(drop)
+    .map_err(Error::Io)
 }
 
 /// Write the next stdin chunk; closes the pipe once every byte is written.

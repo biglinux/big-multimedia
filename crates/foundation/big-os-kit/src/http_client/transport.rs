@@ -17,30 +17,18 @@ pub(super) struct Transport {
     failed: bool,
 }
 #[cfg(unix)]
-fn readiness(pipe: &impl std::os::fd::AsRawFd, events: i16, deadline: Instant) -> io::Result<()> {
+fn readiness(pipe: &impl std::os::fd::AsFd, events: i16, deadline: Instant) -> io::Result<()> {
     if Instant::now() >= deadline {
         return Err(io::Error::new(
             io::ErrorKind::TimedOut,
             "HTTP transport timed out",
         ));
     }
-    let mut fd = libc::pollfd {
-        fd: pipe.as_raw_fd(),
-        events,
-        revents: 0,
-    };
     let millis = deadline
         .saturating_duration_since(Instant::now())
         .as_millis()
         .clamp(1, 20) as i32;
-    // SAFETY: stack pollfd and its owned pipe remain valid until poll returns.
-    if unsafe { libc::poll(&mut fd, 1, millis) } < 0 {
-        let error = io::Error::last_os_error();
-        if error.kind() != io::ErrorKind::Interrupted {
-            return Err(error);
-        }
-    }
-    Ok(())
+    crate::poll::poll(&[(Some(pipe.as_fd()), events)], millis).map(drop)
 }
 /// Write curl's whole configuration to its nonblocking stdin before `deadline`,
 /// then close it: curl reads all of it before transferring.
