@@ -393,15 +393,10 @@ fn base_curl(deadline: Deadline) -> Command {
         Deadline::Total(timeout) => {
             command.args(["--max-time", &timeout.as_secs_f64().to_string()]);
         }
-        // Unbuffered output lets the reader see each received byte as progress.
-        Deadline::Stall(stall) => {
-            command.args([
-                "--no-buffer",
-                "--speed-limit",
-                "1",
-                "--speed-time",
-                &stall.as_secs().max(1).to_string(),
-            ]);
+        // The reader enforces the stall limit; unbuffered output lets it see
+        // each received byte as progress.
+        Deadline::Stall(_) => {
+            command.arg("--no-buffer");
         }
     }
     command
@@ -742,6 +737,20 @@ mod tests {
         response.reader.read_to_end(&mut body).unwrap();
         server.join().unwrap();
         assert_eq!(body, b"xxxxxx");
+    }
+
+    /// Each byte arrives inside the stall limit although the rate stays under
+    /// one byte per second.
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn slow_trickle_stream_completes() {
+        let (url, server) = trickle_server(4, Duration::from_millis(1500));
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(2)).unwrap();
+        let mut body = Vec::new();
+        response.reader.read_to_end(&mut body).unwrap();
+        server.join().unwrap();
+        assert_eq!(body, b"xxxx");
     }
 
     #[test]
