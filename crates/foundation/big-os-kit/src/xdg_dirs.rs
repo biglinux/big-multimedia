@@ -151,10 +151,12 @@ pub fn state_dir() -> Option<PathBuf> {
     xdg_base_dir("XDG_STATE_HOME", ".local/state")
 }
 
+/// Falls back to [`home_dir`], so the base folders and the home folder agree
+/// when `$HOME` is unset.
 fn xdg_base_dir(env_key: &str, home_relative: &str) -> Option<PathBuf> {
     resolve_base_dir(
         std::env::var_os(env_key),
-        std::env::var_os("HOME"),
+        home_dir().map(PathBuf::into_os_string),
         home_relative,
     )
 }
