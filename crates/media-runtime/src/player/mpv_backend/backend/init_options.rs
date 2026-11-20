@@ -1,7 +1,7 @@
 //! Per-mode mpv `MpvInitializer` option helpers (video, audio-only,
 //! playback, watch-later, IPC, custom).
 
-use log::error;
+use log::{error, warn};
 
 use super::client::{MpvError, MpvInitializer};
 
@@ -103,7 +103,7 @@ pub(super) fn apply_playback_options(init: &MpvInitializer) -> Result<(), MpvErr
     init.set_option("demuxer-max-back-bytes", "4MiB")?;
     init.set_option("framedrop", "vo")?;
     init.set_option("vd-lavc-skiploopfilter", "nonref")?;
-    init.set_option("volume-max", "150")?;
+    init.set_option("volume-max", super::volume::VOLUME_MAX_AT_START)?;
     init.set_option("audio-client-name", audio_client_name())?;
     init.set_option("screenshot-format", "png")?;
     init.set_option("screenshot-template", "%F-%p")?;
@@ -125,7 +125,7 @@ pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvE
     init.set_option("input-vo-keyboard", "no")?;
     init.set_option("osc", "no")?;
     init.set_option("osd-level", "0")?;
-    init.set_option("volume-max", "150")?;
+    init.set_option("volume-max", super::volume::VOLUME_MAX_AT_START)?;
     init.set_option("audio-client-name", audio_client_name())?;
     init.set_option("gapless-audio", "yes")?;
     let profile = crate::player::mpv_backend::types::AudioCacheProfile::Music;
@@ -147,20 +147,25 @@ pub(super) fn apply_watch_later(
     subdir: &str,
     options: &str,
 ) -> Result<(), MpvError> {
-    if let Some(data_dir) = gtk::glib::user_data_dir().to_str() {
+    if let Some(data_dir) = big_os_kit::xdg_dirs::data_dir()
+        && let Some(data_dir) = data_dir.to_str()
+    {
         let watch_dir = format!("{data_dir}/{subdir}");
         let _ = std::fs::create_dir_all(&watch_dir);
         init.set_option("watch-later-directory", watch_dir)?;
+    } else {
+        warn!("No XDG data directory; mpv keeps resume points in its own default");
     }
     init.set_option("watch-later-options", options)
 }
 
 /// Apply user-supplied `key=value` pairs; individual failures are logged
-/// but don't abort initialisation.
+/// but don't abort initialization. The log leaves out the value, which may
+/// hold a header or a password.
 pub(super) fn apply_custom_options(init: &MpvInitializer, opts: &[(String, String)]) {
     for (key, value) in opts {
         if let Err(error) = init.set_option(key, value.clone()) {
-            error!("Custom mpv option '{key}={value}' failed: {error}");
+            error!("Custom mpv option {key:?} rejected: {error}");
         }
     }
 }

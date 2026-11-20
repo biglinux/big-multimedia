@@ -8,12 +8,11 @@ mod stats;
 mod texture_pool;
 
 use super::egl_dmabuf::{self, EglDmaBufFns};
-use crate::player::mpv_backend::fast_render::FastRenderContext;
+use crate::player::mpv_backend::fast_render::{FastRenderContext, current_gl_driver};
 use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
 use std::cell::Cell;
-use std::ffi::CStr;
 use std::rc::Rc;
 pub(super) use texture_pool::CurrentContext;
 use texture_pool::{TextureLease, TexturePool};
@@ -88,7 +87,8 @@ impl OffloadRenderer {
 
         let _current = CurrentContext::enter(&gl_context);
 
-        let diagnostics = query_gl_diagnostics();
+        // SAFETY: `gl_context` was made current above.
+        let diagnostics = unsafe { current_gl_driver() };
         if renderer_has_nvidia_resize_leak(&diagnostics.renderer) {
             info!(
                 "Offload disabled for GL renderer '{}' because NVIDIA's \
@@ -401,58 +401,6 @@ impl OffloadRenderer {
         };
         self.render_frame(render_context, w, h);
     }
-}
-
-struct GlDiagnostics {
-    version: String,
-    renderer: String,
-}
-
-fn query_gl_diagnostics() -> GlDiagnostics {
-    type GlGetStringFn = unsafe extern "C" fn(u32) -> *const std::ffi::c_char;
-    const GL_VERSION_ENUM: u32 = 0x1F02;
-    const GL_RENDERER: u32 = 0x1F01;
-
-    // SAFETY: dlsym RTLD_DEFAULT queries the process global symbol table.
-    let get_string: Option<GlGetStringFn> = unsafe {
-        let ptr = libc::dlsym(libc::RTLD_DEFAULT, c"glGetString".as_ptr());
-        if ptr.is_null() {
-            None
-        } else {
-            Some(std::mem::transmute::<*mut std::ffi::c_void, GlGetStringFn>(
-                ptr,
-            ))
-        }
-    };
-
-    let Some(get_string) = get_string else {
-        return GlDiagnostics {
-            version: "<unavailable>".to_owned(),
-            renderer: "<unavailable>".to_owned(),
-        };
-    };
-
-    GlDiagnostics {
-        version: gl_string(get_string, GL_VERSION_ENUM),
-        renderer: gl_string(get_string, GL_RENDERER),
-    }
-}
-
-fn gl_string(
-    get_string: unsafe extern "C" fn(u32) -> *const std::ffi::c_char,
-    name: u32,
-) -> String {
-    // SAFETY: caller has a current GL context; glGetString returns a static
-    // nul-terminated string or null when unavailable.
-    let ptr = unsafe { get_string(name) };
-    if ptr.is_null() {
-        return "<null>".to_owned();
-    }
-    // SAFETY: non-null pointer from GL for this context.
-    unsafe { CStr::from_ptr(ptr) }
-        .to_str()
-        .unwrap_or("<invalid>")
-        .to_owned()
 }
 
 fn renderer_has_nvidia_resize_leak(renderer: &str) -> bool {

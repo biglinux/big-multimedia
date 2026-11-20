@@ -1,72 +1,28 @@
-use big_app_kit::subprocess::BigSubprocessSpec;
+use std::sync::atomic::AtomicBool;
+
+use big_media_data::media_probe::probe_json;
 
 use crate::media::playlist::VideoMeta;
 
 use super::cache::{
     ACTIVE_PROBES, CACHE_EVICT_COUNT, CacheEntry, MAX_CACHE_ENTRIES, MAX_PROBES, acquire_slot,
-    evict_oldest, file_mtime, meta_cache, release_slot, save_meta_cache_to_disk,
+    evict_oldest, meta_cache, release_slot, save_meta_cache_to_disk,
 };
-
-/// ffprobe's format and stream report for `path`. Synchronous; call from a
-/// background thread.
-pub(super) fn ffprobe_json(path: &str) -> Option<serde_json::Value> {
-    let output = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_streams",
-            "-show_format",
-            // A file name starting with `-` must not read as a flag.
-            "--",
-            path,
-        ])
-        .build()
-        .run()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).ok()
-}
 
 /// Synchronous; call from a background thread.
 pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
-    ffprobe_json(path).map(|root| parse_ffprobe(&root))
+    let root = probe_json(path, &AtomicBool::new(false)).ok()?;
+    Some(parse_ffprobe(&root))
 }
 
-/// Cache lookup → native container parser. No ffprobe.
-#[must_use]
-pub fn fast_duration_cached(path: &str) -> Option<f64> {
-    let current_mtime = file_mtime(path);
-
-    if let Some(entry) = meta_cache().lock().ok().and_then(|c| c.get(path).cloned())
-        && entry.mtime == current_mtime
-    {
-        return entry.meta.duration_secs;
-    }
-
-    let dur = super::super::native_duration::fast_read_duration(path)?;
-    if let Ok(mut cache) = meta_cache().lock() {
-        if cache.len() >= MAX_CACHE_ENTRIES {
-            evict_oldest(&mut cache, CACHE_EVICT_COUNT);
-        }
-        cache.entry(path.to_string()).or_insert(CacheEntry {
-            meta: VideoMeta {
-                duration_secs: Some(dur),
-                ..Default::default()
-            },
-            mtime: current_mtime,
-        });
-    }
-    Some(dur)
-}
-
-/// Atomic-semaphore gated to cap concurrent ffprobe children.
+/// Atomic-semaphore gated to cap concurrent ffprobe children. A network
+/// stream is never opened: the playlist probes every card, and an IPTV panel
+/// counts each probe against the account or refuses a stored channel URL.
 pub fn probe_metadata_cached(path: &str) -> Option<VideoMeta> {
-    let current_mtime = file_mtime(path);
+    if big_os_kit::url::is_stream_uri(path) {
+        return None;
+    }
+    let current_mtime = big_os_kit::storage::modified_secs(path).unwrap_or(0);
     if let Some(entry) = meta_cache().lock().ok()?.get(path).cloned()
         && entry.mtime == current_mtime
         && (entry.meta.codec.is_some() || entry.meta.resolution.is_some())

@@ -4,30 +4,90 @@
 
 use super::MpvBackend;
 
+/// mpv's description of a video's frames, empty or 0 where it gives none.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct VideoParams {
+    pub pixel_format: String,
+    /// The surface's real format under hardware decoding.
+    pub hw_pixel_format: String,
+    pub colormatrix: String,
+    pub primaries: String,
+    /// The transfer function, which mpv calls gamma.
+    pub gamma: String,
+    pub width: f64,
+}
+
 impl MpvBackend {
+    /// The frames the decoder produces (`video-dec-params`), as the file
+    /// describes them.
+    pub fn decoder_params(&self) -> VideoParams {
+        self.read_video_params("video-dec-params")
+    }
+
+    /// The frames as mpv outputs them (`video-params`), after its filters.
+    pub fn output_params(&self) -> VideoParams {
+        self.read_video_params("video-params")
+    }
+
+    fn read_video_params(&self, prefix: &str) -> VideoParams {
+        self.with_mpv(|m| {
+            let param = |key: &str| {
+                m.get_property::<String>(&format!("{prefix}/{key}"))
+                    .unwrap_or_default()
+            };
+            VideoParams {
+                pixel_format: param("pixelformat"),
+                hw_pixel_format: param("hw-pixelformat"),
+                colormatrix: param("colormatrix"),
+                primaries: param("primaries"),
+                gamma: param("gamma"),
+                width: m.get_property::<f64>(&format!("{prefix}/w")).unwrap_or(0.0),
+            }
+        })
+    }
+
+    /// The source video's size before scaling, when one is loaded.
+    pub fn video_source_size(&self) -> Option<(i64, i64)> {
+        self.with_mpv(|m| {
+            let w = m.get_property::<i64>("width").ok()?;
+            let h = m.get_property::<i64>("height").ok()?;
+            (w > 0 && h > 0).then_some((w, h))
+        })
+    }
+
+    /// Frames per second after the video filters, 0 when unknown.
+    pub fn estimated_fps(&self) -> f64 {
+        self.get_property_f64("estimated-vf-fps")
+    }
+
+    /// The hardware decoder in use, empty when decoding in software.
+    pub fn hwdec_current(&self) -> String {
+        self.get_property_string("hwdec-current")
+    }
+
     pub fn set_contrast(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("contrast", val);
+            m.set_property_logged("contrast", val);
         });
     }
     pub fn set_brightness(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("brightness", val);
+            m.set_property_logged("brightness", val);
         });
     }
     pub fn set_gamma(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("gamma", val);
+            m.set_property_logged("gamma", val);
         });
     }
     pub fn set_saturation(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("saturation", val);
+            m.set_property_logged("saturation", val);
         });
     }
     pub fn set_hue(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("hue", val);
+            m.set_property_logged("hue", val);
         });
     }
     pub fn get_contrast(&self) -> i64 {
@@ -48,13 +108,13 @@ impl MpvBackend {
 
     pub fn set_video_zoom(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-zoom", val);
+            m.set_property_logged("video-zoom", val);
         });
     }
 
     pub fn set_video_rotate(&self, degrees: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-rotate", degrees);
+            m.set_property_logged("video-rotate", degrees);
         });
     }
 
@@ -62,12 +122,15 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property("video-rotate").unwrap_or(0))
     }
 
+    /// The `vf` label of the filter [`Self::set_video_flip`] owns.
+    pub const FLIP_VF_LABEL: &str = "big-flip";
+
     pub fn set_video_flip(&self, hflip: bool, vflip: bool) {
         match (hflip, vflip) {
-            (false, false) => self.vf_remove("big-flip"),
-            (true, false) => self.vf_append("big-flip", "hflip"),
-            (false, true) => self.vf_append("big-flip", "vflip"),
-            (true, true) => self.vf_append("big-flip", "hflip,vflip"),
+            (false, false) => self.vf_remove(Self::FLIP_VF_LABEL),
+            (true, false) => self.vf_append(Self::FLIP_VF_LABEL, "hflip"),
+            (false, true) => self.vf_append(Self::FLIP_VF_LABEL, "vflip"),
+            (true, true) => self.vf_append(Self::FLIP_VF_LABEL, "hflip,vflip"),
         }
     }
 
@@ -77,7 +140,7 @@ impl MpvBackend {
 
     pub fn set_panscan(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("panscan", val);
+            m.set_property_logged("panscan", val);
         });
     }
 
@@ -85,24 +148,34 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property::<f64>("panscan").unwrap_or(0.0))
     }
 
+    pub fn video_crop(&self) -> String {
+        self.get_property_string("video-crop")
+    }
+
     pub fn set_video_crop(&self, crop: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-crop", crop.to_string());
+            m.set_property_logged("video-crop", crop.to_string());
         });
+    }
+
+    pub fn deinterlace(&self) -> bool {
+        self.get_property_bool("deinterlace")
     }
 
     pub fn set_deinterlace(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("deinterlace", if enable { "yes" } else { "no" });
+            m.set_property_logged("deinterlace", if enable { "yes" } else { "no" });
         });
     }
 
-    /// Read the picture's colours as `mode` says: "pq" (HDR10), "hlg" or
+    /// Read the picture's colors as `mode` says: "pq" (HDR10), "hlg" or
     /// "sdr"; anything else trusts the file. A recording can describe no
-    /// colours at all (a DVB sample: nothing in the stream, nothing per
+    /// colors at all (a DVB sample: nothing in the stream, nothing per
     /// frame), and its HDR then plays grey and washed out. mpv's own format
     /// filter only relabels the frames, so decoding stays on the GPU.
-    pub fn set_source_colours(&self, mode: &str) {
+    pub const SOURCE_COLORS_VF_LABEL: &str = "source-colors";
+
+    pub fn set_source_colors(&self, mode: &str) {
         let format = match mode {
             "pq" => "format=gamma=pq:primaries=bt.2020:colormatrix=bt.2020-ncl",
             "hlg" => "format=gamma=hlg:primaries=bt.2020:colormatrix=bt.2020-ncl",
@@ -110,34 +183,41 @@ impl MpvBackend {
             _ => "",
         };
         self.with_mpv(|m| {
-            let _ = m.command("vf", &["remove", "@source-colours"]);
+            let label = Self::SOURCE_COLORS_VF_LABEL;
+            let _ = m.command("vf", &["remove", &format!("@{label}")]);
             if !format.is_empty() {
-                let _ = m.command("vf", &["add", &format!("@source-colours:{format}")]);
+                let _ = m.command("vf", &["add", &format!("@{label}:{format}")]);
             }
         });
     }
 
     pub fn set_tone_mapping(&self, algo: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("tone-mapping", algo.to_string());
+            m.set_property_logged("tone-mapping", algo.to_string());
         });
     }
 
+    /// 0 is mpv's `auto`, which the option takes only as text.
     pub fn set_target_peak(&self, nits: i64) {
+        let value = if nits == 0 {
+            "auto".to_string()
+        } else {
+            nits.to_string()
+        };
         self.with_mpv(|m| {
-            let _ = m.set_property("target-peak", nits);
+            m.set_property_logged("target-peak", value);
         });
     }
 
     pub fn set_hdr_compute_peak(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("hdr-compute-peak", enable);
+            m.set_property_logged("hdr-compute-peak", enable);
         });
     }
 
     pub fn set_gamut_mapping_mode(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("gamut-mapping-mode", mode.to_string());
+            m.set_property_logged("gamut-mapping-mode", mode.to_string());
         });
     }
 
@@ -264,7 +344,7 @@ mod flip_tests {
     #[test]
     fn flip_preserves_other_filters_and_hardware_preference() {
         let (sender, _events) = async_channel::unbounded();
-        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        let backend = MpvBackend::new_audio_only_with_output(sender, "").unwrap();
         for preference in ["no", "auto-safe", "nvdec-copy"] {
             backend.set_hwdec(preference);
             let expected = backend.get_hwdec();
@@ -287,7 +367,7 @@ mod flip_tests {
     #[test]
     fn hardware_choice_changed_during_effects_survives_removal() {
         let (sender, _events) = async_channel::unbounded();
-        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        let backend = MpvBackend::new_audio_only_with_output(sender, "").unwrap();
         backend.set_hwdec("auto-safe");
         backend.vf_append("effect", "hflip");
         assert_eq!(

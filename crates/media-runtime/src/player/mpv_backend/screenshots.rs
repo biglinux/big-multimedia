@@ -20,8 +20,23 @@ pub enum ScreenshotResult {
         path: PathBuf,
         durability_confirmed: bool,
     },
-    Failed,
+    /// mpv could not write the picture or it could not be put in place; the
+    /// text says why.
+    Failed(String),
     Cancelled,
+}
+
+/// Why a screenshot never reached mpv.
+#[derive(Debug)]
+pub enum ScreenshotRequestError {
+    /// The target folder cannot take the file.
+    Folder(io::Error),
+    /// As many screenshots as the backend holds are still being written.
+    Busy,
+    /// The window that asked for it has closed.
+    Closed,
+    /// mpv refused the command; the text says why.
+    Rejected(String),
 }
 struct Request {
     stage: StagedFile,
@@ -47,19 +62,16 @@ impl Screenshots {
         stage: StagedFile,
         target: PathBuf,
         alive: Arc<AtomicBool>,
-    ) -> io::Result<u64> {
+    ) -> Result<u64, ScreenshotRequestError> {
         let mut state = self
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if !alive.load(Ordering::Acquire) {
-            return Err(io::Error::other("screenshot owner closed"));
+            return Err(ScreenshotRequestError::Closed);
         }
         if state.requests.len() >= LIMIT {
-            return Err(io::Error::new(
-                io::ErrorKind::WouldBlock,
-                "screenshot queue is full",
-            ));
+            return Err(ScreenshotRequestError::Busy);
         }
         let id = loop {
             let id = state.next;
@@ -130,7 +142,9 @@ impl Screenshots {
             return Some(ScreenshotResult::Cancelled);
         }
         if error < 0 {
-            return Some(ScreenshotResult::Failed);
+            return Some(ScreenshotResult::Failed(
+                super::MpvError::Raw(error).to_string(),
+            ));
         }
         match validate_png(request.stage.path())
             .and_then(|()| request.stage.publish(&request.target))
@@ -141,7 +155,7 @@ impl Screenshots {
             }),
             Err(error) => {
                 log::warn!("Screenshot output could not be published: {}", error.kind());
-                Some(ScreenshotResult::Failed)
+                Some(ScreenshotResult::Failed(error.to_string()))
             }
         }
     }
@@ -156,18 +170,7 @@ impl Screenshots {
     }
 }
 fn validate_png(path: &std::path::Path) -> io::Result<()> {
-    use std::fs::OpenOptions;
-    let mut options = OpenOptions::new();
-    options.read(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let mut file = options.open(path)?;
-    if !file.metadata()?.is_file() {
-        return Err(io::Error::other("screenshot is not regular"));
-    }
+    let mut file = big_os_kit::storage::open_regular_read(path)?;
     let mut signature = [0_u8; 8];
     file.read_exact(&mut signature)?;
     if &signature != b"\x89PNG\r\n\x1a\n" {
@@ -202,5 +205,24 @@ mod tests {
         assert!(!private.exists());
         assert!(!target.exists());
         std::fs::remove_dir(dir).unwrap();
+    }
+
+    #[test]
+    fn refused_write_reports_mpv_reason() {
+        let dir = std::env::temp_dir().join(format!("screenshot-refused-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let target = dir.join("shot.png");
+        let stage = StagedFile::new(&target).unwrap();
+        let registry = Screenshots::new();
+        let id = registry
+            .register(stage, target.clone(), Arc::new(AtomicBool::new(true)))
+            .unwrap();
+        // -12 is MPV_ERROR_COMMAND in mpv's client.h.
+        let Some(ScreenshotResult::Failed(reason)) = registry.complete(id, -12) else {
+            panic!("a refused write must fail");
+        };
+        assert!(reason.contains("error running command"), "{reason}");
+        assert!(!target.exists());
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

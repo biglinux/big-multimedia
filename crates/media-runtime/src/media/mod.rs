@@ -6,6 +6,10 @@ pub mod fuzzy_search;
 pub mod iptv;
 pub mod metadata_cache;
 pub(crate) mod native_duration;
+#[cfg(fuzzing)]
+pub use native_duration::fuzz_read_duration;
 pub mod playlist;
+/// Playlist file save picker and result alert.
+pub mod playlist_export;
 pub mod playlist_scan;
 pub mod thumbnail;

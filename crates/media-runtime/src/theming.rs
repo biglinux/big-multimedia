@@ -1,14 +1,14 @@
 //! App settings adapter for shared libadwaita theme helpers.
 
 pub use big_relm4_components::theme::{
-    ColorPalette, HIGH_CONTRAST_CSS, apply_color_scheme, build_adwaita_color_overrides,
-    inject_palette_css, parse_hex_color, parse_hex_to_rgba,
+    ColorPalette, HIGH_CONTRAST_CSS, build_adwaita_color_overrides, parse_hex_color,
+    parse_hex_to_rgba,
 };
 
 /// libadwaita's palette for the scheme in force. libadwaita derives these
-/// variables from named colours that follow the scheme; a desktop theme that
+/// variables from named colors that follow the scheme; a desktop theme that
 /// pins the variables as user CSS (BigStyle writes the system's light ones)
-/// would leave light-theme colours on a forced dark scheme.
+/// would leave light-theme colors on a forced dark scheme.
 const SCHEME_PALETTE_CSS: &str = "\
 :root {
   --window-bg-color: @window_bg_color;
@@ -47,9 +47,22 @@ const SCHEME_PALETTE_CSS: &str = "\
 @define-color player_icon_color @window_fg_color;
 ";
 
-/// The palette CSS for `color_source`: the user's colours for `"custom"`,
-/// libadwaita's own for a forced light or dark scheme, `None` to follow the
-/// system.
+/// Force the scheme `color_source` names; custom colors take the scheme their
+/// background (`bg_key`) reads as, so what they do not color follows it.
+pub fn apply_color_scheme(
+    settings: &crate::settings::Settings,
+    color_source: &str,
+    bg_key: crate::settings::keys::StringKey,
+) {
+    big_relm4_components::theme::apply_color_scheme(
+        color_source,
+        parse_hex_color(&settings.get_string(bg_key)),
+    );
+}
+
+/// The palette CSS for `color_source`: the user's colors over libadwaita's
+/// palette for `"custom"`, libadwaita's own for a forced light or dark scheme,
+/// `None` to follow the system.
 pub fn build_palette_css(
     settings: &crate::settings::Settings,
     color_source: &str,
@@ -59,12 +72,15 @@ pub fn build_palette_css(
     dialog_key: crate::settings::keys::StringKey,
 ) -> Option<String> {
     match color_source {
-        "custom" => Some(build_adwaita_color_overrides(&ColorPalette {
-            bg: parse_hex_color(&settings.get_string(bg_key)),
-            fg: parse_hex_color(&settings.get_string(fg_key)),
-            icon: parse_hex_color(&settings.get_string(icon_key)),
-            dialog: parse_hex_color(&settings.get_string(dialog_key)),
-        })),
+        "custom" => Some(
+            SCHEME_PALETTE_CSS.to_owned()
+                + &build_adwaita_color_overrides(&ColorPalette {
+                    bg: parse_hex_color(&settings.get_string(bg_key)),
+                    fg: parse_hex_color(&settings.get_string(fg_key)),
+                    icon: parse_hex_color(&settings.get_string(icon_key)),
+                    dialog: parse_hex_color(&settings.get_string(dialog_key)),
+                }),
+        ),
         "gtk-light" | "gtk-dark" | "gradient" => Some(SCHEME_PALETTE_CSS.to_owned()),
         _ => None,
     }
@@ -76,7 +92,7 @@ mod tests {
 
     #[test]
     fn system_colors_bring_no_palette() {
-        let settings = crate::settings::Settings::new("test");
+        let settings = crate::settings::Settings::memory_only();
         let result = build_palette_css(
             &settings,
             "gtk-default",

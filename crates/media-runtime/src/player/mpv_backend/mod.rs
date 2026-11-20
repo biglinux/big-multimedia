@@ -5,11 +5,14 @@
 
 mod backend;
 mod screenshots;
-pub use screenshots::ScreenshotResult;
+pub use screenshots::{ScreenshotRequestError, ScreenshotResult};
 mod types;
 
 pub use backend::{MpvBackend, MpvError};
-pub use types::{AudioCacheProfile, AudioEffects, AudioMetadata, PlayerEvent, TrackMetadata};
+pub use types::{
+    AudioCacheProfile, AudioEffects, AudioMetadata, EndReason, PlayerEvent, TargetSource,
+    TrackMetadata,
+};
 
 #[cfg(feature = "video")]
 pub(crate) fn is_proprietary_nvidia_session() -> bool {
@@ -42,6 +45,8 @@ pub mod fast_render;
 pub mod filters;
 #[cfg(feature = "video")]
 pub mod frame_layout;
+#[cfg(feature = "video")]
+pub mod gl_proc_address;
 /// GPU-offloaded video renderer: DMA-BUF export (MESA) or GdkGLTexture
 /// fallback → `GtkGraphicsOffload` → Wayland subsurface. Used by both the
 /// video player and the video converter's edit page.
@@ -57,13 +62,15 @@ mod properties_subtitles;
 #[cfg(feature = "video")]
 mod properties_video;
 #[cfg(feature = "video")]
+pub use properties_video::VideoParams;
+#[cfg(feature = "video")]
 pub mod shader_gen;
 #[cfg(feature = "video")]
 pub mod software_frames;
 #[cfg(feature = "video")]
 pub mod video_surface;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "video"))]
 mod tests {
     use super::env_value_names_nvidia_driver;
 

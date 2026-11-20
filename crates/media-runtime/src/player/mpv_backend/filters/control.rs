@@ -56,7 +56,7 @@ impl MpvBackend {
             }
             let result = mpv.command("vf", &[operation, value]);
             debug!("[VF] {operation}: {result:?}");
-            // The source-colours format filter needs no CPU frames, so only
+            // The source-colors format filter needs no CPU frames, so only
             // a remaining lavfi filter keeps the copying decoder.
             let empty = mpv
                 .get_property::<String>("vf")
@@ -64,7 +64,7 @@ impl MpvBackend {
             if (empty || (result.is_err() && starting))
                 && let Some(original) = preference.take()
             {
-                let _ = mpv.set_property("hwdec", original);
+                mpv.set_property_logged("hwdec", original);
             }
         });
     }

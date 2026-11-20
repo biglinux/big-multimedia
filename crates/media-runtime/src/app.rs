@@ -1,15 +1,20 @@
 //! Bootstrap helpers shared by all binaries: env, gettext, locale,
-//! GResource registration, decoration-icon strip, About dialog builder.
+//! GResource registration, decoration-icon strip, About dialog builder,
+//! and the slot that delivers opened files to the open shell.
+
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use std::thread::LocalKey;
 
 use gtk::gio;
 use gtk::glib;
 
 use crate::config;
 use crate::settings::{self, keys};
-use crate::shared::theming;
+use crate::theming;
 
 /// Set an environment variable only when it is currently unset.
-pub fn set_default_env(name: &str, value: &str) {
+fn set_default_env(name: &str, value: &str) {
     if std::env::var_os(name).is_none() {
         // SAFETY: callers run this from main() before any other thread starts.
         unsafe {
@@ -19,7 +24,7 @@ pub fn set_default_env(name: &str, value: &str) {
 }
 
 /// Set an environment variable during bootstrap regardless of previous value.
-pub fn set_bootstrap_env(name: &str, value: &str) {
+fn set_bootstrap_env(name: &str, value: &str) {
     // SAFETY: callers run this from main() before any other thread starts.
     unsafe {
         std::env::set_var(name, value);
@@ -108,6 +113,7 @@ pub fn log_active_renderer_once(window: &impl glib::object::IsA<gtk::Window>) {
             .map_or_else(|| "unknown".to_owned(), |r| r.type_().name().to_string());
         let pinned =
             std::env::var("GSK_RENDERER").unwrap_or_else(|_| "unset (GTK default)".to_owned());
+        // Once at startup: the renderer every drawing bug report needs.
         log::info!("GSK renderer in use: {renderer} (GSK_RENDERER={pinned})");
     });
 }
@@ -118,12 +124,7 @@ pub fn init_logging(default_rust_log: &str) {
 }
 
 /// Falls back to `<repo>/locale` so `cargo run` works without an install step.
-pub fn init_gettext() {
-    // SAFETY: called from main() before any other thread starts, as
-    // init_numeric_locale is.
-    unsafe {
-        gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
-    }
+fn bind_text_domain() {
     let locale_dir = resolve_locale_dir();
     gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, locale_dir)
         .expect("Failed to bind textdomain");
@@ -139,10 +140,7 @@ fn resolve_locale_dir() -> String {
     if let Some(private) = private_locale_dir() {
         return private;
     }
-    let installed = std::path::Path::new(config::LOCALEDIR)
-        .join("pt_BR/LC_MESSAGES")
-        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
-    if installed.exists() {
+    if has_catalog(std::path::Path::new(config::LOCALEDIR)) {
         return config::LOCALEDIR.to_string();
     }
     if let Some(dev) = dev_locale_dir() {
@@ -156,10 +154,15 @@ fn private_locale_dir() -> Option<String> {
     let exe = std::env::current_exe().ok()?;
     let stem = exe.file_stem()?.to_str()?;
     let dir = format!("/usr/share/{stem}/locale");
-    let probe = std::path::Path::new(&dir)
-        .join("pt_BR/LC_MESSAGES")
-        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
-    probe.exists().then_some(dir)
+    has_catalog(std::path::Path::new(&dir)).then_some(dir)
+}
+
+/// Whether `dir` holds our compiled catalog; pt_BR always ships, so it stands
+/// for the rest.
+fn has_catalog(dir: &std::path::Path) -> bool {
+    dir.join("pt_BR/LC_MESSAGES")
+        .join(format!("{}.mo", config::GETTEXT_PACKAGE))
+        .exists()
 }
 
 fn dev_locale_dir() -> Option<String> {
@@ -167,39 +170,41 @@ fn dev_locale_dir() -> Option<String> {
     let exe_dir = exe.parent()?;
     for rel in ["../../locale", "../locale", "locale"] {
         let candidate = exe_dir.join(rel);
-        if candidate
-            .join("pt_BR/LC_MESSAGES")
-            .join(format!("{}.mo", config::GETTEXT_PACKAGE))
-            .exists()
-        {
+        if has_catalog(&candidate) {
             return Some(candidate.to_string_lossy().into_owned());
         }
     }
     None
 }
 
-/// libmpv parses numbers via libc and breaks under non-C decimal separators.
-pub fn init_numeric_locale() {
-    // GTK must preserve the per-category locale set by gettext + libmpv boot,
-    // including when LC_ALL overrides LC_NUMERIC in the inherited environment.
+/// Take the session's locale, with C for numbers: libmpv parses numbers through
+/// libc and refuses to start under another `LC_NUMERIC`.
+///
+/// Process-wide, so it runs from main() before any other thread starts: in a
+/// standalone player, and in a host before it embeds one.
+pub fn init_process_locale() {
+    // GTK must keep these categories, including when LC_ALL overrides
+    // LC_NUMERIC in the inherited environment.
     if !gtk::is_initialized() {
         gtk::disable_setlocale();
     }
-    set_bootstrap_env("LC_NUMERIC", "C");
-    let c_locale = std::ffi::CString::new("C").expect("static string has no null bytes");
     // SAFETY: called from main() before any other thread starts.
     unsafe {
-        libc::setlocale(libc::LC_NUMERIC, c_locale.as_ptr());
+        gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+    }
+    set_bootstrap_env("LC_NUMERIC", "C");
+    // SAFETY: as above.
+    unsafe {
+        libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr());
     }
 }
 
-/// Boot steps every player entry point (standalone and embedded) shares: bind
-/// the shared gettext domain, route the components' strings through it, pin
-/// the numeric locale, and register the player's GResource bundles.
+/// Boot steps every player entry point (standalone and embedded) shares, none
+/// of them process-wide: bind the shared gettext domain, route the components'
+/// strings through it, and register the player's GResource bundles.
 pub fn boot_player(resource_bundles: &[&'static [u8]]) {
-    init_gettext();
+    bind_text_domain();
     big_media_components::install_media_components_translator(crate::i18n::i18n);
-    init_numeric_locale();
     for bundle in resource_bundles {
         register_resource_bytes(bundle);
     }
@@ -214,8 +219,9 @@ pub fn register_resource_bytes(resource_bytes: &'static [u8]) {
 pub fn apply_startup_color_scheme(
     settings: &settings::Settings,
     color_source_key: keys::StringKey,
+    bg_key: keys::StringKey,
 ) {
-    theming::apply_color_scheme(&settings.get_string(color_source_key));
+    theming::apply_color_scheme(settings, &settings.get_string(color_source_key), bg_key);
 }
 
 /// Bring the player forward for files opened from outside: present its
@@ -230,6 +236,104 @@ pub fn present_for_open(app: &gtk::Application) {
     match app.active_window() {
         Some(window) => window.present(),
         None => app.activate(),
+    }
+}
+
+/// The open shell that files from the desktop or a host are delivered to.
+///
+/// A shell registers through [`ShellInputSlot::bind`] and leaves when its
+/// content unrealizes or its registration drops, so a closed shell receives
+/// nothing; an older shell leaving never removes a newer one.
+pub struct ShellInputSlot<S> {
+    current: RefCell<Option<(u64, S)>>,
+    next_token: Cell<u64>,
+}
+
+impl<S> Default for ShellInputSlot<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> ShellInputSlot<S> {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            current: RefCell::new(None),
+            next_token: Cell::new(0),
+        }
+    }
+
+    fn register(&self, sender: S) -> u64 {
+        let token = self.next_token.get();
+        self.next_token.set(token.wrapping_add(1));
+        *self.current.borrow_mut() = Some((token, sender));
+        token
+    }
+
+    fn clear(&self, token: u64) {
+        let mut current = self.current.borrow_mut();
+        if current
+            .as_ref()
+            .is_some_and(|(registered, _)| *registered == token)
+        {
+            current.take();
+        }
+    }
+}
+
+impl<S: Clone + 'static> ShellInputSlot<S> {
+    /// The open shell's input, or `None` when no shell is open.
+    pub fn sender(&self) -> Option<S> {
+        self.current
+            .borrow()
+            .as_ref()
+            .map(|(_, sender)| sender.clone())
+    }
+
+    /// Register `sender` now and again each time `root` is realized after an
+    /// unrealize, as when the content moves to another window.
+    pub fn bind(
+        slot: &'static LocalKey<Self>,
+        root: &impl glib::object::IsA<gtk::Widget>,
+        sender: S,
+    ) -> ShellInputRegistration<S> {
+        use gtk::prelude::*;
+        let token = Rc::new(Cell::new(Some(
+            slot.with(|slot| slot.register(sender.clone())),
+        )));
+        root.connect_realize({
+            let token = token.clone();
+            move |_| {
+                if token.get().is_none() {
+                    token.set(Some(slot.with(|slot| slot.register(sender.clone()))));
+                }
+            }
+        });
+        root.connect_unrealize({
+            let token = token.clone();
+            move |_| {
+                if let Some(token) = token.take() {
+                    slot.with(|slot| slot.clear(token));
+                }
+            }
+        });
+        ShellInputRegistration { slot, token }
+    }
+}
+
+/// Removes its shell from a [`ShellInputSlot`] when dropped.
+pub struct ShellInputRegistration<S: 'static> {
+    slot: &'static LocalKey<ShellInputSlot<S>>,
+    token: Rc<Cell<Option<u64>>>,
+}
+
+impl<S: 'static> Drop for ShellInputRegistration<S> {
+    fn drop(&mut self) {
+        if let Some(token) = self.token.take() {
+            // At thread exit the slot may already be destroyed, leaving nothing to clear.
+            let _ = self.slot.try_with(|slot| slot.clear(token));
+        }
     }
 }
 
@@ -287,6 +391,17 @@ fn strip_icon_from_layout(raw: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn older_shell_keeps_newer_registration() {
+        let slot = ShellInputSlot::new();
+        let older = slot.register("older");
+        let newer = slot.register("newer");
+        slot.clear(older);
+        assert_eq!(slot.sender(), Some("newer"));
+        slot.clear(newer);
+        assert_eq!(slot.sender(), None);
+    }
 
     #[test]
     fn strip_icon_kde_layout() {

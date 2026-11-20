@@ -1,4 +1,5 @@
 use crate::media::playlist::VideoMeta;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -58,53 +59,46 @@ pub(in crate::media) fn meta_cache() -> &'static Mutex<HashMap<String, CacheEntr
     CACHE.get_or_init(|| Mutex::new(load_meta_cache_from_disk()))
 }
 
-pub(super) fn file_mtime(path: &str) -> u64 {
-    std::fs::metadata(path)
-        .and_then(|m| m.modified())
-        .map_or(0, |t| {
-            t.duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-        })
+/// One file's entry as the cache file stores it; a missing field reads as
+/// unknown.
+#[derive(Default, Serialize, Deserialize)]
+#[serde(default)]
+struct StoredEntry {
+    mtime: u64,
+    duration: Option<f64>,
+    resolution: Option<String>,
+    codec: Option<String>,
+    audio_tracks: u32,
+    subtitle_tracks: u32,
 }
 
 pub(super) fn save_meta_cache_to_disk(cache: &HashMap<String, CacheEntry>) {
     let Some(path) = meta_cache_path() else {
         return;
     };
-    let mut cache_json_root = serde_json::Map::with_capacity(cache.len());
-    for (file_path, entry) in cache {
-        let mut val = serde_json::Map::new();
-        val.insert("mtime".into(), serde_json::Value::from(entry.mtime));
-        if let Some(dur) = entry.meta.duration_secs {
-            val.insert("duration".into(), serde_json::Value::from(dur));
+    let stored: HashMap<&str, StoredEntry> = cache
+        .iter()
+        .map(|(file_path, entry)| {
+            let stored = StoredEntry {
+                mtime: entry.mtime,
+                duration: entry.meta.duration_secs,
+                resolution: entry.meta.resolution.clone(),
+                codec: entry.meta.codec.clone(),
+                audio_tracks: entry.meta.audio_tracks,
+                subtitle_tracks: entry.meta.subtitle_tracks,
+            };
+            (file_path.as_str(), stored)
+        })
+        .collect();
+    let json = match serde_json::to_vec(&stored) {
+        Ok(json) => json,
+        Err(error) => {
+            log::warn!("metadata cache not saved: {error}");
+            return;
         }
-        if let Some(ref resolution_text) = entry.meta.resolution {
-            val.insert(
-                "resolution".into(),
-                serde_json::Value::from(resolution_text.as_str()),
-            );
-        }
-        if let Some(ref codec) = entry.meta.codec {
-            val.insert("codec".into(), serde_json::Value::from(codec.as_str()));
-        }
-        if entry.meta.audio_tracks > 0 {
-            val.insert(
-                "audio_tracks".into(),
-                serde_json::Value::from(entry.meta.audio_tracks),
-            );
-        }
-        if entry.meta.subtitle_tracks > 0 {
-            val.insert(
-                "subtitle_tracks".into(),
-                serde_json::Value::from(entry.meta.subtitle_tracks),
-            );
-        }
-        cache_json_root.insert(file_path.clone(), serde_json::Value::Object(val));
-    }
-    let json = serde_json::Value::Object(cache_json_root).to_string();
-    if let Err(error) = big_os_kit::storage::atomic_write(&path, json.as_bytes()) {
-        log::debug!("metadata cache not saved: {error}");
+    };
+    if let Err(error) = big_os_kit::storage::atomic_write(&path, &json) {
+        log::warn!("metadata cache not saved: {error}");
     }
 }
 
@@ -144,27 +138,31 @@ fn load_meta_cache_from_disk() -> HashMap<String, CacheEntry> {
     else {
         return HashMap::new();
     };
-    let Ok(root) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
-        return HashMap::new();
-    };
-    let Some(cache_json_root) = root.as_object() else {
+    parse_meta_cache(&bytes)
+}
+
+pub(super) fn parse_meta_cache(bytes: &[u8]) -> HashMap<String, CacheEntry> {
+    let Ok(root) = serde_json::from_slice::<HashMap<String, serde_json::Value>>(bytes) else {
         return HashMap::new();
     };
 
-    let mut map = HashMap::with_capacity(cache_json_root.len());
-    for (file_path, val) in cache_json_root {
-        let mtime = val["mtime"].as_u64().unwrap_or(0);
+    // An entry that does not read is dropped alone; the rest stay cached.
+    let mut map = HashMap::with_capacity(root.len());
+    for (file_path, value) in root {
+        let Ok(stored) = serde_json::from_value::<StoredEntry>(value) else {
+            continue;
+        };
         let entry = CacheEntry {
             meta: VideoMeta {
-                duration_secs: val["duration"].as_f64(),
-                resolution: val["resolution"].as_str().map(String::from),
-                codec: val["codec"].as_str().map(String::from),
-                audio_tracks: val["audio_tracks"].as_u64().unwrap_or(0) as u32,
-                subtitle_tracks: val["subtitle_tracks"].as_u64().unwrap_or(0) as u32,
+                duration_secs: stored.duration,
+                resolution: stored.resolution,
+                codec: stored.codec,
+                audio_tracks: stored.audio_tracks,
+                subtitle_tracks: stored.subtitle_tracks,
             },
-            mtime,
+            mtime: stored.mtime,
         };
-        map.insert(file_path.clone(), entry);
+        map.insert(file_path, entry);
     }
     map
 }

@@ -3,6 +3,7 @@
 //! The runtime uses the system `libmpv` C API directly here so consumers do
 //! not pull the higher-level Rust `libmpv2` wrapper into every binary.
 
+use crate::player::mpv_backend::EndReason;
 use std::ffi::{CStr, CString, NulError};
 use std::fmt;
 use std::os::raw::{c_char, c_int, c_ulong, c_void};
@@ -55,7 +56,7 @@ impl From<Utf8Error> for MpvError {
     }
 }
 
-pub struct MpvClient {
+pub(crate) struct MpvClient {
     mpv_handle: Option<NonNull<mpv_sys::mpv_handle>>,
 }
 
@@ -65,7 +66,7 @@ unsafe impl Send for MpvClient {}
 unsafe impl Sync for MpvClient {}
 
 impl MpvClient {
-    pub fn with_initializer<F>(setup: F) -> Result<Self>
+    pub(crate) fn with_initializer<F>(setup: F) -> Result<Self>
     where
         F: FnOnce(&MpvInitializer) -> Result<()>,
     {
@@ -108,12 +109,12 @@ impl MpvClient {
         })
     }
 
-    pub fn raw_handle(&self) -> *mut mpv_sys::mpv_handle {
+    pub(crate) fn raw_handle(&self) -> *mut mpv_sys::mpv_handle {
         self.mpv_handle
             .map_or(std::ptr::null_mut(), NonNull::as_ptr)
     }
 
-    pub fn terminate_destroy(&mut self) {
+    pub(crate) fn terminate_destroy(&mut self) {
         if let Some(mpv_handle) = self.mpv_handle.take() {
             // SAFETY: this object owns the handle; taking it prevents Drop from
             // destroying it again.
@@ -123,7 +124,7 @@ impl MpvClient {
         }
     }
 
-    pub fn command(&self, name: &str, args: &[&str]) -> Result<()> {
+    pub(crate) fn command(&self, name: &str, args: &[&str]) -> Result<()> {
         let mpv_handle = self.mpv_handle()?;
         let mut c_strings = Vec::with_capacity(args.len() + 1);
         c_strings.push(CString::new(name)?);
@@ -139,7 +140,7 @@ impl MpvClient {
         check_mpv(unsafe { mpv_sys::mpv_command(mpv_handle.as_ptr(), raw_args.as_mut_ptr()) })
     }
 
-    pub fn set_property<T>(&self, name: &str, value: T) -> Result<()>
+    pub(crate) fn set_property<T>(&self, name: &str, value: T) -> Result<()>
     where
         T: MpvSetValue,
     {
@@ -154,7 +155,25 @@ impl MpvClient {
         })
     }
 
-    pub fn get_property<T>(&self, name: &str) -> Result<T>
+    /// Set `name` for a caller with no recovery of its own, logging a refusal by
+    /// name only: values can carry paths, URLs or device names.
+    pub(crate) fn set_property_logged<T>(&self, name: &str, value: T)
+    where
+        T: MpvSetValue,
+    {
+        match self.set_property(name, value) {
+            Ok(()) => {}
+            // Expected at teardown, or for a property that exists only while a
+            // file plays.
+            Err(
+                error @ (MpvError::DestroyedHandle
+                | MpvError::Raw(mpv_sys::mpv_error_MPV_ERROR_PROPERTY_UNAVAILABLE)),
+            ) => log::debug!("mpv did not set {name}: {error}"),
+            Err(error) => log::warn!("mpv refused {name}: {error}"),
+        }
+    }
+
+    pub(crate) fn get_property<T>(&self, name: &str) -> Result<T>
     where
         T: MpvGetValue,
     {
@@ -163,7 +182,8 @@ impl MpvClient {
         T::get(mpv_handle, name.as_c_str())
     }
 
-    pub fn observe_property(&self, name: &str) -> Result<()> {
+    /// Report changes of `name` as [`MpvEvent::PropertyChange`] carrying `group`.
+    pub(crate) fn observe_property(&self, name: &str, group: u64) -> Result<()> {
         let handle = self.mpv_handle()?;
         let name = CString::new(name)?;
         // SAFETY: the handle is live and name lives through this call. NONE
@@ -171,14 +191,14 @@ impl MpvClient {
         check_mpv(unsafe {
             mpv_sys::mpv_observe_property(
                 handle.as_ptr(),
-                0,
+                group,
                 name.as_ptr(),
                 mpv_sys::mpv_format_MPV_FORMAT_NONE,
             )
         })
     }
 
-    pub fn wait_event(&mut self, timeout: f64) -> Option<Result<MpvEvent>> {
+    pub(crate) fn wait_event(&mut self, timeout: f64) -> Option<Result<MpvEvent>> {
         let Some(mpv_handle) = self.mpv_handle else {
             return Some(Err(MpvError::DestroyedHandle));
         };
@@ -211,12 +231,12 @@ impl Drop for MpvClient {
     }
 }
 
-pub struct MpvInitializer {
+pub(crate) struct MpvInitializer {
     mpv_handle: NonNull<mpv_sys::mpv_handle>,
 }
 
 impl MpvInitializer {
-    pub fn set_option<T>(&self, name: &str, value: T) -> Result<()>
+    pub(crate) fn set_option<T>(&self, name: &str, value: T) -> Result<()>
     where
         T: MpvSetValue,
     {
@@ -231,7 +251,7 @@ impl MpvInitializer {
     }
 }
 
-pub trait MpvSetValue {
+pub(crate) trait MpvSetValue {
     fn with_mpv_value<R>(
         self,
         call: impl FnOnce(mpv_sys::mpv_format, *mut c_void) -> Result<R>,
@@ -300,7 +320,7 @@ impl MpvSetValue for f64 {
     }
 }
 
-pub trait MpvGetValue: Sized {
+pub(crate) trait MpvGetValue: Sized {
     fn get(mpv_handle: NonNull<mpv_sys::mpv_handle>, name: &CStr) -> Result<Self>;
 }
 
@@ -381,13 +401,14 @@ impl MpvGetValue for f64 {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MpvEvent {
+pub(crate) enum MpvEvent {
     AudioReconfig,
     FileLoaded,
-    EndFile(u32),
+    EndFile(EndReason),
     Shutdown,
-    /// Observed with `MPV_FORMAT_NONE`: the event names no value.
-    PropertyChange,
+    /// Observed with `MPV_FORMAT_NONE`: the event names no value, only the
+    /// group given to [`MpvClient::observe_property`].
+    PropertyChange(u64),
     CommandReply {
         id: u64,
         error: c_int,
@@ -438,16 +459,18 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
         mpv_sys::mpv_event_id_MPV_EVENT_PLAYBACK_RESTART => Ok(MpvEvent::PlaybackRestart),
         mpv_sys::mpv_event_id_MPV_EVENT_END_FILE => Ok(map_end_file_event(event.data)),
         mpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(MpvEvent::Shutdown),
-        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => Ok(MpvEvent::PropertyChange),
+        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => {
+            Ok(MpvEvent::PropertyChange(event.reply_userdata))
+        }
         _ => Ok(MpvEvent::Other),
     })
 }
 
 fn map_end_file_event(event_payload: *mut c_void) -> MpvEvent {
     if event_payload.is_null() {
-        return MpvEvent::EndFile(0);
+        return MpvEvent::EndFile(EndReason::Eof);
     }
     // SAFETY: MPV_EVENT_END_FILE carries `mpv_event_end_file`.
     let event = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_end_file>() };
-    MpvEvent::EndFile(if event.error < 0 { 4 } else { event.reason })
+    MpvEvent::EndFile(EndReason::from_end_file(event.reason, event.error))
 }

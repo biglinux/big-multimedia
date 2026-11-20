@@ -8,6 +8,8 @@
 //! a dialog in the audio player, [`present_tv_dialog`]), the card over the
 //! video, and the transport controls, which drive the TV while it plays.
 
+use big_media_components::playback::set_play_pause;
+use big_relm4_components::feedback::tooltip;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
@@ -219,8 +221,8 @@ impl TvLink {
         self.failure.take()
     }
 
-    /// Run `changed` on every change the daemon reports; returns what
-    /// [`Self::unsubscribe`] takes.
+    /// Run `changed` on every change the daemon reports; returns the id that
+    /// removes it when its view detaches.
     pub fn subscribe(&self, changed: impl Fn() + 'static) -> u64 {
         let id = self.next_listener.get() + 1;
         self.next_listener.set(id);
@@ -245,9 +247,46 @@ impl TvLink {
         }
     }
 
+    /// Play a paused session, pause a playing one.
+    pub fn toggle_pause(self: &Rc<Self>) {
+        if let Some(state) = self.playing() {
+            self.control(if state.paused { "play" } else { "pause" }, 0.0);
+        }
+    }
+
+    pub fn stop(self: &Rc<Self>) {
+        self.control("stop", 0.0);
+    }
+
+    /// Seek to `seconds`, within the TV's length.
+    pub fn seek_to(self: &Rc<Self>, seconds: f64) {
+        if let Some(target) = self
+            .playing()
+            .and_then(|state| seek_target(&state, seconds))
+        {
+            self.control("seek-to", target);
+        }
+    }
+
+    /// Seek `offset` seconds from where the TV is.
+    pub fn seek_by(self: &Rc<Self>, offset: f64) {
+        if let Some(state) = self.playing() {
+            self.seek_to(state.position + offset);
+        }
+    }
+
+    /// Set the TV's level, 0 to 1.
+    pub fn set_volume(self: &Rc<Self>, level: f64) {
+        self.control("volume", level.clamp(0.0, 1.0));
+    }
+
+    pub fn set_muted(self: &Rc<Self>, muted: bool) {
+        self.control(if muted { "mute" } else { "unmute" }, 0.0);
+    }
+
     /// Send a player command to the running session: `play`, `pause`,
     /// `seek-to` (seconds), `volume` (0–1), `mute`, `unmute` or `stop`.
-    pub fn control(self: &Rc<Self>, command: &'static str, value: f64) {
+    fn control(self: &Rc<Self>, command: &'static str, value: f64) {
         let Some(client) = self.client() else {
             return;
         };
@@ -272,8 +311,7 @@ impl TvLink {
                 &i18n("BigNetScreen is unavailable"),
             )
         })?;
-        let remote = media.source.starts_with("http://") || media.source.starts_with("https://");
-        if remote {
+        if big_os_kit::url::is_http_url(&media.source) {
             let content_type = if media.audio {
                 "audio/mpeg"
             } else {
@@ -330,6 +368,12 @@ impl TvLink {
             link.notify();
         });
     }
+}
+
+/// Where a seek to `seconds` lands, or `None` when the TV cannot seek or its
+/// length is unknown: clamped to an unknown end, every seek went to the start.
+fn seek_target(state: &State, seconds: f64) -> Option<f64> {
+    (state.can_seek && state.duration > 0.0).then(|| seconds.clamp(0.0, state.duration))
 }
 
 /// What choosing a TV row does.
@@ -440,30 +484,25 @@ pub fn tv_page(
         .build();
     let now_row = adw::ActionRow::builder().title_lines(2).build();
     now_row.add_prefix(&gtk::Image::from_icon_name("tv-symbolic"));
-    let pause = gtk::Button::builder()
-        .icon_name("media-playback-pause-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["circular"])
-        .build();
-    let stop = gtk::Button::builder()
-        .icon_name("media-playback-stop-symbolic")
-        .tooltip_text(i18n("Stop on the TV"))
-        .valign(gtk::Align::Center)
-        .css_classes(["circular", "destructive-action"])
-        .build();
-    stop.update_property(&[gtk::accessible::Property::Label(&i18n("Stop on the TV"))]);
+    let pause = tooltip::icon_button(
+        "media-playback-pause-symbolic",
+        &i18n("Pause"),
+        &["circular"],
+    );
+    pause.set_valign(gtk::Align::Center);
+    let stop = tooltip::icon_button(
+        "media-playback-stop-symbolic",
+        &i18n("Stop on the TV"),
+        &["circular", "destructive-action"],
+    );
+    stop.set_valign(gtk::Align::Center);
     now_row.add_suffix(&pause);
     now_row.add_suffix(&stop);
     now.add(&now_row);
     root.append(&now);
 
-    let rescan = gtk::Button::builder()
-        .icon_name("view-refresh-symbolic")
-        .tooltip_text(i18n("Search again"))
-        .valign(gtk::Align::Center)
-        .css_classes(["flat"])
-        .build();
-    rescan.update_property(&[gtk::accessible::Property::Label(&i18n("Search again"))]);
+    let rescan = tooltip::icon_button("view-refresh-symbolic", &i18n("Search again"), &["flat"]);
+    rescan.set_valign(gtk::Align::Center);
     let tvs = adw::PreferencesGroup::builder()
         .title(i18n("TVs on this network"))
         .description(i18n("Starts on the TV where it is now, and pauses here."))
@@ -598,11 +637,8 @@ fn wire_actions(
     view.pause.connect_clicked({
         let link = Rc::downgrade(&view.link);
         move |_| {
-            let Some(link) = link.upgrade() else {
-                return;
-            };
-            if let Some(state) = link.playing() {
-                link.control(if state.paused { "play" } else { "pause" }, 0.0);
+            if let Some(link) = link.upgrade() {
+                link.toggle_pause();
             }
         }
     });
@@ -610,7 +646,7 @@ fn wire_actions(
         let link = Rc::downgrade(&view.link);
         move |_| {
             if let Some(link) = link.upgrade() {
-                link.control("stop", 0.0);
+                link.stop();
             }
         }
     });
@@ -710,15 +746,7 @@ fn render_now(view: &View, state: &State) {
             "{} · {position}",
             receiver_line(state)
         )));
-    let (icon, label) = if state.paused {
-        ("media-playback-start-symbolic", i18n("Continue"))
-    } else {
-        ("media-playback-pause-symbolic", i18n("Pause"))
-    };
-    view.pause.set_icon_name(icon);
-    view.pause.set_tooltip_text(Some(&label));
-    view.pause
-        .update_property(&[gtk::accessible::Property::Label(&label)]);
+    set_play_pause(&view.pause, state.paused, &i18n("Play"), &i18n("Pause"));
     view.pause.set_sensitive(state.can_pause);
 }
 
@@ -842,7 +870,7 @@ pub fn present_tv_dialog(
     media: impl Fn() -> Option<TvMedia> + 'static,
     on_started: impl Fn() + 'static,
 ) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Play on a TV"))
         .content_width(480)
         // Fixed: the page grows as TVs are found, and a dialog sized to its
@@ -873,4 +901,23 @@ pub fn present_tv_dialog(
     ));
     dialog.set_child(Some(&toolbar));
     dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn seek_needs_known_length() {
+        let state = |can_seek, duration| State {
+            duration,
+            can_seek,
+            ..State::default()
+        };
+        assert_eq!(seek_target(&state(true, 0.0), 30.0), None);
+        assert_eq!(seek_target(&state(false, 600.0), 30.0), None);
+        assert_eq!(seek_target(&state(true, 600.0), 30.0), Some(30.0));
+        assert_eq!(seek_target(&state(true, 600.0), -5.0), Some(0.0));
+        assert_eq!(seek_target(&state(true, 600.0), 900.0), Some(600.0));
+    }
 }

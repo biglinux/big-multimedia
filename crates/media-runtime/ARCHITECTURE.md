@@ -10,24 +10,28 @@ README).
   `egl_dmabuf`, `software_frames`, `video_surface`), `queue.rs` (audio play
   queue), `thumbnail.rs` (seek-bar hover frames via ffmpeg).
 - `cast/`: `daemon.rs`, the D-Bus client of BigNetScreen, which owns
-  Chromecast/DLNA discovery, streaming and conversion.
+  Chromecast/DLNA discovery, streaming and conversion, and `tv.rs`, the
+  "Play on a TV" page and card both players show.
 - `media/`: playlist parsing and folder scans (`playlist_scan/`), IPTV M3U
   and provider store (`iptv/`), ffprobe metadata cache, native MP4/MKV
-  duration readers, fuzzy search, thumbnails.
+  duration readers, fuzzy search, thumbnails, the playlist save picker
+  (`playlist_export.rs`).
 - `settings/`: re-exports `big_media_data::settings` plus the GTK adapters:
-  dialog-size persistence, save status and close draining (`saving.rs`) and
+  save status and close draining (`saving.rs`) and
   the msgid anchors for dynamically chosen status text (`messages.rs`).
-- `shared/`: code both players use: app boot (`app_base`), audio effects and
-  equalizer, `converter_handoff`, popovers, preference rows, shortcut
-  capture, sleep timer, theming, illustrations, and the "Play on a TV" page
-  and card (`tv_cast`).
-- `recent.rs`, `resources.rs`: recent-file store and the compiled GResource
-  bundles.
+- `app.rs`: process boot, the About dialog and the opened-files slot.
+- `audio_effects/`: equalizer, noise reduction and the voice strength slider
+  bound to mpv and settings.
+- `converter_handoff.rs`, `db_query.rs`, `shortcut_capture.rs`,
+  `sleep_timer.rs`, `theming.rs`: the converter GUIs, off-thread library
+  queries, the shortcut capture dialog, the sleep timer and custom themes.
+- `recent.rs`, `resources.rs`: recent-file store, the compiled GResource
+  bundles and the illustrations built from them.
 
 Dependencies point one way: this crate uses `big-media-data`,
 `big-os-kit`, `big-app-kit`, `big-gtk-kit`, `big-relm4-components`,
-`big-media-components`, `big-audio-effects` and `big-mpv-render`; none of
-them depends on it.
+`big-media-components`, `big-player-ui`, `big-audio-effects` and
+`big-mpv-render`; none of them depends on it.
 
 ## Threads
 
@@ -48,17 +52,16 @@ them depends on it.
 
 ## Subprocesses
 
-All go through `big_os_kit::subprocess::BigSubprocessSpec` (argv arrays, no
-shell).
+All but the converters go through `big_os_kit::subprocess::BigSubprocessSpec`
+(argv arrays, no shell). The converters start through `gio::AppInfo`, so the
+compositor gets an activation token and raises their window.
 
 | Site | Program |
 |---|---|
 | `player/thumbnail.rs`, `media/thumbnail.rs` | `ffmpeg`, `ffprobe` |
-| `player/mpv_backend/backend/` | `ffmpeg`, `pactl` |
-| `media/metadata_cache/` | `ffprobe` |
-| `media/playlist_scan/scan.rs` | `fd` |
-| `media/playlist_scan/display.rs` | `gio trash` |
-| `shared/converter_handoff.rs` | `big-{video,audio}-converter-gui` |
+| `media/metadata_cache/` | `ffprobe`, through `big_media_data::media_probe` |
+| `media/playlist_scan/scan.rs` | `fd`, with a walker of its own when `fd` is missing |
+| `converter_handoff.rs` | `big-{video,audio}-converter-gui` |
 
 Program names are fixed strings. User paths are passed as separate argv
 elements, after `--` where the tool accepts it.
@@ -66,7 +69,7 @@ elements, after `--` where the tool accepts it.
 ## Security notes
 
 - `unsafe` is limited to the libmpv/EGL/GL FFI and the bootstrap environment
-  and locale calls in `shared/app_base.rs`; `unsafe_op_in_unsafe_fn` and
+  and locale calls in `app.rs`; `unsafe_op_in_unsafe_fn` and
   `not_unsafe_ptr_arg_deref` are enforced in `Cargo.toml`.
 - Playlists are read up to 64 MiB; entries that resolve under `/etc`,
   `/proc`, `/sys`, `/dev`, `/root` or `/boot` are dropped.

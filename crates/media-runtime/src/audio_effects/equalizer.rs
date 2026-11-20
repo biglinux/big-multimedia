@@ -1,6 +1,7 @@
 //! Binds equalizer dialog to app settings/mpv callbacks.
 
 use adw::prelude::*;
+use big_relm4_components::feedback::tooltip;
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
@@ -14,7 +15,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
-use super::audio_effects::{EQ_LABELS, parse_eq_bands, rebuild_filters};
+use super::{EQ_LABELS, parse_eq_bands, rebuild_filters};
 
 struct EqPreset {
     name: &'static str,
@@ -152,11 +153,11 @@ pub fn create_equalizer_content(
     preset_box.append(&preset_combo);
 
     // Reset button
-    let reset_button = gtk::Button::builder()
-        .icon_name("edit-clear-symbolic")
-        .build();
-    reset_button.add_css_class("flat");
-    reset_button.set_tooltip_text(Some(&i18n("Reset to Flat")));
+    let reset_button = tooltip::icon_button(
+        "edit-clear-symbolic",
+        &i18n("Reset to Flat"),
+        &["image-button", "flat"],
+    );
     preset_box.append(&reset_button);
 
     main_box.append(&preset_box);

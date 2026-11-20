@@ -1,5 +1,7 @@
 //! GL function pointers and constants used by the offload renderer.
 
+use crate::player::mpv_backend::gl_proc_address::gl_function;
+
 pub(super) const GL_TEXTURE_2D: u32 = 0x0DE1;
 pub(super) const GL_RGBA: u32 = 0x1908;
 pub(super) const GL_RGBA8: u32 = 0x8058;
@@ -47,45 +49,24 @@ pub(super) struct GlFns {
 
 impl GlFns {
     pub(super) fn load() -> Option<Self> {
-        /// SAFETY: name must be null-terminated. dlsym with RTLD_DEFAULT queries
-        /// the global symbol table; the returned pointer is null-checked.
-        unsafe fn sym<F>(name: &[u8]) -> Option<F> {
-            let ptr = unsafe {
-                libc::dlsym(libc::RTLD_DEFAULT, name.as_ptr().cast::<std::ffi::c_char>())
-            };
-            if ptr.is_null() {
-                return None;
-            }
-            // F is always a bare fn pointer (pointer-width); guard against a
-            // mistyped F that would make transmute_copy read out of bounds.
-            debug_assert_eq!(
-                std::mem::size_of::<F>(),
-                std::mem::size_of::<*mut std::ffi::c_void>(),
-                "GL symbol target F must be a plain function pointer",
-            );
-            // SAFETY: ptr is a non-null symbol address; F is a fn pointer of the
-            // same width as the void* it was loaded as (asserted above).
-            Some(unsafe { std::mem::transmute_copy::<*mut std::ffi::c_void, F>(&ptr) })
-        }
-
-        // SAFETY: names are null-terminated; GL extern "C" ABI is stable.
+        // SAFETY: each name is paired with its GL signature.
         unsafe {
             Some(Self {
-                gen_textures: sym(b"glGenTextures\0")?,
-                delete_textures: sym(b"glDeleteTextures\0")?,
-                bind_texture: sym(b"glBindTexture\0")?,
-                tex_parameteri: sym(b"glTexParameteri\0")?,
-                tex_image_2d: sym(b"glTexImage2D\0")?,
-                gen_framebuffers: sym(b"glGenFramebuffers\0")?,
-                delete_framebuffers: sym(b"glDeleteFramebuffers\0")?,
-                bind_framebuffer: sym(b"glBindFramebuffer\0")?,
-                framebuffer_texture_2d: sym(b"glFramebufferTexture2D\0")?,
-                check_framebuffer_status: sym(b"glCheckFramebufferStatus\0")?,
-                viewport: sym(b"glViewport\0")?,
-                flush: sym(b"glFlush\0")?,
-                finish: sym(b"glFinish\0")?,
-                fence_sync: sym(b"glFenceSync\0"),
-                delete_sync: sym(b"glDeleteSync\0"),
+                gen_textures: gl_function(c"glGenTextures")?,
+                delete_textures: gl_function(c"glDeleteTextures")?,
+                bind_texture: gl_function(c"glBindTexture")?,
+                tex_parameteri: gl_function(c"glTexParameteri")?,
+                tex_image_2d: gl_function(c"glTexImage2D")?,
+                gen_framebuffers: gl_function(c"glGenFramebuffers")?,
+                delete_framebuffers: gl_function(c"glDeleteFramebuffers")?,
+                bind_framebuffer: gl_function(c"glBindFramebuffer")?,
+                framebuffer_texture_2d: gl_function(c"glFramebufferTexture2D")?,
+                check_framebuffer_status: gl_function(c"glCheckFramebufferStatus")?,
+                viewport: gl_function(c"glViewport")?,
+                flush: gl_function(c"glFlush")?,
+                finish: gl_function(c"glFinish")?,
+                fence_sync: gl_function(c"glFenceSync"),
+                delete_sync: gl_function(c"glDeleteSync"),
             })
         }
     }
