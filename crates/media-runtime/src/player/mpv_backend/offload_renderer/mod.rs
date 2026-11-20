@@ -208,7 +208,6 @@ impl OffloadRenderer {
     /// Called from the main thread (via `glib::idle_add_once`). Renders into
     /// the back-buffer, then exports as DMA-BUF or wraps as GdkGLTexture.
     pub fn render_frame(&self, render_context: &FastRenderContext, width: i32, height: i32) {
-        let started = std::time::Instant::now();
         let _current = CurrentContext::enter(&self.gl_context);
         // update() must run with this exact context, including forced redraws.
         let new_frame = render_context.has_new_frame();
@@ -238,12 +237,9 @@ impl OffloadRenderer {
             error!("Offload render failed: {result}");
             return;
         }
-        let mut sync_wait = None;
         let texture = match self.export_slot(index, tex) {
             Some(export) => {
-                let sync_started = std::time::Instant::now();
-                let sync = self.sync_frame(&export);
-                sync_wait = Some((sync, sync_started.elapsed()));
+                self.sync_frame(&export);
                 match self.create_dmabuf_texture(export, lease, width, height) {
                     Ok(texture) => texture,
                     Err(lease) => self.create_gl_texture(lease, width, height),
@@ -252,18 +248,6 @@ impl OffloadRenderer {
             None => self.create_gl_texture(lease, width, height),
         };
         self.picture.set_paintable(Some(&texture));
-        // allow-noisy-log: per-frame wall times, printed only with this module at debug.
-        match sync_wait {
-            Some((sync, wait)) => debug!(
-                "Offload frame wall time: render_frame {} us, {sync} {} us",
-                started.elapsed().as_micros(),
-                wait.as_micros()
-            ),
-            None => debug!(
-                "Offload frame wall time: render_frame {} us",
-                started.elapsed().as_micros()
-            ),
-        }
 
         let count = self.frame_count.get() + 1;
         self.frame_count.set(count);
@@ -355,8 +339,7 @@ impl OffloadRenderer {
 
     /// Make readers of the exported frame wait for its rendering: through the
     /// dma-buf's write fence, or by `glFinish` where no fence can be attached.
-    /// Returns the name of the path taken.
-    fn sync_frame(&self, export: &DmaBufExport) -> &'static str {
+    fn sync_frame(&self, export: &DmaBufExport) {
         if let Some(egl) = self.egl.as_ref()
             && let Some(fence) = egl.native_fence.as_ref()
             && !self.fence_unsupported.get()
@@ -365,7 +348,7 @@ impl OffloadRenderer {
             // SAFETY: the context is current.
             let flush = || unsafe { flush() };
             match egl_dmabuf::attach_write_fence(egl, fence, flush, export) {
-                Ok(()) => return "fence",
+                Ok(()) => return,
                 Err(FenceError::Unsupported(error)) => {
                     warn!("DMA-BUF write fence refused ({error}); waiting with glFinish");
                     self.fence_unsupported.set(true);
@@ -375,7 +358,6 @@ impl OffloadRenderer {
         }
         // SAFETY: the context is current.
         unsafe { (self.gl.finish)() };
-        "glFinish"
     }
 
     /// Wrap the export without releasing its lease until GDK finishes reading.
