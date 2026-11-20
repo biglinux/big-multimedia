@@ -262,12 +262,13 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 
 | Variable | Read by | Effect |
 |---|---|---|
-| `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | `1`, `true`, `yes` or `on` (any case) draws video through a GL area; `0`, `false`, `no`, `off` or empty first tries GTK graphics offload, falling back to the GL area. Unset draws through a GL area. Sessions on the proprietary NVIDIA driver never use offload, unless `BIG_MEDIA_FORCE_GRAPHICS_OFFLOAD` forces it. |
-| `BIG_MEDIA_FORCE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | Test switch. `1`, `true`, `yes` or `on` (any case) tries GTK graphics offload whatever `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` says, also on the proprietary NVIDIA driver, where it is otherwise refused because GPU memory grew on each resize; the log warns when it overrides that refusal. Any other value or unset changes nothing. |
+| `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | `1`, `true`, `yes` or `on` (any case) draws video through a GL area. Any other value or unset first tries GTK graphics offload, falling back to the GL area. Offload is never tried on the proprietary NVIDIA driver, where GPU memory grew on each resize, nor in big-compositor's session without graphics acceleration (`BIG_COMPOSITOR_RENDERER=2d`), unless `BIG_MEDIA_FORCE_GRAPHICS_OFFLOAD` forces it. |
+| `BIG_COMPOSITOR_RENDERER` | video player, when it creates the video surface | Set by the session, not the user. `2d`, big-compositor composing in software, keeps video off graphics offload: an offloaded frame gets no plane there and costs the compositor more than the GL area costs the player. |
+| `BIG_MEDIA_FORCE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | Test switch. `1`, `true`, `yes` or `on` (any case) tries GTK graphics offload whatever `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` and `BIG_COMPOSITOR_RENDERER` say, also on the proprietary NVIDIA driver; the log warns when it overrides the NVIDIA refusal. Any other value or unset changes nothing. |
 | `BIG_MEDIA_DB_APP_ID` | audio player, each time it opens the music library | Names the folder of the library database, `~/.config/<id>/library.db`. Unset or empty means `big-audio-player`. No shipped program sets it. |
 
-To try graphics offload in the video player:
+To draw video through a GL area instead of graphics offload:
 
 ```sh
-BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD=0 big-video-player
+BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD=1 big-video-player
 ```
