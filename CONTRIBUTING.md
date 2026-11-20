@@ -10,14 +10,12 @@ cargo build --workspace --locked
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --locked --all-features
 scripts/check-media-surface-imports.sh
-scripts/check-no-shell-invocations.sh
 ast-grep scan
 ```
 
-`check-no-shell-invocations.sh` refuses `sh -c` and `bash -c` in every crate's
-`src/`: subprocesses take an argv array, never a shell command string.
-
-`ast-grep scan` runs the rules in `rules/`. A URL's scheme is checked through
+`ast-grep scan` runs the rules in `rules/`. Subprocesses take an argv array,
+never a shell command string: outside tests, a shell started as the program
+or with `-c` is refused. A URL's scheme is checked through
 `big_os_kit::url`: entries of feeds, IPTV lists and playlists reach mpv only
 as network streams, or as local files from a local list, because mpv's guard
 against unsafe playlist entries does not cover loads through its client API.
