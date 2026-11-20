@@ -108,11 +108,20 @@ glib::wrapper! {
         @implements gio::ActionGroup, gio::ActionMap;
 }
 
+/// Whether `flag` is among `args`. GLib's parser reads these options too, but
+/// only after the application flags are set; argv may hold non-UTF-8 paths.
+pub(crate) fn launched_with(
+    args: impl IntoIterator<Item = std::ffi::OsString>,
+    flag: &str,
+) -> bool {
+    args.into_iter().any(|argument| argument == flag)
+}
+
 impl Application {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mut flags = gio::ApplicationFlags::HANDLES_OPEN;
-        if std::env::args().any(|a| a == "--new-window") {
+        if launched_with(std::env::args_os(), "--new-window") {
             flags |= gio::ApplicationFlags::NON_UNIQUE;
         }
         let app: Self = glib::Object::builder()
@@ -149,6 +158,21 @@ impl Application {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn flag_found_beside_non_utf8_paths() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        let args = || {
+            [
+                OsString::from("big-video-player"),
+                OsString::from_vec(b"/media/v\xeddeo.mp4".to_vec()),
+                OsString::from("--maximized"),
+            ]
+        };
+        assert!(super::launched_with(args(), "--maximized"));
+        assert!(!super::launched_with(args(), "--new-window"));
+    }
+
     #[test]
     fn about_icon_matches_installed_icon() {
         let icon = crate::config::video::ICON_NAME;

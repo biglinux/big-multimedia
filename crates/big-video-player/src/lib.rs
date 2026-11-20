@@ -121,7 +121,7 @@ pub fn run() -> gtk::glib::ExitCode {
     use relm4::{Component, ComponentController};
 
     let app = video::app::Application::new();
-    let maximized = std::env::args().any(|a| a == "--maximized");
+    let maximized = video::app::launched_with(std::env::args_os(), "--maximized");
     let shell: std::rc::Rc<
         std::cell::RefCell<Option<relm4::Controller<video::ui::video_shell::VideoShell>>>,
     > = std::rc::Rc::new(std::cell::RefCell::new(None));
