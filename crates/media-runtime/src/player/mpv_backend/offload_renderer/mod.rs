@@ -4,6 +4,7 @@
 
 mod backend;
 mod gl_fns;
+mod slot_buffers;
 mod stats;
 mod texture_pool;
 
@@ -21,6 +22,7 @@ use gl_fns::{
     GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_LINEAR, GL_RGBA, GL_RGBA8,
     GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNSIGNED_BYTE, GlFns,
 };
+use slot_buffers::SlotBuffers;
 use stats::{RenderStatsSurfacePath, render_stats_report_for_interval};
 
 pub use backend::VideoBackend;
@@ -41,6 +43,7 @@ pub struct OffloadRenderer {
     /// True after the kernel refused a dma-buf write fence; locks `glFinish`.
     fence_unsupported: Cell<bool>,
     pool: TexturePool,
+    slots: SlotBuffers,
     fbo: u32,
     frame_count: Cell<u64>,
     skip_count: Cell<u64>,
@@ -139,6 +142,7 @@ impl OffloadRenderer {
             dmabuf_rejected: Cell::new(false),
             fence_unsupported: Cell::new(false),
             pool,
+            slots: SlotBuffers::default(),
             fbo,
             frame_count: Cell::new(0),
             skip_count: Cell::new(0),
@@ -172,39 +176,27 @@ impl OffloadRenderer {
     /// the way DMA-BUF does.
     fn prepare_slot(&self, index: usize, texture: u32, width: i32, height: i32) -> bool {
         let changed = self.pool.dimensions(index) != (width, height);
-        // SAFETY: the slot is exclusively leased and GL is current.
-        unsafe {
-            if changed {
-                (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
-                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                (self.gl.tex_image_2d)(
-                    GL_TEXTURE_2D,
-                    0,
-                    GL_RGBA8 as i32,
-                    width,
-                    height,
-                    0,
-                    GL_RGBA,
-                    GL_UNSIGNED_BYTE,
-                    std::ptr::null(),
-                );
-                (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
-            }
-            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
-            (self.gl.framebuffer_texture_2d)(
-                GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
+        let in_gbm_buffer = changed
+            && self.slots.bind(
+                index,
                 texture,
-                0,
+                width,
+                height,
+                &self.picture,
+                self.egl.as_ref(),
+                self.gl.bind_texture,
             );
-            let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
-            if status != GL_FRAMEBUFFER_COMPLETE {
-                (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
-                error!("Offload FBO incomplete: 0x{status:X}");
-                return false;
-            }
+        if changed {
+            self.specify_texture(texture, width, height, !in_gbm_buffer);
+        }
+        let mut complete = self.attach_to_framebuffer(texture);
+        if !complete && in_gbm_buffer {
+            self.slots.disable(index);
+            self.specify_texture(texture, width, height, true);
+            complete = self.attach_to_framebuffer(texture);
+        }
+        if !complete {
+            return false;
         }
         if changed {
             self.pool.set_dimensions(index, width, height);
@@ -247,7 +239,7 @@ impl OffloadRenderer {
             return;
         }
         let mut sync_wait = None;
-        let texture = match self.export_slot(tex) {
+        let texture = match self.export_slot(index, tex) {
             Some(export) => {
                 let sync_started = std::time::Instant::now();
                 let sync = self.sync_frame(&export);
@@ -299,10 +291,60 @@ impl OffloadRenderer {
         }
     }
 
+    /// Linear filtering, and storage from `glTexImage2D` when `allocate`; a
+    /// texture bound to a GBM buffer already has its storage.
+    fn specify_texture(&self, texture: u32, width: i32, height: i32, allocate: bool) {
+        // SAFETY: the slot is exclusively leased and GL is current.
+        unsafe {
+            (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
+            (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if allocate {
+                (self.gl.tex_image_2d)(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGBA8 as i32,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    std::ptr::null(),
+                );
+            }
+            (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
+        }
+    }
+
+    /// Leaves the framebuffer bound when it is complete.
+    fn attach_to_framebuffer(&self, texture: u32) -> bool {
+        // SAFETY: the slot is exclusively leased and GL is current.
+        unsafe {
+            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
+            (self.gl.framebuffer_texture_2d)(
+                GL_FRAMEBUFFER,
+                GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D,
+                texture,
+                0,
+            );
+            let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
+            if status != GL_FRAMEBUFFER_COMPLETE {
+                (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
+                error!("Offload FBO incomplete: 0x{status:X}");
+                return false;
+            }
+        }
+        true
+    }
+
     /// `None` once export failed or GDK refused a texture: the GL path takes over.
-    fn export_slot(&self, texture: u32) -> Option<DmaBufExport> {
+    fn export_slot(&self, index: usize, texture: u32) -> Option<DmaBufExport> {
         if self.dmabuf_rejected.get() {
             return None;
+        }
+        if let Some(export) = self.slots.export(index) {
+            return Some(export);
         }
         let export = egl_dmabuf::export_gl_texture(self.egl.as_ref()?, texture);
         if export.is_none() {

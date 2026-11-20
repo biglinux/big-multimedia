@@ -10,7 +10,7 @@ use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-const SLOT_COUNT: usize = 3;
+pub(super) const SLOT_COUNT: usize = 3;
 type RetiredTexture = (u32, usize);
 
 /// Restore GTK's previous current context even on error/early return.

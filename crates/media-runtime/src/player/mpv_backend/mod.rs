@@ -39,6 +39,8 @@ fn env_value_names_nvidia_driver(value: &str) -> bool {
 }
 
 #[cfg(feature = "video")]
+mod dmabuf_feedback;
+#[cfg(feature = "video")]
 pub(crate) mod egl_dmabuf;
 #[cfg(feature = "video")]
 pub mod fast_render;
