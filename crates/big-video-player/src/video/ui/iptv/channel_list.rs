@@ -129,10 +129,10 @@ impl ChannelListView {
         self.resplice(&query);
     }
 
-    /// Move stars saved under the first URL of each pair to the second.
+    /// Move stars saved under the first URL of each pair to the second; the
+    /// rows show them from the next [`Self::set_channels`].
     pub fn rename_favorites(&self, renames: Vec<(String, String)>) {
         self.favorites.borrow_mut().rename(renames);
-        self.reload_favorites();
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model
