@@ -27,11 +27,9 @@ enum PortalTarget {
     Selected(PathBuf),
 }
 
-/// Opens `target` through the desktop portal, so the program that shows it
-/// starts outside this process and its AppArmor profile: GTK's launchers
-/// start it as a child unless the player runs sandboxed. When the portal is
-/// missing or reports a failure, `fallback` launches it directly. Best
-/// effort: a launch failure is logged.
+/// Opens `target` through the desktop portal, so its program starts outside
+/// this process and its AppArmor profile; without a working portal, `fallback`
+/// launches it directly.
 fn open_through_portal(target: PortalTarget, fallback: impl FnOnce() + 'static) {
     glib::spawn_future_local(async move {
         if let Err(error) = portal_call(target).await {
