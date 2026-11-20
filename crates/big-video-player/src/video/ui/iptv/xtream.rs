@@ -61,12 +61,42 @@ pub(super) fn shows_password(url: &str, password: &str) -> bool {
 }
 
 /// `m3u` with the account's `/user/password/` path segments, as the panel
-/// writes them or URL-encoded, replaced by [`CREDENTIALS`].
+/// writes them or URL-encoded, replaced by [`CREDENTIALS`]. An entry that
+/// carries the password in its query cannot be rebuilt that way, and is left
+/// out with the lines that describe it.
 fn without_credentials(m3u: &str, username: &str, password: &str) -> String {
     let raw = format!("/{username}/{password}/");
-    let encoded = format!("/{}/{}/", urlencode(username), urlencode(password));
-    m3u.replace(&raw, CREDENTIALS)
-        .replace(&encoded, CREDENTIALS)
+    let encoded_password = urlencode(password);
+    let encoded = format!("/{}/{encoded_password}/", urlencode(username));
+    let m3u = m3u
+        .replace(&raw, CREDENTIALS)
+        .replace(&encoded, CREDENTIALS);
+    let in_query = |line: &str| {
+        line.split_once('?').is_some_and(|(_, query)| {
+            query.split(['&', '#']).any(|field| {
+                field.split_once('=').is_some_and(|(_, value)| {
+                    !password.is_empty() && (value == password || value == encoded_password)
+                })
+            })
+        })
+    };
+    let mut kept = String::with_capacity(m3u.len());
+    let mut described = String::new();
+    for line in m3u.lines() {
+        if line.starts_with("#EXTINF") || (line.starts_with('#') && !described.is_empty()) {
+            described.push_str(line);
+            described.push('\n');
+            continue;
+        }
+        if line.starts_with('#') || !in_query(line) {
+            kept.push_str(&described);
+            kept.push_str(line);
+            kept.push('\n');
+        }
+        described.clear();
+    }
+    kept.push_str(&described);
+    kept
 }
 
 /// The live line-up of a Xtream account as M3U text, without its credentials.
@@ -409,7 +439,7 @@ mod tests {
         let streams = live_streams(r#"[{"name": "One", "stream_id": 1}]"#).unwrap();
         let json_api = live_m3u("http://srv", "ts", &[], &streams);
         let export = without_credentials(
-            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n",
+            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n#EXTINF:-1,Three\nhttp://srv/live.php?username=joe&password=s3cr%3Ft&stream=3\n",
             "joe",
             "s3cr?t",
         );
