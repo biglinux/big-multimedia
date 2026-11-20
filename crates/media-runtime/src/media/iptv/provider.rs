@@ -319,19 +319,20 @@ impl IptvProviderStore {
     }
 
     /// Put back each `(index, original, protected)` whose slot still holds
-    /// `original`, so an edit made meanwhile wins. True when any changed; the
-    /// caller saves.
-    pub fn apply_protected(&mut self, protected: Vec<(usize, IptvProvider, IptvProvider)>) -> bool {
-        let mut changed = false;
+    /// `original`, so an edit made meanwhile wins. Returns the keyring items of
+    /// the entries skipped, which nothing names; the caller saves and clears.
+    pub fn apply_protected(
+        &mut self,
+        protected: Vec<(usize, IptvProvider, IptvProvider)>,
+    ) -> Vec<String> {
+        let mut orphaned = Vec::new();
         for (index, original, provider) in protected {
-            if let Some(slot) = self.providers.get_mut(index)
-                && *slot == original
-            {
-                *slot = provider;
-                changed = true;
+            match self.providers.get_mut(index) {
+                Some(slot) if *slot == original => *slot = provider,
+                _ => orphaned.push(provider.secret_id),
             }
         }
-        changed
+        orphaned
     }
 
     pub fn remove(&mut self, index: usize) {
@@ -649,7 +650,7 @@ mod tests {
                 (index, original, provider)
             })
             .collect();
-        assert!(store.apply_protected(protected));
+        assert!(store.apply_protected(protected).is_empty());
 
         let rewritten = toml::to_string_pretty(&store).expect("serialize");
         assert!(!rewritten.contains("s3cret"), "{rewritten}");
@@ -672,7 +673,11 @@ mod tests {
         let mut protected = original.clone();
         protected.protect_secret(&MemoryVault::default()).unwrap();
 
-        assert!(!store.apply_protected(vec![(index, original, protected)]));
+        let secret_id = protected.secret_id.clone();
+        assert_eq!(
+            store.apply_protected(vec![(index, original, protected)]),
+            [secret_id]
+        );
         assert_eq!(store.providers[0], xtream("typed meanwhile"));
     }
 }

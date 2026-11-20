@@ -35,12 +35,12 @@ use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
-use big_os_kit::keyring::SecretService;
+use big_os_kit::keyring::{SecretService, Vault};
 use big_os_kit::url::ListOrigin;
 
 use crate::media::iptv::{
-    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
-    parse_channel_list,
+    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, SECRET_SCOPE,
+    left_out_notice, parse_channel_list,
 };
 
 use channel_list::ChannelListView;
@@ -300,11 +300,28 @@ impl Component for VideoIptvBrowser {
                 complete,
             } => {
                 self.protecting = false;
-                let mut store = self.store.borrow_mut();
-                if store.apply_protected(protected) {
-                    store.save();
+                let total = protected.len();
+                let orphaned = self.store.borrow_mut().apply_protected(protected);
+                if orphaned.len() < total {
+                    self.store.borrow_mut().save();
                 }
                 self.keyring_status.set_visible(!complete);
+                if !orphaned.is_empty() {
+                    spawn_blocking_result(
+                        move || {
+                            let cancelled = AtomicBool::new(false);
+                            let vault = SecretService {
+                                cancelled: &cancelled,
+                            };
+                            for secret_id in &orphaned {
+                                if let Err(error) = vault.clear(SECRET_SCOPE, secret_id) {
+                                    log::warn!("an unused IPTV keyring item stays: {error}");
+                                }
+                            }
+                        },
+                        |()| {},
+                    );
+                }
             }
             VideoIptvBrowserInput::KeyringUnavailable => {
                 self.status
@@ -582,8 +599,7 @@ fn spawn_network_load(
 }
 
 /// Wire the static widget signals (manage/refresh/search/dropdown) to component
-/// inputs, returning the dropdown's selection handler. Pulled out of `init` to
-/// keep that function small.
+/// inputs, returning the dropdown's selection handler.
 fn wire_widget_signals(
     manage_providers_button: &gtk::Button,
     refresh_provider_button: &gtk::Button,
