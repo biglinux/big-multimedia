@@ -134,15 +134,34 @@ pub fn played_channels(
     Ok(channels)
 }
 
-/// Whether `url` is on the server of the Xtream `provider`: its credentials
-/// go nowhere else.
+/// Whether `url` is on the server of the Xtream `provider`, compared by
+/// scheme, host and port with the scheme's default filled in: its
+/// credentials go nowhere else.
 fn serves(provider: &IptvProvider, url: &str) -> bool {
-    match &provider.source {
-        IptvKind::Xtream { server, .. } => url
-            .strip_prefix(server.trim_end_matches('/'))
-            .is_some_and(|path| path.starts_with('/')),
-        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => false,
-    }
+    let IptvKind::Xtream { server, .. } = &provider.source else {
+        return false;
+    };
+    let flags = glib::UriFlags::PARSE_RELAXED | glib::UriFlags::ENCODED;
+    let (Ok(server), Ok(url)) = (
+        glib::Uri::parse(server, flags),
+        glib::Uri::parse(url, flags),
+    ) else {
+        return false;
+    };
+    let port = |uri: &glib::Uri| match (uri.port(), uri.scheme().to_ascii_lowercase().as_str()) {
+        (-1, "http") => 80,
+        (-1, "https") => 443,
+        (port, _) => port,
+    };
+    let host = |uri: &glib::Uri| uri.host().map(|host| host.to_ascii_lowercase());
+    server.scheme().eq_ignore_ascii_case(&url.scheme())
+        && host(&server).is_some()
+        && host(&server) == host(&url)
+        && port(&server) == port(&url)
+        && url
+            .path()
+            .strip_prefix(server.path().trim_end_matches('/'))
+            .is_some_and(|path| path.starts_with('/'))
 }
 
 /// Stable per-provider cache identifier; the cache names its file by a hash
@@ -380,6 +399,7 @@ mod tests {
             "http://srv.example/live/{credentials}/7.ts",
             "http://other/live/{credentials}/7.ts",
             "https://srv/live/{credentials}/7.ts",
+            "http://srv:8080/live/{credentials}/7.ts",
         ] {
             assert_eq!(
                 played_channels(
@@ -391,6 +411,23 @@ mod tests {
                 "{entry}"
             );
         }
+    }
+
+    /// RFC 3986, 6.2.3: a scheme's default port names the same server.
+    #[test]
+    fn default_port_names_the_same_server() {
+        let mut panel = account("Panel");
+        if let IptvKind::Xtream { server, .. } = &mut panel.source {
+            *server = "HTTP://SRV:80/".into();
+        }
+        let entries = ["http://srv/live/{credentials}/7.ts".to_string()];
+        assert_eq!(
+            played_channels(&entries, &[panel], &Keyring(Some("pw"))),
+            Ok(vec![(
+                entries[0].clone(),
+                "http://srv/live/ana/pw/7.ts".to_string()
+            )])
+        );
     }
 
     #[test]
