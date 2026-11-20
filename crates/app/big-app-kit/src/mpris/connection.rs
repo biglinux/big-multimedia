@@ -1,7 +1,7 @@
 use glib::variant::ToVariant;
 use gtk::{gio, glib};
 use log::warn;
-use std::cell::{Cell, OnceCell, RefCell};
+use std::cell::{Cell, OnceCell};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -113,15 +113,13 @@ pub struct Mpris {
 }
 
 struct ExportedPlayer {
-    /// The bus names held, released in Drop before the connection closes.
-    owner_ids: Rc<RefCell<Vec<gio::OwnerId>>>,
     publisher: Rc<Publisher>,
 }
 
 impl ExportedPlayer {
     /// Export both objects on `connection`, take `bus_name` and publish the
     /// first state; the connection is closed when exporting fails.
-    fn start(
+    async fn start(
         connection: gio::DBusConnection,
         bus_name: &str,
         desktop_id: &str,
@@ -139,32 +137,16 @@ impl ExportedPlayer {
         }
         // Another window of the same player holds `bus_name`: MPRIS names each
         // further instance `<bus_name>.instance<pid>`.
-        let owner_ids = Rc::new(RefCell::new(Vec::new()));
         let instance_name = format!("{bus_name}.instance{}", std::process::id());
-        let held = Rc::downgrade(&owner_ids);
-        let owner_id = gio::bus_own_name_on_connection(
-            &connection,
-            bus_name,
-            gio::BusNameOwnerFlags::DO_NOT_QUEUE,
-            |_, _| {},
-            move |connection, _| {
-                let Some(held) = held.upgrade() else {
-                    return;
-                };
-                if held.borrow().len() > 1 {
-                    return;
-                }
-                let instance = gio::bus_own_name_on_connection(
-                    &connection,
-                    &instance_name,
-                    gio::BusNameOwnerFlags::DO_NOT_QUEUE,
-                    |_, _| {},
-                    |_, _| {},
-                );
-                held.borrow_mut().push(instance);
-            },
-        );
-        owner_ids.borrow_mut().push(owner_id);
+        let owned = match request_name(&connection, bus_name).await {
+            Ok(false) => request_name(&connection, &instance_name).await,
+            owned => owned,
+        };
+        match owned {
+            Ok(true) => {}
+            Ok(false) => warn!("MPRIS: {bus_name} and {instance_name} are both taken"),
+            Err(e) => warn!("MPRIS: requesting {bus_name} failed: {e}"),
+        }
         let publisher = Rc::new(Publisher::new(
             connection,
             state_cb,
@@ -172,11 +154,33 @@ impl ExportedPlayer {
             taskbar,
         ));
         publisher.sync();
-        Ok(Self {
-            owner_ids,
-            publisher,
-        })
+        Ok(Self { publisher })
     }
+}
+
+/// Asks the bus for `name` without queueing; true when this connection owns
+/// it. Closing the connection releases it, so nothing is left to unown: gio's
+/// name-owning callbacks abort when the bus closes under them.
+async fn request_name(connection: &gio::DBusConnection, name: &str) -> Result<bool, glib::Error> {
+    const DO_NOT_QUEUE: u32 = 4;
+    const PRIMARY_OWNER: u32 = 1;
+    const ALREADY_OWNER: u32 = 4;
+    let reply = connection
+        .call_future(
+            Some("org.freedesktop.DBus"),
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            "RequestName",
+            Some(&(name, DO_NOT_QUEUE).to_variant()),
+            Some(glib::VariantTy::new("(u)").expect("valid type string")),
+            gio::DBusCallFlags::NONE,
+            -1,
+        )
+        .await?;
+    Ok(matches!(
+        reply.child_value(0).get::<u32>(),
+        Some(PRIMARY_OWNER | ALREADY_OWNER)
+    ))
 }
 
 impl Mpris {
@@ -213,7 +217,9 @@ impl Mpris {
                 command_cb,
                 state_cb,
                 publisher_taskbar,
-            ) {
+            )
+            .await
+            {
                 Ok(player) => {
                     let _ = slot.set(player);
                 }
@@ -273,11 +279,6 @@ impl Drop for ExportedPlayer {
         if let Some(tick) = self.publisher.tick.take() {
             big_gtk_kit::source::remove(tick);
         }
-        // Unown before closing: a closed connection fires name-lost with a
-        // NULL connection, which aborts in gio's closure trampoline.
-        for owner_id in self.owner_ids.borrow_mut().drain(..) {
-            gio::bus_unown_name(owner_id);
-        }
         self.publisher
             .connection
             .close(gio::Cancellable::NONE, |_| {});
@@ -330,6 +331,38 @@ mod tests {
         assert!(has_owner(&host, name));
         drop(first);
         iterate_until(|| !has_owner(&host, name));
+        let _ = host.close_sync(gio::Cancellable::NONE);
+        let context = glib::MainContext::default();
+        while context.pending() {
+            context.iteration(false);
+        }
+    }
+
+    /// The connection closing under a held name, as when the session bus goes
+    /// away, releases the name without ending the process.
+    #[test]
+    #[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit mpris -- --ignored"]
+    fn closed_connection_releases_name() {
+        let host = glib::MainContext::default()
+            .block_on(private_session_bus())
+            .unwrap();
+        let name = "org.mpris.MediaPlayer2.BigClosedPlayer";
+        let player = Mpris::new(
+            name,
+            "br.com.biglinux.TestPlayer",
+            Box::new(|_| {}),
+            Box::new(PlayerState::default),
+            false,
+        );
+        iterate_until(|| has_owner(&host, name));
+        let exported = player.exported.get().unwrap();
+        exported
+            .publisher
+            .connection
+            .close_sync(gio::Cancellable::NONE)
+            .unwrap();
+        iterate_until(|| !has_owner(&host, name));
+        drop(player);
         let _ = host.close_sync(gio::Cancellable::NONE);
         let context = glib::MainContext::default();
         while context.pending() {
