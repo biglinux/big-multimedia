@@ -121,7 +121,8 @@ profile @APP@ @{exec_path} flags=(complain) {
   /usr/lib/glycin-loaders/** Cx -> image_loader,
   # Helpers that only talk to the desktop.
   /usr/bin/{secret-tool,gsettings,qdbus6,wmctrl,systemctl} ix,
-  # The converters run under their own profiles.
+  # The converter packages ship these profiles; a converter installed without
+  # its profile is refused in enforce mode, so enforce waits for their release.
   /usr/bin/big-{audio,video}-converter-gui Px,
   signal (send) set=(term, kill) peer=@APP@//{decoder,image_loader},
   unix (send, receive) type=stream peer=(label=@APP@//image_loader),
