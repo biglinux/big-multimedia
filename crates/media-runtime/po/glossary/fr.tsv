@@ -1,0 +1,17 @@
+player	lecteur	catalog
+playlist	liste de lecture	catalog, celluloid
+queue	file d’attente	catalog
+track	piste	catalog
+library	bibliothèque	catalog
+station	station	catalog
+episode	épisode	catalog
+keyring	trousseau de clés	gnome-keyring
+provider	fournisseur	catalog
+screenshot	capture d’écran	catalog
+scan	analyse	catalog
+sidebar	barre latérale	catalog (gtk40 uses "panneau latéral")
+Preferences	Préférences	catalog
+save	enregistrer	catalog
+Retry	Réessayer	catalog
+you	vous	catalog
+punctuation	plain space before ; : ? ! and inside « »	catalog

@@ -1,0 +1,26 @@
+player	плейър	catalog
+track	песен	catalog
+library	фонотека	catalog
+queue	опашка	catalog
+playlist	списък за изпълнение	catalog
+playback	изпълнение	catalog
+station	станция	catalog
+episode	епизод	catalog
+podcast subscriptions	абонаменти за подкасти	catalog Абонаменти
+screenshot	снимка на екрана	catalog
+provider	доставчик	catalog
+keyring	ключодържател	gnome-keyring, libsecret
+unlock	отключване	gtk40, gnome-keyring
+Preferences	Настройки	catalog
+Advanced	Допълнителни	catalog
+Audio Output	Аудио изход	catalog
+Video Output	Видео изход	catalog
+mpv Options	Опции на mpv	catalog
+sidebar	странична лента	catalog, nautilus
+top bar, bottom bar	горна лента, долна лента	libadwaita
+Paused	На пауза	gtk40
+retry	Повторен опит	new term (verbal noun, as catalog buttons)
+scan (library)	сканиране	catalog
+playback engine	механизъм за изпълнение	new term
+entry (playlist)	запис	catalog
+web remote	уеб дистанционно	catalog

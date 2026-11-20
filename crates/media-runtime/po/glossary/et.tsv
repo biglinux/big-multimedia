@@ -1,0 +1,30 @@
+source	translation	source of the choice
+track (music)	lugu (partitive lugu after numerals)	catalog: All Tracks, tracks imported
+track (stream)	rada	catalog: Track
+playlist	esitusloend	catalog: Playlist
+queue	järjekord	catalog: Queue
+library	kogu	catalog: Library
+station	jaam	catalog: My Stations
+episode	episood	catalog: No episodes found
+podcast subscriptions	podcastide tellimused	catalog: Podcasts, Subscriptions
+screenshot	ekraanipilt	catalog: Screenshot
+recording	salvestus	catalog: Recording was not saved
+provider	teenusepakkuja	catalog: IPTV Provider
+password	parool	catalog: Password; gnome-keyring
+keyring	võtmerõngas	gnome-keyring
+playback engine	taasesitusmootor	new
+player	esitaja	catalog: Close the player
+Preferences	Eelistused	catalog
+Advanced	Täpsemad	catalog
+mpv Options	mpv valikud	catalog
+Video Output	Videoväljund	catalog
+Audio Output	Heliväljund	catalog
+sidebar	külgriba	catalog: Toggle playlist sidebar
+lyrics	laulusõnad	catalog: Lyrics
+web remote	veebikaugjuhtimine	catalog: Web Remote
+scan	skannimine	catalog: Scanning library…
+register	formal plural imperative in messages, singular imperative on buttons	catalog: Lohistage / Laadi episoodid alla
+Return (key)	Enter	gtk40 keyboard label
+Left / Right (keys)	Alt+vasakule / Alt+paremale	catalog Alt+üles style
+quotation marks	„ “	catalog: „Halda…“
+Paused	Pausil	catalog: Pause = Paus; Peata is Stop playback

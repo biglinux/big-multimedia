@@ -1,0 +1,24 @@
+source	translation	source of the choice
+library	資料庫	zh_TW.po (Library)
+track	曲目	zh_TW.po (Imported tracks were kept)
+playlist	播放清單	zh_TW.po (Playlist)
+queue	佇列	zh_TW.po (Queue)
+player	播放器	zh_TW.po (Close the player)
+playback engine	播放引擎	new; zh_TW.po uses 播放 for playback
+keyring	鑰匙圈	libsecret, gnome-keyring
+password	密碼	zh_TW.po (Password)
+provider	供應商	zh_TW.po (Provider)
+station	電台	zh_TW.po (Explore Stations)
+episode	單集	zh_TW.po (Save Episode)
+subscription	訂閱	zh_TW.po (Subscriptions)
+screenshot	螢幕截圖	zh_TW.po (Screenshot)
+recording	錄音; record a station 錄製	zh_TW.po (Recording saved, Recording to)
+scan	掃描	zh_TW.po (Scan Now)
+stream	串流	zh_TW.po (Video Stream)
+sidebar	側邊欄	zh_TW.po (Resize sidebar), nautilus
+home folder	家目錄	zh_TW.po (Home folder)
+Preferences	偏好設定	zh_TW.po (Preferences)
+Top bar	頂端列	libadwaita (Top Bar)
+Retry	重試	nautilus
+you	您	zh_TW.po
+quotes	「」	zh_TW.po (No providers configured)
