@@ -215,7 +215,7 @@ fn remove_provider(
 
 /// Delete the keyring item `secret_id` no provider names any more, once the
 /// providers file that drops it is written, and show `note` when the keyring
-/// keeps it. While the file still names the item, a failed save keeps both.
+/// keeps it. While the file still names the item, the item stays.
 fn forget_secret(
     secret_id: String,
     store: &Rc<RefCell<IptvProviderStore>>,
@@ -241,8 +241,8 @@ fn forget_secret(
             if status.saved_revision >= dropped_in {
                 break;
             }
-            if status.phase == big_os_kit::deferred::Phase::Failed || changes.recv().await.is_err()
-            {
+            // A failed save keeps waiting: a retry that writes it still drops the item.
+            if changes.recv().await.is_err() {
                 return;
             }
         }
