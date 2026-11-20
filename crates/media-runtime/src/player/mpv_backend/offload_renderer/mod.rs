@@ -7,7 +7,7 @@ mod gl_fns;
 mod stats;
 mod texture_pool;
 
-use super::egl_dmabuf::{self, EglDmaBufFns};
+use super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns, FenceError};
 use crate::player::mpv_backend::fast_render::{FastRenderContext, current_gl_driver};
 use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
@@ -38,6 +38,8 @@ pub struct OffloadRenderer {
     dmabuf_active: Cell<bool>,
     /// True after an unsupported/non-linear modifier; locks the GL fallback.
     dmabuf_rejected: Cell<bool>,
+    /// True after the kernel refused a dma-buf write fence; locks `glFinish`.
+    fence_unsupported: Cell<bool>,
     pool: TexturePool,
     fbo: u32,
     frame_count: Cell<u64>,
@@ -135,6 +137,7 @@ impl OffloadRenderer {
             egl,
             dmabuf_active: Cell::new(false),
             dmabuf_rejected: Cell::new(false),
+            fence_unsupported: Cell::new(false),
             pool,
             fbo,
             frame_count: Cell::new(0),
@@ -243,26 +246,24 @@ impl OffloadRenderer {
             error!("Offload render failed: {result}");
             return;
         }
-        let mut finish_wait = None;
-        let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
-            // DMA-BUF explicit-fence negotiation is not implemented, so glFinish
-            // is the only correctness barrier before export.
-            let finish_started = std::time::Instant::now();
-            // SAFETY: the context is current.
-            unsafe { (self.gl.finish)() };
-            finish_wait = Some(finish_started.elapsed());
-            match self.try_create_dmabuf_texture(lease, width, height) {
-                Ok(texture) => texture,
-                Err(lease) => self.create_gl_texture(lease, width, height),
+        let mut sync_wait = None;
+        let texture = match self.export_slot(tex) {
+            Some(export) => {
+                let sync_started = std::time::Instant::now();
+                let sync = self.sync_frame(&export);
+                sync_wait = Some((sync, sync_started.elapsed()));
+                match self.create_dmabuf_texture(export, lease, width, height) {
+                    Ok(texture) => texture,
+                    Err(lease) => self.create_gl_texture(lease, width, height),
+                }
             }
-        } else {
-            self.create_gl_texture(lease, width, height)
+            None => self.create_gl_texture(lease, width, height),
         };
         self.picture.set_paintable(Some(&texture));
         // allow-noisy-log: per-frame wall times, printed only with this module at debug.
-        match finish_wait {
-            Some(wait) => debug!(
-                "Offload frame wall time: render_frame {} us, glFinish {} us",
+        match sync_wait {
+            Some((sync, wait)) => debug!(
+                "Offload frame wall time: render_frame {} us, {sync} {} us",
                 started.elapsed().as_micros(),
                 wait.as_micros()
             ),
@@ -298,20 +299,51 @@ impl OffloadRenderer {
         }
     }
 
-    /// Export the slot without releasing its lease until GDK finishes reading.
-    fn try_create_dmabuf_texture(
+    /// `None` once export failed or GDK refused a texture: the GL path takes over.
+    fn export_slot(&self, texture: u32) -> Option<DmaBufExport> {
+        if self.dmabuf_rejected.get() {
+            return None;
+        }
+        let export = egl_dmabuf::export_gl_texture(self.egl.as_ref()?, texture);
+        if export.is_none() {
+            self.dmabuf_rejected.set(true);
+        }
+        export
+    }
+
+    /// Make readers of the exported frame wait for its rendering: through the
+    /// dma-buf's write fence, or by `glFinish` where no fence can be attached.
+    /// Returns the name of the path taken.
+    fn sync_frame(&self, export: &DmaBufExport) -> &'static str {
+        if let Some(egl) = self.egl.as_ref()
+            && let Some(fence) = egl.native_fence.as_ref()
+            && !self.fence_unsupported.get()
+        {
+            let flush = self.gl.flush;
+            // SAFETY: the context is current.
+            let flush = || unsafe { flush() };
+            match egl_dmabuf::attach_write_fence(egl, fence, flush, export) {
+                Ok(()) => return "fence",
+                Err(FenceError::Unsupported(error)) => {
+                    warn!("DMA-BUF write fence refused ({error}); waiting with glFinish");
+                    self.fence_unsupported.set(true);
+                }
+                Err(FenceError::Failed) => debug!("DMA-BUF write fence failed; glFinish"),
+            }
+        }
+        // SAFETY: the context is current.
+        unsafe { (self.gl.finish)() };
+        "glFinish"
+    }
+
+    /// Wrap the export without releasing its lease until GDK finishes reading.
+    fn create_dmabuf_texture(
         &self,
+        export: DmaBufExport,
         lease: TextureLease,
         width: i32,
         height: i32,
     ) -> std::result::Result<gdk::Texture, TextureLease> {
-        let Some(egl) = self.egl.as_ref() else {
-            return Err(lease);
-        };
-        let Some(export) = egl_dmabuf::export_gl_texture(egl, lease.id()) else {
-            self.dmabuf_rejected.set(true);
-            return Err(lease);
-        };
         let Some(display) = gdk::prelude::DrawContextExt::display(&self.gl_context) else {
             self.dmabuf_rejected.set(true);
             return Err(lease);
