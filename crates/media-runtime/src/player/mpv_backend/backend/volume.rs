@@ -172,11 +172,13 @@ impl VolumeControl {
         state.mute_set = true;
     }
 
-    /// The state to sync from, with its requests taken, or `None` when there
-    /// is nothing to do. mpv does not notify changes made in the sound
-    /// server's mixer, so `refresh_mixer` re-reads it at most twice a second.
-    fn take_requests(&self, changed: bool, refresh_mixer: bool) -> Option<State> {
-        let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+    /// A copy of the state to sync from, or `None` when there is nothing to
+    /// do. Its requests stay in place, so readers see them until `sync`
+    /// publishes the applied state. mpv does not notify changes made in the
+    /// sound server's mixer, so `refresh_mixer` re-reads it at most twice a
+    /// second.
+    fn requests(&self, changed: bool, refresh_mixer: bool) -> Option<State> {
+        let shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         let refresh = refresh_mixer
             && (shared.native_volume || shared.native_mute)
             && shared.last_sync.elapsed() >= Duration::from_millis(500);
@@ -184,10 +186,7 @@ impl VolumeControl {
         {
             return None;
         }
-        let snapshot = *shared;
-        shared.pending_volume = None;
-        shared.pending_mute = None;
-        Some(snapshot)
+        Some(*shared)
     }
 
     pub(super) fn sync(
@@ -199,7 +198,8 @@ impl VolumeControl {
     ) -> Option<(f64, bool)> {
         // Never keep the snapshot mutex locked across sound-server I/O: GTK
         // reads it for controls and can enqueue the next request concurrently.
-        let mut state = self.take_requests(changed, refresh_mixer)?;
+        let mut state = self.requests(changed, refresh_mixer)?;
+        let (requested_volume, requested_mute) = (state.pending_volume, state.pending_mute);
         let driver = mpv.get_property::<String>("current-ao").unwrap_or_default();
         // ALSA's ao-volume can control the system-wide mixer. Only these two
         // APIs promise a per-stream control belonging to this mpv instance.
@@ -238,6 +238,13 @@ impl VolumeControl {
         let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         shared.volume = state.volume;
         shared.mute = state.mute;
+        // A request made during this pass waits for the next one.
+        if shared.pending_volume == requested_volume {
+            shared.pending_volume = None;
+        }
+        if shared.pending_mute == requested_mute {
+            shared.pending_mute = None;
+        }
         shared.native_volume = native_volume;
         shared.native_mute = native_mute;
         shared.had_output |= !driver.is_empty();
