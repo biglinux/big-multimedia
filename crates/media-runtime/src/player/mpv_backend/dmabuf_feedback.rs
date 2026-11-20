@@ -10,6 +10,7 @@ use super::gl_proc_address::{SystemLibrary, library_function, library_symbol};
 use log::debug;
 use std::ffi::{CStr, c_char, c_int, c_void};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::ptr::NonNull;
 
 const DRM_FORMAT_MOD_LINEAR: u64 = 0;
 const DRM_FORMAT_MOD_INVALID: u64 = 0x00ff_ffff_ffff_ffff;
@@ -259,10 +260,15 @@ impl WaylandFns {
     }
 }
 
-/// What the dispatchers collect during the roundtrips.
+/// The `zwp_linux_dmabuf_v1` global the registry announced: name and version.
+#[derive(Default)]
+struct Globals {
+    dmabuf: Option<(u32, u32)>,
+}
+
+/// What one feedback object reports until its `done`.
 #[derive(Default)]
 struct Collected {
-    dmabuf_global: Option<(u32, u32)>,
     table: Option<Vec<(u32, u64)>>,
     pending: Tranche,
     tranches: Vec<Tranche>,
@@ -318,14 +324,14 @@ unsafe extern "C" fn registry_event(
     _message: *const WlMessage,
     args: *mut WlArgument,
 ) -> c_int {
-    // SAFETY: `data` is the `Collected` that `read_surface_feedback` owns for
-    // the roundtrips; the arguments follow the event's signature "usu".
+    // SAFETY: `data` is the session's `Globals`, freed only after the registry
+    // is destroyed; the arguments follow the event's signature "usu".
     unsafe {
-        let collected = &mut *data.cast_mut().cast::<Collected>();
+        let globals = &mut *data.cast_mut().cast::<Globals>();
         if opcode == WL_REGISTRY_GLOBAL {
             let interface = (*args.add(1)).string;
             if !interface.is_null() && CStr::from_ptr(interface) == c"zwp_linux_dmabuf_v1" {
-                collected.dmabuf_global = Some(((*args).uint, (*args.add(2)).uint));
+                globals.dmabuf = Some(((*args).uint, (*args.add(2)).uint));
             }
         }
     }
@@ -339,7 +345,9 @@ unsafe extern "C" fn feedback_event(
     _message: *const WlMessage,
     args: *mut WlArgument,
 ) -> c_int {
-    // SAFETY: as in `registry_event`; each opcode reads its own signature.
+    // SAFETY: `data` is the `Collected` of the read that made this feedback
+    // object, which destroys the object before it returns; each opcode reads
+    // its own signature.
     unsafe {
         let collected = &mut *data.cast_mut().cast::<Collected>();
         match opcode {
@@ -369,34 +377,193 @@ unsafe extern "C" fn feedback_event(
     0
 }
 
-/// The proxies and queue of one read, destroyed in reverse order on every path.
-struct Session<'a> {
-    fns: &'a WaylandFns,
+/// GDK's connection with a private queue, its registry and the bound
+/// `zwp_linux_dmabuf_v1`, kept for the renderer's life: each read is one
+/// `get_surface_feedback` and its round trip. The compositor keeps a registry
+/// until the client disconnects, so the session makes one.
+pub(crate) struct FeedbackSession {
+    fns: WaylandFns,
+    wl_display: *mut c_void,
     queue: *mut c_void,
     wrapper: *mut c_void,
     registry: *mut c_void,
     dmabuf: *mut c_void,
-    feedback: *mut c_void,
+    /// Written by `registry_event`; freed after the registry in `Drop`.
+    globals: NonNull<Globals>,
 }
 
-impl Drop for Session<'_> {
-    fn drop(&mut self) {
-        let mut no_args: [WlArgument; 0] = [];
-        // SAFETY: each pointer is null or a proxy this session created and
-        // still owns; destroy requests carry no arguments.
+impl FeedbackSession {
+    /// `None` when libwayland-client or `zwp_linux_dmabuf_v1` at version 4 is
+    /// missing.
+    ///
+    /// # Safety
+    /// `wl_display` is GDK's live display, outlives the session and is used on
+    /// this thread only.
+    pub(crate) unsafe fn open(wl_display: *mut c_void) -> Option<Self> {
+        let fns = WaylandFns::load()?;
+        let globals = NonNull::from(Box::leak(Box::<Globals>::default()));
+        // SAFETY: forwarded from the caller; every proxy made here is on the
+        // private queue and `Drop` destroys it, nulls included.
         unsafe {
-            for proxy in [self.feedback, self.dmabuf] {
-                if !proxy.is_null() {
-                    let version = (self.fns.get_version)(proxy);
-                    (self.fns.marshal)(
-                        proxy,
-                        DESTROY,
-                        std::ptr::null(),
-                        version,
-                        WL_MARSHAL_FLAG_DESTROY,
-                        no_args.as_mut_ptr(),
-                    );
+            let mut session = Self {
+                queue: (fns.create_queue)(wl_display),
+                wrapper: (fns.create_wrapper)(wl_display),
+                fns,
+                wl_display,
+                registry: std::ptr::null_mut(),
+                dmabuf: std::ptr::null_mut(),
+                globals,
+            };
+            if session.queue.is_null() || session.wrapper.is_null() {
+                return None;
+            }
+            (session.fns.set_queue)(session.wrapper, session.queue);
+            let mut new_registry = [WlArgument {
+                object: std::ptr::null_mut(),
+            }];
+            session.registry = (session.fns.marshal)(
+                session.wrapper,
+                WL_DISPLAY_GET_REGISTRY,
+                session.fns.registry_interface,
+                (session.fns.get_version)(session.wrapper),
+                0,
+                new_registry.as_mut_ptr(),
+            );
+            if session.registry.is_null()
+                || (session.fns.add_dispatcher)(
+                    session.registry,
+                    registry_event,
+                    globals.as_ptr().cast(),
+                    std::ptr::null_mut(),
+                ) != 0
+                || (session.fns.roundtrip_queue)(wl_display, session.queue) < 0
+            {
+                return None;
+            }
+            // allow-noisy-log: debug-level reasons the window's layout falls back.
+            let Some((name, advertised)) = globals.as_ref().dmabuf else {
+                debug!("dma-buf feedback: no zwp_linux_dmabuf_v1 global");
+                return None;
+            };
+            if advertised < DMABUF_VERSION {
+                debug!(
+                    "dma-buf feedback: zwp_linux_dmabuf_v1 version {advertised} has no surface feedback"
+                );
+                return None;
+            }
+            session.dmabuf = session.bind_dmabuf(name);
+            (!session.dmabuf.is_null()).then_some(session)
+        }
+    }
+
+    /// # Safety
+    /// The registry is live and `name` is the global it announced.
+    unsafe fn bind_dmabuf(&self, name: u32) -> *mut c_void {
+        let mut bind = [
+            WlArgument { uint: name },
+            WlArgument {
+                string: DMABUF_INTERFACE.0.name,
+            },
+            WlArgument {
+                uint: DMABUF_VERSION,
+            },
+            WlArgument {
+                object: std::ptr::null_mut(),
+            },
+        ];
+        // SAFETY: the arguments follow wl_registry.bind's "usun".
+        unsafe {
+            (self.fns.marshal)(
+                self.registry,
+                WL_REGISTRY_BIND,
+                &raw const DMABUF_INTERFACE.0,
+                DMABUF_VERSION,
+                0,
+                bind.as_mut_ptr(),
+            )
+        }
+    }
+
+    /// The feedback the compositor gives `wl_surface`, after one `done`.
+    ///
+    /// # Safety
+    /// `wl_surface` is a live surface of the session's display.
+    pub(crate) unsafe fn read(&self, wl_surface: *mut c_void) -> Option<SurfaceFeedback> {
+        let mut collected = Collected::default();
+        let collected_ptr = &raw mut collected;
+        let mut get_feedback = [
+            WlArgument {
+                object: std::ptr::null_mut(),
+            },
+            WlArgument { object: wl_surface },
+        ];
+        // SAFETY: the arguments follow "no"; the feedback object is destroyed
+        // before `collected`, which its dispatcher writes, is read or dropped.
+        unsafe {
+            let feedback = (self.fns.marshal)(
+                self.dmabuf,
+                DMABUF_GET_SURFACE_FEEDBACK,
+                &raw const FEEDBACK_INTERFACE.0,
+                DMABUF_VERSION,
+                0,
+                get_feedback.as_mut_ptr(),
+            );
+            if feedback.is_null() {
+                return None;
+            }
+            if (self.fns.add_dispatcher)(
+                feedback,
+                feedback_event,
+                collected_ptr.cast(),
+                std::ptr::null_mut(),
+            ) == 0
+            {
+                for _ in 0..MAX_ROUNDTRIPS {
+                    if (*collected_ptr).done
+                        || (self.fns.roundtrip_queue)(self.wl_display, self.queue) < 0
+                    {
+                        break;
+                    }
                 }
+            }
+            self.destroy(feedback);
+        }
+        if !collected.done {
+            debug!("dma-buf feedback: no done event");
+            return None;
+        }
+        Some(SurfaceFeedback {
+            table: collected.table?,
+            tranches: collected.tranches,
+        })
+    }
+
+    /// # Safety
+    /// `proxy` is a live object of this session whose interface has `destroy`
+    /// as request 0.
+    unsafe fn destroy(&self, proxy: *mut c_void) {
+        let mut no_args: [WlArgument; 0] = [];
+        // SAFETY: forwarded from the caller; destroy carries no arguments.
+        unsafe {
+            (self.fns.marshal)(
+                proxy,
+                DESTROY,
+                std::ptr::null(),
+                (self.fns.get_version)(proxy),
+                WL_MARSHAL_FLAG_DESTROY,
+                no_args.as_mut_ptr(),
+            );
+        }
+    }
+}
+
+impl Drop for FeedbackSession {
+    fn drop(&mut self) {
+        // SAFETY: each pointer is null or an object this session made and
+        // still owns; `globals` is freed only once no registry can write it.
+        unsafe {
+            if !self.dmabuf.is_null() {
+                self.destroy(self.dmabuf);
             }
             if !self.registry.is_null() {
                 (self.fns.destroy_proxy)(self.registry);
@@ -407,169 +574,9 @@ impl Drop for Session<'_> {
             if !self.queue.is_null() {
                 (self.fns.destroy_queue)(self.queue);
             }
+            drop(Box::from_raw(self.globals.as_ptr()));
         }
     }
-}
-
-impl<'a> Session<'a> {
-    /// A private queue on `wl_display` and the registry on it, its globals read.
-    ///
-    /// # Safety
-    /// `wl_display` is live; `collected` outlives the session.
-    unsafe fn open(
-        fns: &'a WaylandFns,
-        wl_display: *mut c_void,
-        collected: *mut Collected,
-    ) -> Option<Self> {
-        // SAFETY: forwarded from the caller; every proxy made here goes on the
-        // private queue and is destroyed by `Drop`.
-        unsafe {
-            let mut session = Self {
-                fns,
-                queue: (fns.create_queue)(wl_display),
-                wrapper: std::ptr::null_mut(),
-                registry: std::ptr::null_mut(),
-                dmabuf: std::ptr::null_mut(),
-                feedback: std::ptr::null_mut(),
-            };
-            if session.queue.is_null() {
-                return None;
-            }
-            session.wrapper = (fns.create_wrapper)(wl_display);
-            if session.wrapper.is_null() {
-                return None;
-            }
-            (fns.set_queue)(session.wrapper, session.queue);
-            let mut new_registry = [WlArgument {
-                object: std::ptr::null_mut(),
-            }];
-            session.registry = (fns.marshal)(
-                session.wrapper,
-                WL_DISPLAY_GET_REGISTRY,
-                fns.registry_interface,
-                (fns.get_version)(session.wrapper),
-                0,
-                new_registry.as_mut_ptr(),
-            );
-            let listening = !session.registry.is_null()
-                && (fns.add_dispatcher)(
-                    session.registry,
-                    registry_event,
-                    collected.cast(),
-                    std::ptr::null_mut(),
-                ) == 0;
-            (listening && (fns.roundtrip_queue)(wl_display, session.queue) >= 0).then_some(session)
-        }
-    }
-
-    /// Bind `zwp_linux_dmabuf_v1` (named `name` in the registry) and ask for the
-    /// feedback of `wl_surface`.
-    ///
-    /// # Safety
-    /// As [`Session::open`]; `wl_surface` is a live surface of the display.
-    unsafe fn request_feedback(
-        &mut self,
-        name: u32,
-        wl_surface: *mut c_void,
-        collected: *mut Collected,
-    ) -> Option<()> {
-        // SAFETY: forwarded from the caller; the bind arguments follow
-        // wl_registry.bind's "usun" and the feedback request's "no".
-        unsafe {
-            let mut bind = [
-                WlArgument { uint: name },
-                WlArgument {
-                    string: DMABUF_INTERFACE.0.name,
-                },
-                WlArgument {
-                    uint: DMABUF_VERSION,
-                },
-                WlArgument {
-                    object: std::ptr::null_mut(),
-                },
-            ];
-            self.dmabuf = (self.fns.marshal)(
-                self.registry,
-                WL_REGISTRY_BIND,
-                &raw const DMABUF_INTERFACE.0,
-                DMABUF_VERSION,
-                0,
-                bind.as_mut_ptr(),
-            );
-            if self.dmabuf.is_null() {
-                return None;
-            }
-            let mut get_feedback = [
-                WlArgument {
-                    object: std::ptr::null_mut(),
-                },
-                WlArgument { object: wl_surface },
-            ];
-            self.feedback = (self.fns.marshal)(
-                self.dmabuf,
-                DMABUF_GET_SURFACE_FEEDBACK,
-                &raw const FEEDBACK_INTERFACE.0,
-                DMABUF_VERSION,
-                0,
-                get_feedback.as_mut_ptr(),
-            );
-            let listening = !self.feedback.is_null()
-                && (self.fns.add_dispatcher)(
-                    self.feedback,
-                    feedback_event,
-                    collected.cast(),
-                    std::ptr::null_mut(),
-                ) == 0;
-            listening.then_some(())
-        }
-    }
-}
-
-/// The feedback the compositor gives `wl_surface`, after one `done`. `None`
-/// when libwayland-client, the global at version 4 or the answer is missing.
-///
-/// # Safety
-/// `wl_display` is GDK's live `wl_display` and `wl_surface` a live surface of
-/// it, both used on this thread only.
-pub(crate) unsafe fn read_surface_feedback(
-    wl_display: *mut c_void,
-    wl_surface: *mut c_void,
-) -> Option<SurfaceFeedback> {
-    let fns = WaylandFns::load()?;
-    let mut collected = Collected::default();
-    let collected_ptr = &raw mut collected;
-    // SAFETY: the display and surface are live (caller), and `session` is
-    // dropped, destroying the proxies whose dispatchers write through
-    // `collected_ptr`, before `collected` is read whole.
-    unsafe {
-        let mut session = Session::open(&fns, wl_display, collected_ptr)?;
-        // allow-noisy-log: debug-level reasons the window's layout falls back.
-        let Some((name, advertised)) = (*collected_ptr).dmabuf_global else {
-            debug!("dma-buf feedback: no zwp_linux_dmabuf_v1 global");
-            return None;
-        };
-        if advertised < DMABUF_VERSION {
-            debug!(
-                "dma-buf feedback: zwp_linux_dmabuf_v1 version {advertised} has no surface feedback"
-            );
-            return None;
-        }
-        session.request_feedback(name, wl_surface, collected_ptr)?;
-        for _ in 0..MAX_ROUNDTRIPS {
-            if (*collected_ptr).done || (fns.roundtrip_queue)(wl_display, session.queue) < 0 {
-                break;
-            }
-        }
-        drop(session);
-    }
-    if !collected.done {
-        debug!("dma-buf feedback: no done event");
-        return None;
-    }
-    Some(SurfaceFeedback {
-        table: collected.table?,
-        tranches: collected.tranches,
-    })
 }
 
 #[cfg(test)]

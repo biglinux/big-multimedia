@@ -3,7 +3,7 @@
 //! picks for a GL texture (Y-tiled on Sandy Bridge, which big-compositor's 2d
 //! refuses). Any step that fails leaves the slot to `glTexImage2D` and export.
 
-use super::super::dmabuf_feedback::{self, Layout};
+use super::super::dmabuf_feedback::{self, FeedbackSession, Layout};
 use super::super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns};
 use super::super::gl_proc_address::{SystemLibrary, library_function};
 use super::gl_fns::GlFns;
@@ -127,6 +127,8 @@ impl Drop for Allocator {
 #[derive(Default)]
 pub(super) struct SlotBuffers {
     allocator: OnceCell<Option<Allocator>>,
+    /// Opened on the first read; `None` stays for the renderer's life.
+    feedback: OnceCell<Option<FeedbackSession>>,
     buffers: RefCell<[Option<DmaBufExport>; SLOT_COUNT]>,
     /// The size the layout was read for, and the layout (`None`: driver's).
     layout: RefCell<Option<((i32, i32), Option<Layout>)>>,
@@ -251,11 +253,17 @@ impl SlotBuffers {
             self.describe("driver layout: the window has no Wayland surface");
             return None;
         };
-        // SAFETY: GDK's display and the window's surface, alive while the
-        // picture is realized, used on the main thread only.
-        let Some(feedback) =
-            (unsafe { dmabuf_feedback::read_surface_feedback(wl_display, wl_surface) })
-        else {
+        // SAFETY: GDK's display, which outlives the renderer, and the window's
+        // surface, alive while the picture is realized, both on the main thread.
+        let session = self
+            .feedback
+            .get_or_init(|| unsafe { FeedbackSession::open(wl_display) });
+        let Some(session) = session else {
+            self.describe("driver layout: the compositor offers no dma-buf feedback");
+            return None;
+        };
+        // SAFETY: as above.
+        let Some(feedback) = (unsafe { session.read(wl_surface) }) else {
             self.describe("driver layout: the compositor gave no dma-buf feedback for the window");
             return None;
         };
