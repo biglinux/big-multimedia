@@ -285,7 +285,8 @@ fn move_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
 
 /// Copy `src` to the absent `dest` through staging that a killed copy leaves
 /// out of sight, and remove `src` only once the copy and its directory entry
-/// are on disk.
+/// are on disk. The copy keeps the source's modification time and mode, so
+/// sorting by date and access stay as they were.
 fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
     // Copying a large video takes minutes; refuse a taken name before it.
     if dest.symlink_metadata().is_ok() {
@@ -293,7 +294,14 @@ fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
     }
     let stage = StagedFile::new(dest)?;
     let mut staged = std::fs::OpenOptions::new().write(true).open(stage.path())?;
-    std::io::copy(&mut std::fs::File::open(src)?, &mut staged)?;
+    let mut source = std::fs::File::open(src)?;
+    std::io::copy(&mut source, &mut staged)?;
+    let metadata = source.metadata()?;
+    // FAT and some network mounts store neither; the move goes on without them.
+    let _ = staged.set_permissions(metadata.permissions());
+    if let Ok(modified) = metadata.modified() {
+        let _ = staged.set_times(std::fs::FileTimes::new().set_modified(modified));
+    }
     drop(staged);
     stage.publish_copy(dest)?.into_io_result()?;
     std::fs::remove_file(src)
@@ -388,8 +396,21 @@ mod tests {
         let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
         std::fs::create_dir(dir.join("out")).unwrap();
         std::fs::write(&src, b"").unwrap();
+        let modified = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000);
+        let file = std::fs::File::options().write(true).open(&src).unwrap();
+        file.set_times(std::fs::FileTimes::new().set_modified(modified))
+            .unwrap();
+        file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o640))
+            .unwrap();
+        drop(file);
         move_by_copy(&src, &dest).unwrap();
         assert_eq!(std::fs::read(&dest).unwrap(), b"");
+        let moved = std::fs::metadata(&dest).unwrap();
+        assert_eq!(moved.modified().unwrap(), modified);
+        assert_eq!(
+            std::os::unix::fs::PermissionsExt::mode(&moved.permissions()) & 0o777,
+            0o640
+        );
         assert!(!src.exists());
         assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
         std::fs::remove_dir_all(dir).unwrap();
