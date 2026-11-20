@@ -151,7 +151,11 @@ impl AudioShell {
                     mpv.seek_absolute_async(target);
                 }
             }
-            MprisCommand::OpenUri(path) => {
+            MprisCommand::OpenUri(uri) => {
+                // A file reads its tags from its path; other schemes stream.
+                let path = big_os_kit::url::file_uri_path(&uri)
+                    .and_then(|path| path.into_os_string().into_string().ok())
+                    .unwrap_or(uri);
                 self.cancel_pending_opens();
                 self.snapshot_queue();
                 self.podcast_mode = false;

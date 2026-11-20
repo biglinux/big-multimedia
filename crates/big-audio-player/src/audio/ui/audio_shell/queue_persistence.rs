@@ -103,9 +103,13 @@ impl QueuePersistence {
         }
     }
 
-    /// Saves stay refused until a retry opens the library.
+    /// Saves stay refused until a retry opens the library. Startup and Retry
+    /// can both be opening it: once one has, the other's failure is stale.
     pub(super) fn open_failed(&self, cause: String) {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        if state.loaded {
+            return;
+        }
         state.failed = true;
         state.open_failure = Some(cause);
         drop(state);
@@ -249,6 +253,16 @@ mod tests {
             },
             podcasts: SavedQueue::default(),
         }
+    }
+
+    #[test]
+    fn late_open_failure_after_open_is_stale() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        db::schema::run_migrations(&conn).unwrap();
+        let (mut owner, _updates) = QueuePersistence::new();
+        owner.loaded(Arc::new(Mutex::new(conn)), true);
+        owner.open_failed("database is locked".into());
+        assert_eq!(owner.status().phase, Phase::Saved);
     }
 
     #[test]

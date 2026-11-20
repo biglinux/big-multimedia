@@ -8,16 +8,21 @@ impl AudioShell {
         restored: queue_persistence::RestoredQueue,
         sender: &ComponentSender<Self>,
     ) {
-        if let Some(session) = &restored.session
-            && self.queue_persistence.status().revision == 0
-        {
-            self.queue.set_tracks(session.music.tracks.clone());
-            if let Some(index) = session.music.current {
-                self.queue.jump_to(index);
+        if let Some(session) = &restored.session {
+            fill_untouched_queues(
+                self.podcast_mode,
+                &mut self.queue,
+                &mut self.saved_music_queue,
+                &mut self.saved_podcast_queue,
+                session,
+            );
+            // Edited before the saved queue arrived: what is saved next is
+            // that edit with the rest of the saved session, not the edit alone.
+            if self.queue_persistence.status().revision == 0 {
+                self.sync_queue_to_panels();
+            } else {
+                self.commit_queue();
             }
-            self.saved_podcast_queue =
-                Some((session.podcasts.tracks.clone(), session.podcasts.current));
-            self.sync_queue_to_panels();
             let paths = self
                 .queue
                 .tracks()
@@ -319,6 +324,32 @@ fn plan_open(queued: &[&str], resolved: &[String]) -> (Vec<String>, Option<usize
 /// A queue set aside while the other one plays, with its playing index.
 type StashedQueue = (Vec<Track>, Option<usize>);
 
+/// Fill from `session` each queue that is still empty when the saved one
+/// arrives. Both start empty, so an empty one is one the person left alone,
+/// and a queue they filled meanwhile keeps their edit.
+fn fill_untouched_queues(
+    podcast_mode: bool,
+    queue: &mut PlayQueue,
+    saved_music: &mut Option<StashedQueue>,
+    saved_podcast: &mut Option<StashedQueue>,
+    session: &crate::db::queries_advanced::QueueSession,
+) {
+    let (playing, stashed, stash) = if podcast_mode {
+        (&session.podcasts, &session.music, saved_music)
+    } else {
+        (&session.music, &session.podcasts, saved_podcast)
+    };
+    if queue.is_empty() {
+        queue.set_tracks(playing.tracks.clone());
+        if let Some(index) = playing.current {
+            queue.jump_to(index);
+        }
+    }
+    if stash.as_ref().is_none_or(|(tracks, _)| tracks.is_empty()) {
+        *stash = Some((stashed.tracks.clone(), stashed.current));
+    }
+}
+
 fn stash(queue: &PlayQueue) -> StashedQueue {
     (queue.tracks().to_vec(), queue.current_index())
 }
@@ -463,6 +494,41 @@ mod podcast_queue_tests {
         ids.sort_unstable();
         ids.dedup();
         assert_eq!(ids.len(), 50);
+    }
+
+    /// A feed played before the saved queue was read keeps its episodes, and
+    /// the saved music waits in the stash instead of being saved over.
+    #[test]
+    fn early_feed_keeps_saved_music() {
+        use crate::db::queries_advanced::{QueueSession, SavedQueue};
+        let session = QueueSession {
+            music: SavedQueue {
+                tracks: music_queue().tracks().to_vec(),
+                current: Some(2),
+            },
+            podcasts: SavedQueue::default(),
+        };
+        let mut podcast_mode = false;
+        let mut queue = PlayQueue::new();
+        let (mut saved_music, mut saved_podcast) = (None, None);
+        start_podcast_queue(
+            &mut podcast_mode,
+            &mut queue,
+            &mut saved_music,
+            podcast_episode_tracks("Feed", episodes(2)),
+        );
+        fill_untouched_queues(
+            podcast_mode,
+            &mut queue,
+            &mut saved_music,
+            &mut saved_podcast,
+            &session,
+        );
+        assert_eq!(titles(&queue), ["Episode 0", "Episode 1"]);
+        let (music, current) = saved_music.unwrap();
+        assert_eq!(music.len(), 3);
+        assert_eq!(current, Some(2));
+        assert_eq!(saved_podcast, None);
     }
 
     #[test]

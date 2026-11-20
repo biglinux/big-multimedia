@@ -461,8 +461,17 @@ impl AudioShell {
 /// forget. Entries match by path, because files opened from outside the library
 /// all share id 0.
 fn remove_deleted_files(queue: &mut PlayQueue, deleted: &[(i64, String)]) -> Vec<i64> {
-    let is_deleted = |track: &Track| deleted.iter().any(|(_, path)| *path == track.file_path);
-    while let Some(index) = queue.tracks().iter().position(is_deleted) {
+    let paths: std::collections::HashSet<&str> =
+        deleted.iter().map(|(_, path)| path.as_str()).collect();
+    let doomed: Vec<usize> = queue
+        .tracks()
+        .iter()
+        .enumerate()
+        .filter(|(_, track)| paths.contains(track.file_path.as_str()))
+        .map(|(index, _)| index)
+        .collect();
+    // Highest first, so each index still names its track.
+    for index in doomed.into_iter().rev() {
         queue.remove(index);
     }
     deleted
