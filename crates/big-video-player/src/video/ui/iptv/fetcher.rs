@@ -12,8 +12,8 @@ use crate::media::iptv::{
 use crate::video::ui::iptv::{cache, xtream};
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
 use big_os_kit::keyring::{SecretService, Vault};
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
@@ -106,17 +106,55 @@ pub fn played_channels(
     providers: &[IptvProvider],
     vault: &dyn Vault,
 ) -> Result<Vec<(String, String)>, FetchError> {
+    resolve_channels(entries, providers, vault, &|provider| {
+        let origin = provider.source.list_origin();
+        cache::read(&provider_identifier(provider))
+            .map(|text| {
+                parse_channel_list(&text, origin)
+                    .entries
+                    .into_iter()
+                    .map(|channel| channel.url)
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// [`played_channels`] with each provider's stored channel URLs from
+/// `line_up`, read only when several accounts share a server: the channel
+/// goes to the account whose list carries it, else to the first one.
+fn resolve_channels(
+    entries: &[String],
+    providers: &[IptvProvider],
+    vault: &dyn Vault,
+    line_up: &dyn Fn(&IptvProvider) -> HashSet<String>,
+) -> Result<Vec<(String, String)>, FetchError> {
     let mut accounts: HashMap<usize, (String, String)> = HashMap::new();
+    let mut line_ups: HashMap<usize, HashSet<String>> = HashMap::new();
     let mut channels = Vec::new();
     for entry in entries
         .iter()
         .filter(|entry| xtream::names_credentials(entry))
     {
-        let (index, provider) = providers
-            .iter()
-            .enumerate()
-            .find(|(_, provider)| serves(provider, entry))
-            .ok_or(FetchError::NoProvider)?;
+        let serving: Vec<usize> = (0..providers.len())
+            .filter(|&index| serves(&providers[index], entry))
+            .collect();
+        let &first = serving.first().ok_or(FetchError::NoProvider)?;
+        let index = if serving.len() == 1 {
+            first
+        } else {
+            serving
+                .iter()
+                .copied()
+                .find(|&index| {
+                    line_ups
+                        .entry(index)
+                        .or_insert_with(|| line_up(&providers[index]))
+                        .contains(entry)
+                })
+                .unwrap_or(first)
+        };
+        let provider = &providers[index];
         let (username, password) = match accounts.entry(index) {
             Entry::Occupied(account) => account.into_mut(),
             Entry::Vacant(slot) => match provider.resolved_source(vault) {
@@ -381,6 +419,33 @@ mod tests {
                 ),
             ]
         );
+    }
+
+    /// Two accounts on one server: the channel goes to the one whose list
+    /// carries it, and to the first one when neither list does.
+    #[test]
+    fn shared_server_picks_listing_account() {
+        let mut second = account("Second");
+        if let IptvKind::Xtream { username, .. } = &mut second.source {
+            *username = "bia".into();
+        }
+        let providers = [account("First"), second];
+        let entries = ["http://srv/live/{credentials}/7.ts".to_string()];
+        let listed_by_second = |provider: &IptvProvider| {
+            if provider.name == "Second" {
+                std::iter::once(entries[0].clone()).collect()
+            } else {
+                HashSet::new()
+            }
+        };
+        let played = |line_up: &dyn Fn(&IptvProvider) -> HashSet<String>| {
+            resolve_channels(&entries, &providers, &Keyring(Some("pw")), line_up)
+                .unwrap()
+                .remove(0)
+                .1
+        };
+        assert_eq!(played(&listed_by_second), "http://srv/live/bia/pw/7.ts");
+        assert_eq!(played(&|_| HashSet::new()), "http://srv/live/ana/pw/7.ts");
     }
 
     #[test]
