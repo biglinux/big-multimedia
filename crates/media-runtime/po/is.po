@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-20 12:30-0300\n"
+"POT-Creation-Date: 2026-11-20 18:20-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -506,7 +506,7 @@ msgstr "Vista þátt"
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 msgid "Save"
 msgstr "Vista"
 
@@ -1051,7 +1051,7 @@ msgstr "Upplýsingar um lag"
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:202
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:213
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
 #: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:85
@@ -1641,10 +1641,14 @@ msgstr "Fjarlæg eða óstudd staðsetning — ekki hægt að fjarlægja hér"
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:128
+#: crates/big-video-player/src/video/app.rs:138
 msgid "Open a separate player window instead of using the running one"
 msgstr ""
 "Opna sérstakan spilaraglugga í stað þess að nota spilarann sem er í gangi"
+
+#: crates/big-video-player/src/video/app.rs:148
+msgid "Open the player window maximized"
+msgstr "Opna spilaragluggann hámarkaðan"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -2301,45 +2305,53 @@ msgstr "Áhrif með hægfara dofnandi sjónrænni slóð"
 msgid "Decay"
 msgstr "Dofnun"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:83
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:88
 msgid "Toggle favorite"
 msgstr "Víxla eftirlæti af/á"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:96
+msgid ""
+"This channel's address holds the provider's password, so it cannot be a "
+"favorite."
+msgstr ""
+"Vistfang þessarar rásar inniheldur lykilorð veitunnar, svo hún getur ekki "
+"verið eftirlæti."
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:187
 msgid "No channels"
 msgstr "Engar rásir"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:177
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:195
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} rás"
 msgstr[1] "{} rásir"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:224
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:242
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Án hóps"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:166
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:175
 msgid "Provider"
 msgstr "Veita"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:174
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:183
 msgid "Manage…"
 msgstr "Sýsla…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:179
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:188
 msgid "Reload from provider"
 msgstr "Endurhlaða frá veitu"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:186
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:191
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:195
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:200
 msgid "Search channels"
 msgstr "Leita í rásum"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:204
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:213
 msgid ""
 "Some provider passwords are kept only until the player closes because your "
 "keyring could not be reached. Unlock your keyring, then reload the channels."
@@ -2348,29 +2360,29 @@ msgstr ""
 "að ekki náðist í lyklakippuna þína. Aflæstu lyklakippunni og hlaððu síðan "
 "rásunum inn aftur."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:270
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:472
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Engar veitur stilltar. Smelltu á „Sýsla…“ til að bæta einni við."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:291
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
 msgid "Showing cached channels, updating…"
 msgstr "Sýni rásir úr skyndiminni — uppfæri…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:497
 msgid "Reloading channels…"
 msgstr "Endurhleð rásir…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:499
 msgid "Loading channels…"
 msgstr "Hleð rásum…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:539
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "Sýni fyrstu {} rásirnar; listinn inniheldur fleiri."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:559
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2378,7 +2390,7 @@ msgstr ""
 "Ekki náðist samband við veituna. Athugaðu vistfangið og tenginguna; vistaður "
 "listi helst á skjánum."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:562
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2386,39 +2398,39 @@ msgstr ""
 "Veitan neitaði aðgangi. Athugaðu notandanafn og lykilorð, eða User-Agent sem "
 "veitan biður um."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:565
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr "Netþjónn veitunnar bilaði (villa {}). Reyndu aftur síðar."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:569
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Veitan svaraði með villu {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:571
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "Rásalistinn er stærri en {} MB."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:575
 msgid "The provider sent no channels."
 msgstr "Veitan sendi engar rásir."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:576
 msgid "The provider rejected the user name or password."
 msgstr "Veitan hafnaði notandanafninu eða lykilorðinu."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:578
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Þessi reikningur er ekki virkur (veitan segir: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:580
 msgid "Could not read the playlist file."
 msgstr "Ekki tókst að lesa spilunarlistaskrána."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:582
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2426,7 +2438,7 @@ msgstr ""
 "Ekki var hægt að lesa lykilorð þessarar veitu úr lyklakippunni þinni. "
 "Aflæstu lyklakippunni og hlaððu síðan rásunum inn aftur."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:585
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -2478,15 +2490,15 @@ msgstr "Breyta"
 msgid "Remove"
 msgstr "Fjarlægja"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:254
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:286
 msgid "IPTV Provider"
 msgstr "IPTV-veita"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:335
 msgid "Saving the password in your keyring…"
 msgstr "Vista lykilorðið í lyklakippunni þinni…"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
@@ -2494,69 +2506,69 @@ msgstr ""
 "Ekki var hægt að vista lykilorðið í lyklakippunni þinni og því var ekkert "
 "vistað. Aflæstu lyklakippunni og vistaðu síðan aftur."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
 msgid "Name"
 msgstr "Heiti"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:375
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:415
 msgid "Type"
 msgstr "Gerð"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:377
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:417
 msgid "M3U URL"
 msgstr "M3U-slóð"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:378
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:418
 msgid "Local M3U file"
 msgstr "Staðbundin M3U-skrá"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:379
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:419
 msgid "Xtream Codes"
 msgstr "Xtream Codes"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:389
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:429
 msgid "URL"
 msgstr "Slóð"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:393
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "File path"
 msgstr "Skráarslóð"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:397
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:437
 msgid "Server URL"
 msgstr "Slóð netþjóns"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:398
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:438
 msgid "Username"
 msgstr "Notandanafn"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:400
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:440
 msgid "Password"
 msgstr "Lykilorð"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:422
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:462
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
 "Fullt vistfang er vistað í lyklakippunni þinni. Láttu það standa eins og það "
 "er sýnt til að halda því."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:465
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
 "Lykilorðið er vistað í lyklakippunni þinni. Hafðu Lykilorð autt til að halda "
 "því."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:473
 msgid "HTTP headers (optional)"
 msgstr "HTTP-hausar (valfrjálst)"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:434
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:474
 msgid "User-Agent"
 msgstr "User-Agent"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:436
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:476
 msgid "Referer"
 msgstr "Referer"
 
@@ -3755,7 +3767,7 @@ msgstr "lýkur kl. {}"
 msgid "Search your videos…"
 msgstr "Leita í myndskeiðunum þínum…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:175
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:177
 msgid "Scanning…"
 msgstr "Skanna…"
 
@@ -3997,7 +4009,7 @@ msgid "On the TV"
 msgstr "Í sjónvarpinu"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:234
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:44
 #: crates/media-runtime/src/cast/tv/card.rs:261
 msgid "The TV is still playing"
 msgstr "Sjónvarpið er enn að spila"
@@ -4344,7 +4356,7 @@ msgstr "Fjarlægja þessa klippingu"
 msgid "Open a local video to cut it"
 msgstr "Opnaðu staðbundið myndskeið til að klippa það"
 
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:42
 #: crates/media-runtime/src/cast/tv/card.rs:233
 msgid "On the TV and here"
 msgstr "Í sjónvarpinu og hér"

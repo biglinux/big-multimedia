@@ -500,7 +500,7 @@ pub(crate) fn bind_dmabuf_texture(
 /// Call with a current EGL/GL context.
 pub(crate) fn probe() -> Option<EglDmaBufFns> {
     let fns = EglDmaBufFns::load();
-    // allow-noisy-log: one line per renderer, naming how frames are synchronized.
+    // One line per renderer, naming how frames are synchronized.
     match &fns {
         Some(fns) if fns.native_fence.is_some() => info!(
             "EGL DMA-BUF export: available (EGL_MESA_image_dma_buf_export), frames fenced by EGL_ANDROID_native_fence_sync"

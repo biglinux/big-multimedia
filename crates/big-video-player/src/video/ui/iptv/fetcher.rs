@@ -263,7 +263,11 @@ pub fn fetch_provider_channels(
     if channels.entries.is_empty() && channels.skipped == 0 {
         return Err(FetchError::Empty);
     }
-    cache::write(provider_id, &content);
+    if provider.lists_secret_urls() {
+        cache::retire(provider_id);
+    } else {
+        cache::write(provider_id, &content);
+    }
     let favorite_renames = match &source {
         IptvKind::Xtream {
             username, password, ..

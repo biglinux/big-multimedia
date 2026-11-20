@@ -39,6 +39,7 @@ flate = "flate"
 unparented = "unparented"   # GTK: widget removed from its parent.
 seeked = "seeked"           # MPRIS spec "Seeked" D-Bus signal.
 caf = "caf"                 # Percent-encoded "café" in tests.
+zink = "zink"               # Mesa's OpenGL driver over Vulkan.
 ABD = "ABD"                 # Sort-order test input.
 
 [files]

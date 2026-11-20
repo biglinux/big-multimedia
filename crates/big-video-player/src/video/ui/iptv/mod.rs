@@ -299,8 +299,7 @@ impl Component for VideoIptvBrowser {
                 channels,
             } => {
                 if generation == self.load_generation && !self.fresh_shown {
-                    self.shown.clone_from(&self.loading);
-                    self.list_view.set_channels(channels);
+                    self.show_rows_of_loading(channels);
                     self.status
                         .set_label(&i18n("Showing cached channels, updating…"));
                 }
@@ -508,6 +507,17 @@ impl VideoIptvBrowser {
         spawn_network_load(provider, provider_id, generation, sender);
     }
 
+    /// Show `channels` as the rows of the provider being loaded.
+    fn show_rows_of_loading(&mut self, channels: Vec<IptvChannel>) {
+        self.shown.clone_from(&self.loading);
+        let starrable = self
+            .shown
+            .as_ref()
+            .is_none_or(|provider| !provider.lists_secret_urls());
+        self.list_view.set_starrable(starrable);
+        self.list_view.set_channels(channels);
+    }
+
     /// Apply a finished network fetch (only for the current generation): replace
     /// the list on success, or surface a fallback message on failure.
     fn on_network_resolved(
@@ -532,8 +542,7 @@ impl VideoIptvBrowser {
                 }
                 status.extend(left_out_notice(false, channels.skipped));
                 self.list_view.rename_favorites(favorite_renames);
-                self.list_view.set_channels(channels.entries);
-                self.shown.clone_from(&self.loading);
+                self.show_rows_of_loading(channels.entries);
                 self.fresh_shown = true;
                 self.status.set_label(&status.join(" "));
             }

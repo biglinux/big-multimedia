@@ -328,7 +328,7 @@ impl SlotBuffers {
     fn describe(&self, description: &str) {
         let mut described = self.described.borrow_mut();
         if *described != description {
-            // allow-noisy-log: once per change of the slots' layout.
+            // Once per change of the slots' layout.
             info!("Offload slots: {description}");
             description.clone_into(&mut described);
         }

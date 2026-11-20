@@ -113,6 +113,14 @@ impl IptvProvider {
         }
     }
 
+    /// Whether the list is fetched with credentials that its channel URLs
+    /// then repeat: such a list is neither cached nor starred.
+    #[must_use]
+    pub fn lists_secret_urls(&self) -> bool {
+        matches!(self.source, IptvKind::M3uUrl { .. })
+            && (!self.secret_id.is_empty() || self.plaintext_secret().is_some())
+    }
+
     /// Move the plain-text secret into `vault` under a fresh item and keep
     /// only its reference. Blocking.
     ///
@@ -573,6 +581,25 @@ mod tests {
         // Memory keeps them until the keyring holds them.
         assert_eq!(store.providers[0].plaintext_secret(), Some("s3cret"));
         assert_eq!(store.providers[1].plaintext_secret(), Some(full));
+    }
+
+    #[test]
+    fn credentialed_m3u_lists_flagged() {
+        let protected = IptvProvider {
+            secret_id: "item".into(),
+            ..m3u_url_provider("List", "https://srv/get.php?username=ana&password=***")
+        };
+        let plain = m3u_url_provider("List", "https://srv/get.php?username=ana&password=s3cret");
+        let free = m3u_url_provider("Free", "https://srv/free.m3u8");
+        let xtream_account = IptvProvider {
+            secret_id: "item".into(),
+            ..xtream("")
+        };
+        let flags: Vec<bool> = [protected, plain, free, xtream_account]
+            .iter()
+            .map(IptvProvider::lists_secret_urls)
+            .collect();
+        assert_eq!(flags, [true, true, false, false]);
     }
 
     #[test]

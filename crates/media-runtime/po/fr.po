@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-20 12:30-0300\n"
+"POT-Creation-Date: 2026-11-20 18:20-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -517,7 +517,7 @@ msgstr "Enregistrer l’épisode"
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -1071,7 +1071,7 @@ msgstr "Informations sur la piste"
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:240
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:202
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:260
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:292
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:213
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
 #: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:85
@@ -1671,11 +1671,15 @@ msgstr "Emplacement distant ou non pris en charge — suppression impossible ici
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:128
+#: crates/big-video-player/src/video/app.rs:138
 msgid "Open a separate player window instead of using the running one"
 msgstr ""
 "Ouvrir une fenêtre de lecteur séparée au lieu d’utiliser celle déjà en cours "
 "d’exécution"
+
+#: crates/big-video-player/src/video/app.rs:148
+msgid "Open the player window maximized"
+msgstr "Ouvrir la fenêtre du lecteur agrandie"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -2343,45 +2347,53 @@ msgstr "Effet de traînée visuelle qui s’estompe lentement"
 msgid "Decay"
 msgstr "Atténuation"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:83
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:88
 msgid "Toggle favorite"
 msgstr "Basculer le favori"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:96
+msgid ""
+"This channel's address holds the provider's password, so it cannot be a "
+"favorite."
+msgstr ""
+"L’adresse de cette chaîne contient le mot de passe du fournisseur, elle ne "
+"peut donc pas devenir un favori."
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:187
 msgid "No channels"
 msgstr "Aucune chaîne"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:177
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:195
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} chaîne"
 msgstr[1] "{} chaînes"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:224
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:242
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Non groupées"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:166
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:175
 msgid "Provider"
 msgstr "Fournisseur"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:174
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:183
 msgid "Manage…"
 msgstr "Gérer…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:179
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:188
 msgid "Reload from provider"
 msgstr "Recharger depuis le fournisseur"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:186
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:191
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:195
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:200
 msgid "Search channels"
 msgstr "Rechercher des chaînes"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:204
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:213
 msgid ""
 "Some provider passwords are kept only until the player closes because your "
 "keyring could not be reached. Unlock your keyring, then reload the channels."
@@ -2390,30 +2402,30 @@ msgstr ""
 "fermeture du lecteur, car votre trousseau de clés n’a pas pu être atteint. "
 "Déverrouillez votre trousseau de clés, puis rechargez les canaux."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:270
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:472
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "Aucun fournisseur configuré. Cliquez sur « Gérer… » pour en ajouter un."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:291
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
 msgid "Showing cached channels, updating…"
 msgstr "Affichage des chaînes en cache — mise à jour…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:497
 msgid "Reloading channels…"
 msgstr "Rechargement des chaînes…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:499
 msgid "Loading channels…"
 msgstr "Chargement des chaînes…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:539
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "Affichage des {} premiers canaux ; la liste en contient davantage."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:559
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2421,7 +2433,7 @@ msgstr ""
 "Impossible de joindre le fournisseur. Vérifiez l’adresse et votre "
 "connexion ; une liste enregistrée reste affichée."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:562
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2429,39 +2441,39 @@ msgstr ""
 "Le fournisseur a refusé l’accès. Vérifiez le nom d’utilisateur et le mot de "
 "passe, ou le User-Agent demandé par le fournisseur."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:565
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr "Le serveur du fournisseur a échoué (erreur {}). Réessayez plus tard."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:569
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Le fournisseur a répondu par l’erreur {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:571
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "La liste des chaînes dépasse {} Mo."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:575
 msgid "The provider sent no channels."
 msgstr "Le fournisseur n’a envoyé aucune chaîne."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:576
 msgid "The provider rejected the user name or password."
 msgstr "Le fournisseur a rejeté le nom d’utilisateur ou le mot de passe."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:578
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Ce compte n’est pas actif (le fournisseur indique : {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:580
 msgid "Could not read the playlist file."
 msgstr "Impossible de lire le fichier de la liste de lecture."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:582
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2469,7 +2481,7 @@ msgstr ""
 "Impossible de lire le mot de passe de ce fournisseur dans votre trousseau de "
 "clés. Déverrouillez votre trousseau de clés, puis rechargez les canaux."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:585
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -2521,15 +2533,15 @@ msgstr "Modifier"
 msgid "Remove"
 msgstr "Retirer"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:254
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:286
 msgid "IPTV Provider"
 msgstr "Fournisseur IPTV"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:335
 msgid "Saving the password in your keyring…"
 msgstr "Enregistrement du mot de passe dans votre trousseau de clés…"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
@@ -2538,69 +2550,69 @@ msgstr ""
 "n’a été enregistré. Déverrouillez votre trousseau de clés, puis enregistrez "
 "à nouveau."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
 msgid "Name"
 msgstr "Nom"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:375
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:415
 msgid "Type"
 msgstr "Type"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:377
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:417
 msgid "M3U URL"
 msgstr "URL M3U"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:378
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:418
 msgid "Local M3U file"
 msgstr "Fichier M3U local"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:379
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:419
 msgid "Xtream Codes"
 msgstr "Xtream Codes"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:389
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:429
 msgid "URL"
 msgstr "URL"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:393
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "File path"
 msgstr "Chemin du fichier"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:397
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:437
 msgid "Server URL"
 msgstr "URL du serveur"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:398
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:438
 msgid "Username"
 msgstr "Nom d’utilisateur"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:400
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:440
 msgid "Password"
 msgstr "Mot de passe"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:422
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:462
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
 "L’adresse complète est enregistrée dans votre trousseau de clés. Laissez-la "
 "telle quelle pour la conserver."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:465
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
 "Le mot de passe est enregistré dans votre trousseau de clés. Laissez le "
 "champ Mot de passe vide pour le conserver."
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:473
 msgid "HTTP headers (optional)"
 msgstr "En-têtes HTTP (facultatif)"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:434
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:474
 msgid "User-Agent"
 msgstr "User-Agent"
 
-#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:436
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:476
 msgid "Referer"
 msgstr "Referer"
 
@@ -3832,7 +3844,7 @@ msgstr "se termine à {}"
 msgid "Search your videos…"
 msgstr "Rechercher dans vos vidéos…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:175
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:177
 msgid "Scanning…"
 msgstr "Analyse…"
 
@@ -4074,7 +4086,7 @@ msgid "On the TV"
 msgstr "Sur la télévision"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:234
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:44
 #: crates/media-runtime/src/cast/tv/card.rs:261
 msgid "The TV is still playing"
 msgstr "La télévision est toujours en lecture"
@@ -4430,7 +4442,7 @@ msgstr "Supprimer cette coupe"
 msgid "Open a local video to cut it"
 msgstr "Ouvrez une vidéo locale pour la couper"
 
-#: crates/big-video-player/src/video/ui/video_shell/tv.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:42
 #: crates/media-runtime/src/cast/tv/card.rs:233
 msgid "On the TV and here"
 msgstr "Sur la télévision et ici"
