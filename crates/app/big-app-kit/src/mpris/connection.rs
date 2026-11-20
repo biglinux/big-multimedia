@@ -305,7 +305,7 @@ mod tests {
 
     /// A second window of the same player takes the MPRIS instance name.
     #[test]
-    #[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit mpris -- --ignored"]
+    #[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit mpris -- --ignored"]
     fn second_player_takes_instance_name() {
         let host = glib::MainContext::default()
             .block_on(private_session_bus())

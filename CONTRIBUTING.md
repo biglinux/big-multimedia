@@ -124,10 +124,12 @@ env "${isolated_home[@]}" BIG_MEDIA_TEST_BNS_DAEMON="$daemon" \
 	cargo test --locked -p big-media-runtime --features ui-core --lib daemon_exposes_player_contract -- --ignored
 ```
 
-The tray icon test plays the tray host on a session bus of its own:
+The tray icon, MPRIS instance-name and portal tests play the other side of the
+bus on a session bus of their own, one at a time because each drives the default
+main context:
 
 ```sh
-dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
+dbus-run-session -- cargo test --locked -p big-app-kit -- --ignored --test-threads=1
 ```
 
 `secret_service_round_trip` stores, reads and deletes an item through

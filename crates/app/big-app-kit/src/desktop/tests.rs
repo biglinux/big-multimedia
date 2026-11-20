@@ -112,7 +112,7 @@ fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId
 
 /// Links go to the portal as URIs, files and folders as descriptors.
 #[test]
-#[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit portal -- --ignored"]
+#[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit portal -- --ignored"]
 fn portal_receives_links_and_files() {
     let context = glib::MainContext::default();
     let host = context
