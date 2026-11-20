@@ -9,7 +9,7 @@ mod stats;
 mod texture_pool;
 
 use super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns, FenceError};
-use crate::player::mpv_backend::fast_render::{FastRenderContext, current_gl_driver};
+use crate::player::mpv_backend::fast_render::{FastRenderContext, GlDriver, current_gl_driver};
 use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
@@ -53,8 +53,9 @@ pub struct OffloadRenderer {
 }
 
 impl OffloadRenderer {
-    /// `None` when GL context creation fails or GL fns missing.
-    pub fn try_new(display: &gdk::Display) -> Option<Self> {
+    /// `None` when GL context creation fails, GL fns are missing, or the driver
+    /// is proprietary NVIDIA and offload is not `forced`.
+    pub fn try_new(display: &gdk::Display, forced: bool) -> Option<Self> {
         let gl_context = display
             .create_gl_context()
             .map_err(|e| {
@@ -91,13 +92,7 @@ impl OffloadRenderer {
 
         // SAFETY: `gl_context` was made current above.
         let diagnostics = unsafe { current_gl_driver() };
-        if is_proprietary_nvidia(&diagnostics.vendor, &diagnostics.renderer) {
-            info!(
-                "Offload disabled for GL {} / {} because NVIDIA's proprietary \
-                 GdkGLTexture/GraphicsOffload path grows GPU memory during \
-                 resize; using GtkGLArea fallback",
-                diagnostics.vendor, diagnostics.renderer
-            );
+        if !driver_allows_offload(&diagnostics, forced) {
             return None;
         }
 
@@ -500,6 +495,37 @@ fn is_proprietary_nvidia(vendor: &str, renderer: &str) -> bool {
     vendor.starts_with("NVIDIA") || renderer.contains("(NVIDIA_PROPRIETARY)")
 }
 
+/// Whether offload may go on `driver`, logging a refusal or its override.
+fn driver_allows_offload(driver: &GlDriver, forced: bool) -> bool {
+    let proprietary_nvidia = is_proprietary_nvidia(&driver.vendor, &driver.renderer);
+    if !offload_permitted(proprietary_nvidia, forced) {
+        info!(
+            "Offload disabled for GL {} / {} because NVIDIA's proprietary \
+             GdkGLTexture/GraphicsOffload path grows GPU memory during \
+             resize; using GtkGLArea fallback",
+            driver.vendor, driver.renderer
+        );
+        return false;
+    }
+    if proprietary_nvidia {
+        warn!(
+            "Offload forced by {} on GL {} / {}, where it is refused because \
+             NVIDIA's proprietary GdkGLTexture/GraphicsOffload path grows GPU \
+             memory during resize",
+            backend::FORCE_GRAPHICS_OFFLOAD,
+            driver.vendor,
+            driver.renderer
+        );
+    }
+    true
+}
+
+/// Whether offload may go on this driver: the proprietary NVIDIA refusal
+/// yields only to `forced`.
+fn offload_permitted(proprietary_nvidia: bool, forced: bool) -> bool {
+    !proprietary_nvidia || forced
+}
+
 impl Drop for OffloadRenderer {
     fn drop(&mut self) {
         let _current = CurrentContext::enter(&self.gl_context);
@@ -529,6 +555,22 @@ mod tests {
                 super::opaque_fourcc(exported),
                 declared,
                 "exported 0x{exported:08X}"
+            );
+        }
+    }
+
+    #[test]
+    fn force_overrides_nvidia_refusal() {
+        for (proprietary_nvidia, forced, permitted) in [
+            (false, false, true),
+            (false, true, true),
+            (true, false, false),
+            (true, true, true),
+        ] {
+            assert_eq!(
+                super::offload_permitted(proprietary_nvidia, forced),
+                permitted,
+                "proprietary NVIDIA {proprietary_nvidia}, forced {forced}"
             );
         }
     }

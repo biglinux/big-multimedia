@@ -5,6 +5,14 @@ use log::info;
 
 use super::OffloadRenderer;
 
+/// Truthy draws video through a GL area; set and not truthy asks for graphics
+/// offload.
+const DISABLE_GRAPHICS_OFFLOAD: &str = "BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD";
+
+/// Test switch: truthy asks for graphics offload even on the proprietary
+/// NVIDIA driver, whose refusal it exists to measure.
+pub(super) const FORCE_GRAPHICS_OFFLOAD: &str = "BIG_MEDIA_FORCE_GRAPHICS_OFFLOAD";
+
 pub enum VideoBackend {
     /// GdkDmabufTexture/GdkGLTexture + GraphicsOffload (Wayland subsurface when available).
     Offload(Box<OffloadRenderer>),
@@ -15,12 +23,13 @@ pub enum VideoBackend {
 impl VideoBackend {
     /// Tries offload first (best on Wayland, harmless on X11), falls back to GLArea.
     pub fn detect(display: &gdk::Display) -> Self {
-        if !Self::graphics_offload_requested() {
+        let forced = std::env::var(FORCE_GRAPHICS_OFFLOAD).is_ok_and(|v| truthy(&v));
+        if !forced && !Self::graphics_offload_requested() {
             info!("GraphicsOffload video backend not requested");
             return Self::GlArea;
         }
 
-        if let Some(renderer) = OffloadRenderer::try_new(display) {
+        if let Some(renderer) = OffloadRenderer::try_new(display, forced) {
             let mode = if renderer.has_egl_dmabuf() {
                 "DMA-BUF + GraphicsOffload"
             } else {
@@ -34,18 +43,21 @@ impl VideoBackend {
         Self::GlArea
     }
 
-    /// Offload only when `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` is set and not
-    /// truthy: it costs the GL area's CPU plus an idle GL context and texture pool.
+    /// Offload only when [`DISABLE_GRAPHICS_OFFLOAD`] is set and not truthy: it
+    /// costs the GL area's CPU plus an idle GL context and texture pool.
     fn graphics_offload_requested() -> bool {
-        std::env::var("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD").is_ok_and(|v| {
-            !matches!(
-                v.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            )
-        })
+        std::env::var(DISABLE_GRAPHICS_OFFLOAD).is_ok_and(|v| !truthy(&v))
     }
 
     pub fn is_offload(&self) -> bool {
         matches!(self, Self::Offload(_))
     }
+}
+
+/// `1`, `true`, `yes` or `on`, in any case and surrounded by spaces.
+fn truthy(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
 }
