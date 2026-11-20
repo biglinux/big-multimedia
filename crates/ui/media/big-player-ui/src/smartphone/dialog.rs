@@ -94,16 +94,8 @@ where
     )
     .into_root();
 
-    let parent_weak = parent.downgrade();
-    kde_connect_row.connect_activated(move |_| {
-        if let Some(parent) = parent_weak.upgrade() {
-            let launcher = gtk::UriLauncher::new("https://kdeconnect.kde.org/download.html");
-            launcher.launch(
-                parent.root().and_downcast_ref::<gtk::Window>(),
-                gtk::gio::Cancellable::NONE,
-                |_| {},
-            );
-        }
+    kde_connect_row.connect_activated(|_| {
+        big_app_kit::desktop::open_uri("https://kdeconnect.kde.org/download.html");
     });
     kde_connect_group.add(&kde_connect_row);
 

@@ -77,11 +77,13 @@ profile big-audio-player @{exec_path} flags=(complain) {
   dbus (send, receive) bus=session path=/{StatusNotifierItem,MenuBar},
   # Portals: desktop settings, opening links and folders, the idle inhibitor.
   # Only the portal calls the players make: the whole portal would let a
-  # compromised player add an autostart entry, open URLs or trash any file.
+  # compromised player add an autostart entry or trash any file. Links,
+  # files and folders open through OpenURI, so their handler starts outside
+  # this profile.
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Settings member={Read,ReadAll,ReadOne},
   dbus receive bus=session interface=org.freedesktop.portal.Settings member=SettingChanged,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Inhibit member=Inhibit,
-  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member=OpenDirectory,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member={OpenURI,OpenFile,OpenDirectory},
   # GTK's file dialogs go through the portal's chooser, where the person picks.
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.FileChooser member={OpenFile,SaveFile,SaveFiles},
   # GTK registers a host app's id with the portal before its first call.

@@ -56,3 +56,89 @@ fn install_quit_action_registers_application_action() {
 
     assert!(app.lookup_action("quit").is_some());
 }
+
+/// What a stand-in portal on a private bus receives: the method, the URI or the
+/// contents read through the passed descriptor.
+#[test]
+#[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit portal -- --ignored"]
+fn portal_receives_links_and_files() {
+    use crate::tray::tests::iterate_until;
+    use gio::prelude::UnixFDListExtManual;
+    use std::cell::RefCell;
+    use std::io::Read;
+    use std::rc::Rc;
+
+    const OPEN_URI_XML: &str = r#"<node><interface name="org.freedesktop.portal.OpenURI">
+        <method name="OpenURI"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
+        <method name="OpenFile"><arg type="s" direction="in"/><arg type="h" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
+        <method name="OpenDirectory"><arg type="s" direction="in"/><arg type="h" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
+    </interface></node>"#;
+    let context = glib::MainContext::default();
+    let host = context
+        .block_on(crate::mpris::private_session_bus())
+        .unwrap();
+    let interface = gio::DBusNodeInfo::for_xml(OPEN_URI_XML)
+        .unwrap()
+        .lookup_interface(PORTAL_OPEN_URI)
+        .unwrap();
+    let received = Rc::new(RefCell::new(Vec::<(String, String)>::new()));
+    let sink = received.clone();
+    let object = host
+        .register_object(PORTAL_PATH, &interface)
+        .method_call(move |_, _, _, _, method, params, invocation| {
+            let what = if method == "OpenURI" {
+                params.child_value(1).get::<String>().unwrap()
+            } else {
+                let fd = invocation.message().unix_fd_list().unwrap().get(0).unwrap();
+                let mut text = String::new();
+                std::fs::File::from(fd).read_to_string(&mut text).unwrap();
+                text
+            };
+            sink.borrow_mut().push((method.to_owned(), what));
+            let request =
+                glib::variant::ObjectPath::try_from("/org/freedesktop/portal/desktop/request/1/t")
+                    .unwrap();
+            invocation.return_value(Some(&(request,).to_variant()));
+        })
+        .build()
+        .unwrap();
+    let owned = Rc::new(std::cell::Cell::new(false));
+    let flag = owned.clone();
+    let owner = gio::bus_own_name_on_connection(
+        &host,
+        PORTAL_NAME,
+        gio::BusNameOwnerFlags::NONE,
+        move |_, _| flag.set(true),
+        |_, _| {},
+    );
+    iterate_until(|| owned.get());
+
+    let dir = tempfile::tempdir().unwrap();
+    let song = dir.path().join("song.txt");
+    std::fs::write(&song, "the song").unwrap();
+    context
+        .block_on(portal_call(PortalTarget::Uri(
+            "https://example.org/".into(),
+        )))
+        .unwrap();
+    context
+        .block_on(portal_call(PortalTarget::File(song.clone())))
+        .unwrap();
+    context
+        .block_on(portal_call(PortalTarget::Selected(song)))
+        .unwrap();
+    assert_eq!(
+        *received.borrow(),
+        [
+            ("OpenURI".to_owned(), "https://example.org/".to_owned()),
+            ("OpenFile".to_owned(), "the song".to_owned()),
+            ("OpenDirectory".to_owned(), "the song".to_owned()),
+        ]
+    );
+    gio::bus_unown_name(owner);
+    let _ = host.unregister_object(object);
+    let _ = host.close_sync(gio::Cancellable::NONE);
+    while context.pending() {
+        context.iteration(false);
+    }
+}
