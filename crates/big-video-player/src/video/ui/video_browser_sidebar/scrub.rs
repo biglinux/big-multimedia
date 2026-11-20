@@ -197,7 +197,9 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
     for frame_index in 0..SCRUB_FRAME_COUNT {
         let frame = clip_directory.join(format!("{frame_index}.jpg"));
-        if frame.exists()
+        // A cut-off write leaves an empty frame: render it again.
+        let rendered = std::fs::metadata(&frame).is_ok_and(|meta| meta.is_file() && meta.len() > 0);
+        if rendered
             || thumbnail::render_card_frame(path, sample_time_secs(frame_index, duration), &frame)
         {
             frames.push(frame);
