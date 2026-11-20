@@ -9,12 +9,14 @@ use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 
 use super::filter_specs::{
     cas_shader_to_ui_pct, cas_ui_pct_to_shader, fsr_shader_to_ui_pct, fsr_ui_pct_to_shader,
 };
+use super::vf_row::wire_filter_expander;
 use crate::config;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -30,23 +32,23 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     group.add(&build_gpu_sharpen_row(mpv));
     group.add(&build_gpu_bool_row(
         mpv,
-        "deband",
         i18n("Deband"),
         i18n("Remove color banding artifacts"),
+        MpvBackend::deband,
         MpvBackend::set_deband,
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        "sigmoid-upscaling",
         i18n("Sigmoid Upscaling"),
         i18n("Reduces ringing when scaling video up"),
+        MpvBackend::sigmoid_upscaling,
         MpvBackend::set_sigmoid_upscaling,
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        "correct-downscaling",
         i18n("Correct Downscaling"),
         i18n("Higher quality when scaling video down"),
+        MpvBackend::correct_downscaling,
         MpvBackend::set_correct_downscaling,
     ));
     group
@@ -54,7 +56,7 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
 
 /// GPU sharpen expander (0..5, debounced 100 ms).
 fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
-    let current = mpv.get_property_f64("sharpen");
+    let current = mpv.sharpen();
     let is_active = current.abs() > 0.001;
     let expander = adw::ExpanderRow::builder()
         .title(i18n("Sharpen"))
@@ -72,41 +74,30 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
         0.0,
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Amount"))
             .adjustment(&adjustment)
             .digits(1)
             .build(),
     );
 
-    let mpv_toggle = Arc::clone(mpv);
-    let adjustment_toggle = adjustment.clone();
-    expander.connect_enable_expansion_notify(move |row| {
-        mpv_toggle.set_sharpen(if row.enables_expansion() {
-            adjustment_toggle.value()
-        } else {
-            0.0
-        });
-    });
-
-    let debounce = DebouncedAction::new(Duration::from_millis(100));
-    // Weak back-ref: the expander owns the SpinRow (→ adjustment), so a strong
-    // capture here would form a mutual reference cycle (both leak on close).
-    let expander_weak = expander.downgrade();
-    let mpv = Arc::clone(mpv);
-    adjustment.connect_value_changed(move |adjustment| {
-        let Some(expander_ref) = expander_weak.upgrade() else {
-            return;
-        };
-        if !expander_ref.enables_expansion() {
-            return;
+    let apply = {
+        let mpv = Arc::clone(mpv);
+        let adjustment = adjustment.downgrade();
+        move || {
+            if let Some(adjustment) = adjustment.upgrade() {
+                mpv.set_sharpen(adjustment.value());
+            }
         }
-        let value = adjustment.value();
-        let mpv = Arc::clone(&mpv);
-        debounce.run(move || {
-            mpv.set_sharpen(value);
-        });
-    });
+    };
+    let mpv = Arc::clone(mpv);
+    let changed = wire_filter_expander(
+        &expander,
+        Some(Duration::from_millis(100)),
+        apply,
+        move || mpv.set_sharpen(0.0),
+    );
+    adjustment.connect_value_changed(move |_| changed());
 
     expander
 }
@@ -114,15 +105,15 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
 /// A GPU boolean property toggle row seeded from the live mpv property.
 fn build_gpu_bool_row(
     mpv: &Arc<MpvBackend>,
-    property: &str,
     title: String,
     subtitle: String,
+    getter: fn(&MpvBackend) -> bool,
     setter: fn(&MpvBackend, bool),
 ) -> adw::SwitchRow {
     let row = adw::SwitchRow::builder()
         .title(title)
         .subtitle(subtitle)
-        .active(mpv.get_property_bool(property))
+        .active(getter(mpv))
         .build();
     let mpv = Arc::clone(mpv);
     row.connect_active_notify(move |row| setter(&mpv, row.is_active()));
@@ -176,7 +167,7 @@ pub(super) fn build_shaders_group(
         10.0,
         0.0,
     );
-    let intensity_row = adw::SpinRow::builder()
+    let intensity_row = accessible_spin_row()
         .title(i18n("Sharpening Intensity"))
         .subtitle(i18n(
             "Higher values produce a more visible sharpening effect",
@@ -260,9 +251,8 @@ fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
             mpv.glsl_shader_remove_prefix(path);
         }
     }
-    if let Some(user_dir) = gtk::glib::user_config_dir()
-        .join(config::video::USER_SHADERS_RELATIVE)
-        .to_str()
+    if let Some(user_dir) = shader_gen::user_shaders_dir()
+        && let Some(user_dir) = user_dir.to_str()
     {
         mpv.glsl_shader_remove_prefix(user_dir);
     }
@@ -310,6 +300,14 @@ fn apply_anime4k(mpv: &MpvBackend, preset: &str) {
     }
 }
 
+/// The upscaler, neural upscaler and Anime4K preset, in the order every
+/// enhancement array uses.
+const ENHANCEMENT_KEYS: [keys::StringKey; 3] = [
+    keys::BUILTIN_UPSCALER,
+    keys::NEURAL_UPSCALER,
+    keys::ANIME4K_PRESET,
+];
+
 /// The upscaler, neural upscaler and Anime4K preset the dialog saved, each
 /// empty when off or when its shaders are not installed.
 pub(crate) fn saved_enhancements(settings: &Settings) -> [String; 3] {
@@ -318,18 +316,21 @@ pub(crate) fn saved_enhancements(settings: &Settings) -> [String; 3] {
         shader_gen::neural_shaders_available(),
         shader_gen::anime4k_dir().is_dir(),
     ];
-    let keys = [
-        keys::BUILTIN_UPSCALER,
-        keys::NEURAL_UPSCALER,
-        keys::ANIME4K_PRESET,
-    ];
     std::array::from_fn(|i| {
         if available[i] {
-            settings.get_string(keys[i])
+            settings.get_string(ENHANCEMENT_KEYS[i])
         } else {
             String::new()
         }
     })
+}
+
+/// Save the upscaler, neural upscaler and Anime4K preset, in the order
+/// [`saved_enhancements`] returns them.
+pub(crate) fn put_enhancements(settings: &Settings, choices: [&str; 3]) {
+    for (key, choice) in ENHANCEMENT_KEYS.into_iter().zip(choices) {
+        let _ = settings.put_string(key, choice);
+    }
 }
 
 /// Put the saved choices on the picture: they outlive the session, so the
@@ -357,8 +358,8 @@ pub(super) fn build_neural_group(
     let row = adw::SwitchRow::builder()
         .title(i18n("RAVU Neural Upscaler"))
         .subtitle(i18n(
-            "Reconstructs detail lost during video compression — \
-             uses RAVU r4, the best fragment-shader neural upscaler available",
+            "Reconstructs detail lost during video compression, \
+             using RAVU r4, the best fragment-shader neural upscaler available",
         ))
         .active(is_active)
         .build();
@@ -394,13 +395,13 @@ pub(super) fn build_anime4k_group(
             i18n("Anime4K Preset"),
             [
                 i18n("Disabled"),
-                i18n("Quality A — Best (1080p sources)"),
-                i18n("Quality B — Soft Restore (720p sources)"),
-                i18n("Quality C — Fast (low-end GPU)"),
+                i18n("Quality A: Best (1080p sources)"),
+                i18n("Quality B: Soft Restore (720p sources)"),
+                i18n("Quality C: Fast (low-end GPU)"),
             ],
         )
         .subtitle(i18n(
-            "Select a quality preset — higher quality uses more GPU power",
+            "Select a quality preset; higher quality uses more GPU power",
         )),
     )
     .into_parts();
@@ -444,4 +445,18 @@ fn anime4k_not_installed_row() -> adw::ActionRow {
         )),
     )
     .into_root()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enhancements_are_saved_under_their_own_keys() {
+        let settings = Settings::memory_only();
+        put_enhancements(&settings, ["fsr", "ravu-r4", "mode-a"]);
+        assert_eq!(settings.get_string(keys::BUILTIN_UPSCALER), "fsr");
+        assert_eq!(settings.get_string(keys::NEURAL_UPSCALER), "ravu-r4");
+        assert_eq!(settings.get_string(keys::ANIME4K_PRESET), "mode-a");
+    }
 }

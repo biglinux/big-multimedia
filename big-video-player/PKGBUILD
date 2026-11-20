@@ -3,13 +3,16 @@
 
 # One package per directory, like big-kernel: gitrepo lists each directory
 # and builds the ones chosen. Do not reference the pkgname or url variables
-# in this file: a testing build in the CI expands them textually.
+# in this file: a testing build in the CI expands them textually. Code outside
+# the functions uses builtins only: namcap sources this file in a restricted
+# shell without PATH.
 
 pkgname=big-video-player
 _repo=big-multimedia
 # Read once: makepkg sources this file again in its fakeroot pass, and both
 # passes must agree on the version.
-export BIG_PKGSTAMP="${BIG_PKGSTAMP:-$(date +%y.%m.%d-%H%M)}"
+[[ -n ${BIG_PKGSTAMP-} ]] || printf -v BIG_PKGSTAMP '%(%y.%m.%d-%H%M)T' -1
+export BIG_PKGSTAMP
 pkgver=${BIG_PKGSTAMP%-*}
 pkgrel=${BIG_PKGSTAMP#*-}
 pkgdesc='Hardware-accelerated video player for BigLinux'
@@ -17,10 +20,13 @@ arch=('x86_64')
 url="https://github.com/biglinux/big-multimedia"
 # The shipped GPU shaders: FSR/CAS and Anime4K are MIT, RAVU is LGPL-3.0.
 license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
-# ffmpeg renders the seek-bar preview thumbnails.
-depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+# ffmpeg renders the seek-bar preview thumbnails; libsecret's secret-tool keeps
+# IPTV passwords in the keyring.
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libsecret')
 makedepends=('git' 'cargo' 'pkgconf' 'gettext')
-optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
+checkdepends=('desktop-file-utils' 'appstream' 'apparmor')
+optdepends=('apparmor: confine the player to media files (complain mode: logs only)'
+            'deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
             'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
             'big-video-converter: cut and convert videos'
             'big-audio-converter: extract audio from videos'
@@ -30,14 +36,17 @@ optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)
 replaces=('big-player-video' 'bigvideo')
 conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
-# makepkg's lto adds -flto to CFLAGS, so the C in ring and jemalloc builds as
+# makepkg's lto adds -flto to CFLAGS, so the C in jemalloc builds as
 # GCC bytecode that lld cannot link. The release profile already does fat LTO.
 options=('!lto')
+install=big-video-player.install
 
 # Inside a checkout this recipe builds its working tree, uncommitted changes
 # included. The CI receives only this directory and fetches from GitHub
 # instead; keep that line literal, the builder appends #branch= to it.
-_recipe_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)
+# makepkg sources this file by its absolute path, namcap by its bare name.
+_recipe_dir=${BASH_SOURCE[0]%/*}
+[[ ${_recipe_dir} == /* ]] || _recipe_dir=${PWD}
 _checkout=${_recipe_dir%/*}
 if [ -e "${_checkout}/.git" ] && [ -f "${_checkout}/Cargo.toml" ]; then
     source=()
@@ -50,12 +59,12 @@ fi
 
 prepare() {
     if [ -n "${_checkout}" ]; then
-        # The files git sees: tracked and new ones, without ignored output or
-        # this recipe's own src/ and pkg/.
+        # The files git sees: tracked and new ones, without ignored output
+        # (this recipe's src/, pkg/ and packages among it). Tests read the
+        # recipe itself, so it is copied too.
         rm -rf "${srcdir:?}/${_repo}"
         mkdir "${srcdir}/${_repo}"
-        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard \
-            -- ":!:${_recipe_dir#"${_checkout}"/}" |
+        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard |
             tar -C "${_checkout}" --null --files-from=- --ignore-failed-read -cf - |
             tar -C "${srcdir}/${_repo}" -xf -
     fi
@@ -69,6 +78,26 @@ build() {
     cargo build --frozen --release -p big-video-player
 }
 
+check() {
+    local tree="${srcdir}/${_repo}"
+    local resources="${tree}/crates/big-video-player/resources"
+    local id=br.com.biglinux.VideoPlayer
+
+    desktop-file-validate "${resources}/applications/${id}.desktop"
+    appstreamcli validate --no-net "${resources}/metainfo/${id}.metainfo.xml"
+    apparmor_parser -Q -K "${resources}/apparmor/big-video-player"
+    local po="${tree}/crates/media-runtime/po" lang
+    while read -r lang; do
+        [[ -z "${lang}" || "${lang}" == \#* ]] && continue
+        msgfmt --check -o /dev/null "${po}/${lang}.po"
+    done <"${po}/LINGUAS"
+
+    # The unit tests need no display, D-Bus session or network; the ones that
+    # open windows are ignored.
+    cd "${tree}" || return
+    cargo test --frozen --lib -p big-video-player --config build.incremental=false
+}
+
 package() {
     local tree="${srcdir}/${_repo}"
     local resources="${tree}/crates/big-video-player/resources"
@@ -79,6 +108,7 @@ package() {
         "${pkgdir}/usr/share/applications/${id}.desktop"
     install -Dm644 "${resources}/metainfo/${id}.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/${id}.metainfo.xml"
+    install -Dm644 "${resources}/apparmor/big-video-player" "${pkgdir}/etc/apparmor.d/big-video-player"
     install -Dm644 "${resources}/icons/hicolor/scalable/apps/big-video-player.svg" \
         "${pkgdir}/usr/share/icons/hicolor/scalable/apps/big-video-player.svg"
 
@@ -89,7 +119,7 @@ package() {
     while read -r lang; do
         [[ -z "${lang}" || "${lang}" == \#* ]] && continue
         install -d "${pkgdir}/usr/share/big-video-player/locale/${lang}/LC_MESSAGES"
-        msgfmt "${po}/${lang}.po" \
+        msgfmt --check "${po}/${lang}.po" \
             -o "${pkgdir}/usr/share/big-video-player/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
     done <"${po}/LINGUAS"
 

@@ -11,9 +11,9 @@
 //! Pages are rebuilt from mpv and `Settings` each time they open, so they
 //! never show a stale value.
 
-use super::adjustments::{Adjustment, detect};
+use super::adjustments::{Adjustment, changes_summary, detect};
 use super::*;
-use crate::video::ui::menu_dialogs::chapter_title;
+use big_relm4_components::feedback::tooltip;
 
 mod recent;
 use recent::recent_page;
@@ -48,6 +48,17 @@ impl PanelPage {
         }
     }
 
+    /// The card's (horizontal, vertical) corner: the TV page rises from its
+    /// button in the controls' corner, Recent hangs below the Open menu on
+    /// the left, the rest below the settings button.
+    fn corner(self) -> (gtk::Align, gtk::Align) {
+        match self {
+            Self::Tv => (gtk::Align::End, gtk::Align::End),
+            Self::Recent => (gtk::Align::Start, gtk::Align::Start),
+            _ => (gtk::Align::End, gtk::Align::Start),
+        }
+    }
+
     /// Where "Back" leads.
     fn parent(self) -> Option<Self> {
         match self {
@@ -58,9 +69,6 @@ impl PanelPage {
         }
     }
 }
-
-/// Below this the panel covers the controls instead of shrinking.
-const PANEL_MIN_HEIGHT: i32 = 300;
 
 /// Where the panel sits and how its home page is laid out in a window of
 /// `width` × `height` whose header bar and controls take `header` and
@@ -78,9 +86,9 @@ struct PanelLayout {
 fn panel_layout(width: i32, height: i32, header: i32, controls: i32) -> PanelLayout {
     // Just below the header, where the settings button is.
     let top = header + 4;
-    // A short window would squeeze the card to a sliver: then it covers the
-    // controls rather than shrink below a usable height.
-    let bottom = (controls + 6).min(height - top - PANEL_MIN_HEIGHT).max(8);
+    // Clear of the seek bar and time even in a short window, where the card
+    // scrolls instead.
+    let bottom = (controls + 6).max(8);
     let room = width - 16;
     let (columns, card) = if room >= 940 {
         (3, 620)
@@ -116,12 +124,8 @@ pub(super) struct SettingsPanel {
 
 impl SettingsPanel {
     pub(super) fn new(sender: &ComponentSender<VideoShell>) -> Rc<Self> {
-        let back = gtk::Button::builder()
-            .icon_name("go-previous-symbolic")
-            .tooltip_text(i18n("Back"))
-            .css_classes(["flat", "circular"])
-            .build();
-        back.update_property(&[gtk::accessible::Property::Label(&i18n("Back"))]);
+        let back =
+            tooltip::icon_button("go-previous-symbolic", &i18n("Back"), &["flat", "circular"]);
         let title = gtk::Label::builder()
             .hexpand(true)
             .xalign(0.0)
@@ -140,8 +144,8 @@ impl SettingsPanel {
         // again or Esc closes it.
         top.append(&title);
 
-        // The card hugs its content and scrolls only when the window is too
-        // short for it (`max_content_height` is set per window on open).
+        // The card hugs its content and scrolls only when the room between
+        // the revealer's margins is too short for it.
         let scroller = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Never)
             .propagate_natural_height(true)
@@ -157,7 +161,7 @@ impl SettingsPanel {
 
         let revealer = gtk::Revealer::builder()
             .halign(gtk::Align::End)
-            .valign(gtk::Align::Start)
+            .valign(gtk::Align::Fill)
             .transition_type(gtk::RevealerTransitionType::SlideLeft)
             .transition_duration(150)
             .margin_end(8)
@@ -200,7 +204,7 @@ impl SettingsPanel {
 }
 
 /// One home block: what it is, how it is set now, and whether that is a
-/// change from normal (then a dot and bold text say so, not colour alone).
+/// change from normal (then a dot and bold text say so, not color alone).
 struct Block {
     icon: &'static str,
     name: String,
@@ -217,7 +221,7 @@ enum BlockTarget {
 /// The home block (by page) an adjustment belongs to.
 fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
     match adjustment {
-        Adjustment::SourceColours(_) => Some(PanelPage::Hdr),
+        Adjustment::SourceColors(_) => Some(PanelPage::Hdr),
         Adjustment::Picture(_) => Some(PanelPage::Picture),
         Adjustment::Zoom { .. }
         | Adjustment::Rotation(_)
@@ -226,19 +230,6 @@ fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
         Adjustment::VideoEffects(_) | Adjustment::ImageEnhancement(_) => Some(PanelPage::Effects),
         Adjustment::Equalizer { .. } | Adjustment::AudioDelay(_) => Some(PanelPage::Sound),
         _ => None,
-    }
-}
-
-/// "Normal", the one change by name, or how many there are.
-fn summary(changes: &[&Adjustment], normal: String) -> (String, bool) {
-    match changes {
-        [] => (normal, false),
-        [only] => (only.label(), true),
-        many => (
-            ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-            true,
-        ),
     }
 }
 
@@ -264,25 +255,18 @@ impl VideoShell {
     /// Where the floating panels sit in the window at its current size.
     fn panel_layout_now(&self) -> PanelLayout {
         // The header bar itself: in the gradient look its box also holds
-        // 80 px of fade, and so does the top of the controls.
-        let natural = |widget: Option<gtk::Widget>| {
-            widget.map_or(0, |widget| widget.measure(gtk::Orientation::Vertical, -1).1)
-        };
-        let fade = if self.settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
-            80
-        } else {
-            0
-        };
+        // 80 px of fade.
+        let header = self
+            .osd
+            .header_revealer
+            .child()
+            .and_then(|b| b.first_child())
+            .map_or(0, |bar| bar.measure(gtk::Orientation::Vertical, -1).1);
         panel_layout(
             self.main_overlay.width(),
             self.main_overlay.height(),
-            natural(
-                self.osd
-                    .header_revealer
-                    .child()
-                    .and_then(|b| b.first_child()),
-            ),
-            natural(self.osd.controls_revealer.child()) - fade,
+            header,
+            super::osd::controls_bar_height(&self.osd.controls_revealer, &self.settings),
         )
     }
 
@@ -315,33 +299,31 @@ impl VideoShell {
             self.close_panel(sender);
             return;
         }
-        // The TV page opens from its button in the controls' corner, so it
-        // rises from there; the rest hang below the settings button.
-        let from_below = page == PanelPage::Tv;
-        if !panel.is_open() || from_below != (panel.revealer.valign() == gtk::Align::End) {
+        let (halign, valign) = page.corner();
+        if !panel.is_open() || (panel.revealer.halign(), panel.card.valign()) != (halign, valign) {
             let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
+            // The revealer spans the room between header and controls; the
+            // card hangs at its top or rests on its bottom, never past it.
             panel.revealer.set_margin_top(layout.top);
-            if from_below {
-                // One list: the home page's width would only stretch it.
-                panel.card.set_width_request(layout.width.min(440));
-                panel.revealer.set_valign(gtk::Align::End);
-                panel.revealer.set_margin_bottom(layout.bottom);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideUp);
+            panel.revealer.set_margin_bottom(layout.bottom);
+            panel.revealer.set_halign(halign);
+            let on_left = halign == gtk::Align::Start;
+            panel.revealer.set_margin_start(if on_left { 8 } else { 0 });
+            panel.revealer.set_margin_end(if on_left { 0 } else { 8 });
+            panel.card.set_valign(valign);
+            // The TV page is one list: the home page's width would only
+            // stretch it.
+            panel.card.set_width_request(if page == PanelPage::Tv {
+                layout.width.min(440)
             } else {
-                panel.card.set_width_request(layout.width);
-                panel.revealer.set_valign(gtk::Align::Start);
-                panel.revealer.set_margin_bottom(0);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideLeft);
-            }
-            // Room below the card's own title row.
-            panel.scroller.set_max_content_height(
-                (self.main_overlay.height() - layout.top - layout.bottom - 52).max(120),
-            );
+                layout.width
+            });
+            panel.revealer.set_transition_type(match page {
+                PanelPage::Tv => gtk::RevealerTransitionType::SlideUp,
+                PanelPage::Recent => gtk::RevealerTransitionType::SlideRight,
+                _ => gtk::RevealerTransitionType::SlideLeft,
+            });
             if layout.compact {
                 panel.card.add_css_class("compact");
             } else {
@@ -369,6 +351,10 @@ impl VideoShell {
         wrapper.append(&content);
         panel.scroller.set_child(Some(&wrapper));
         panel.title.set_label(&page.title());
+        // On the left Recent reads as the sidebars do, with their centered title.
+        panel
+            .title
+            .set_xalign(if page == PanelPage::Recent { 0.5 } else { 0.0 });
         panel.back.set_visible(page.parent().is_some());
         if !panel.is_open() {
             panel.direct.set(direct);
@@ -428,7 +414,8 @@ impl VideoShell {
                 .iter()
                 .filter(|a| page_of(a) == Some(page))
                 .collect();
-            let (state, changed) = summary(&changes, i18n("Normal"));
+            let (state, changed) = changes_summary(&changes)
+                .map_or_else(|| (i18n("Normal"), false), |text| (text, true));
             Block {
                 icon,
                 name,
@@ -443,7 +430,7 @@ impl VideoShell {
             state: if hdr.changed {
                 hdr.state
             } else {
-                media_adjust::source_colour_names()[0].clone()
+                media_adjust::source_color_names()[0].clone()
             },
             ..hdr
         };
@@ -483,8 +470,9 @@ impl VideoShell {
             });
         }
         let timer = self
-            .sleep_timer_is_armed()
-            .then(|| Adjustment::SleepTimer(self.sleep_timer_remaining_secs()));
+            .sleep_timer
+            .is_armed()
+            .then(|| Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         blocks.push(Block {
             icon: "alarm-symbolic",
             name: i18n("Stop after…"),
@@ -507,18 +495,13 @@ impl VideoShell {
                 target: BlockTarget::Action("win.ytdl-quality"),
             });
         }
-        let (width, height) = (
-            mpv.get_property_f64("width"),
-            mpv.get_property_f64("height"),
-        );
+
         blocks.push(Block {
             icon: "dialog-information-symbolic",
             name: i18n("About this video"),
-            state: if width > 0.0 {
-                format!("{width:.0} × {height:.0}")
-            } else {
-                String::new()
-            },
+            state: mpv
+                .video_source_size()
+                .map_or_else(String::new, |(width, height)| format!("{width} × {height}")),
             changed: false,
             target: BlockTarget::Action("win.media-info"),
         });
@@ -629,12 +612,12 @@ impl VideoShell {
                     let _ = row.activate_action(action, None);
                 });
             }
-            let undo = gtk::Button::builder()
-                .icon_name("window-close-symbolic")
-                .tooltip_text(i18n("Back to normal"))
-                .valign(gtk::Align::Center)
-                .css_classes(["flat", "circular"])
-                .build();
+            let undo = tooltip::icon_button(
+                "window-close-symbolic",
+                &i18n("Back to normal"),
+                &["flat", "circular"],
+            );
+            undo.set_valign(gtk::Align::Center);
             undo.update_property(&[gtk::accessible::Property::Label(
                 &i18n("Undo: {setting}").replace("{setting}", &label),
             )]);
@@ -683,7 +666,7 @@ impl VideoShell {
         let page = page_box();
         page.set_margin_start(0);
         page.set_margin_end(0);
-        let equalizer = crate::shared::audio_effects::create_equalizer_content(
+        let equalizer = big_media_runtime::audio_effects::create_equalizer_content(
             &self.settings,
             Some(Arc::clone(mpv)),
             Some(Rc::new(|| {
@@ -702,8 +685,8 @@ impl VideoShell {
             BigSleepTimerSetupPage, BigSleepTimerSetupSpec, connect_sleep_timer_start_with_close,
         };
         let icon = || gtk::Image::from_icon_name("alarm-symbolic");
-        if self.sleep_timer_is_armed() {
-            let remaining = self.sleep_timer_remaining_secs();
+        if self.sleep_timer.is_armed() {
+            let remaining = self.sleep_timer.remaining_secs();
             let active = BigSleepTimerActivePage::new(
                 BigSleepTimerActiveSpec {
                     labels: BigSleepTimerActiveLabels {
@@ -724,11 +707,11 @@ impl VideoShell {
             return active.into_page().upcast();
         }
         let (minutes, action) =
-            crate::shared::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
+            big_media_runtime::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
         let setup = BigSleepTimerSetupPage::new(
             BigSleepTimerSetupSpec {
-                labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                actions: crate::shared::sleep_timer::sleep_timer_actions(),
+                labels: big_media_runtime::sleep_timer::sleep_timer_setup_labels(),
+                actions: big_media_runtime::sleep_timer::sleep_timer_actions(),
                 saved_minutes: minutes,
                 saved_action_id: action,
                 icon_size: 64,
@@ -744,7 +727,7 @@ impl VideoShell {
             &setup,
             &self.panel.card,
             move |_, minutes, action| {
-                crate::shared::sleep_timer::save_sleep_timer_preferences(
+                big_media_runtime::sleep_timer::save_sleep_timer_preferences(
                     Some(&settings),
                     minutes,
                     &action,
@@ -826,12 +809,7 @@ fn block_button(block: Block, sender: &ComponentSender<VideoShell>) -> gtk::Butt
 fn chapters_page(mpv: &MpvBackend, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
     let chapters = group(&i18n("Jump to a chapter"), None);
     let current = mpv.get_current_chapter();
-    for index in 0..mpv.get_chapter_count() {
-        let time = mpv.get_property_f64(&format!("chapter-list/{index}/time"));
-        let title = chapter_title(
-            mpv.get_property_string(&format!("chapter-list/{index}/title")),
-            index,
-        );
+    for (index, (time, title)) in (0_i64..).zip(mpv.chapters()) {
         let row = adw::ActionRow::builder()
             .title(title)
             .subtitle(big_media_components::time::playback_time(time))
@@ -863,9 +841,9 @@ mod tests {
     }
 
     #[test]
-    fn short_window_covers_the_controls() {
-        let layout = panel_layout(1174, 420, 46, 110);
-        assert_eq!(layout.bottom, 420 - 50 - PANEL_MIN_HEIGHT);
+    fn short_window_keeps_the_controls_clear() {
+        let layout = panel_layout(640, 400, 46, 110);
+        assert_eq!((layout.top, layout.bottom), (50, 116));
         assert!(layout.compact);
     }
 

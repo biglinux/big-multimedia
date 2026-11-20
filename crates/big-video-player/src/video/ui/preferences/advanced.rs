@@ -9,8 +9,8 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
 
 use super::{
-    add_combo_row, add_entry_row, add_spin_double_row, add_spin_int_row, add_switch_row, live,
-    live_str,
+    add_combo_row, add_entry_row, add_index_combo_row, add_spin_double_row, add_spin_int_row,
+    add_switch_row, live, live_str,
 };
 
 /// Build the page. The returned closure re-reads the per-scene HDR row, which a
@@ -70,7 +70,7 @@ fn hdr_group(
             &i18n("Clip"),
         ],
         &["auto", "mobius", "reinhard", "hable", "bt.2390", "clip"],
-        "tone-mapping",
+        keys::TONE_MAPPING,
         settings,
         live_str(mpv, MpvBackend::set_tone_mapping),
     );
@@ -78,7 +78,7 @@ fn hdr_group(
         &group,
         &i18n("Adapt to Each Scene"),
         &i18n("Measures the brightness of every scene; uses more graphics power"),
-        keys::HDR_COMPUTE_PEAK.0,
+        keys::HDR_COMPUTE_PEAK,
         settings,
         live(mpv, MpvBackend::set_hdr_compute_peak),
     );
@@ -86,7 +86,7 @@ fn hdr_group(
         &group,
         &i18n("Screen Peak Brightness"),
         &i18n("In nits; 0 detects it automatically"),
-        "target-peak",
+        keys::TARGET_PEAK,
         0.0,
         10000.0,
         10.0,
@@ -105,7 +105,7 @@ fn hdr_group(
         ],
         // vo=gpu, which the embedded render API uses, accepts only these.
         &["auto", "clip", "desaturate", "warn"],
-        "gamut-mapping-mode",
+        keys::GAMUT_MAPPING_MODE,
         settings,
         live_str(mpv, MpvBackend::set_gamut_mapping_mode),
     );
@@ -122,13 +122,12 @@ fn color_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
     add_applied_entry_row(
         &group,
         &i18n("Profile File"),
-        "icc-profile",
+        keys::ICC_PROFILE,
         settings,
         live_str(mpv, MpvBackend::set_icc_profile),
     );
     let intent_mpv = mpv.cloned();
-    let intent_settings = settings.clone();
-    big_media_components::preference_rows::combo_row(
+    add_index_combo_row(
         &group,
         &i18n("Rendering Intent"),
         "",
@@ -138,10 +137,9 @@ fn color_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
             &i18n("Saturation"),
             &i18n("Absolute"),
         ],
-        settings.get_int(keys::ICC_INTENT).clamp(0, 3) as u32,
+        keys::ICC_INTENT,
+        settings,
         move |intent| {
-            let intent = intent as i32;
-            let _ = intent_settings.put_int(keys::ICC_INTENT, intent);
             if let Some(mpv) = &intent_mpv {
                 mpv.set_icc_intent(i64::from(intent));
             }
@@ -161,7 +159,7 @@ fn cache_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
         &group,
         &i18n("Load Ahead"),
         "",
-        "cache",
+        keys::CACHE,
         settings,
         live(mpv, MpvBackend::set_cache),
     );
@@ -169,7 +167,7 @@ fn cache_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
         &group,
         &i18n("How Far Ahead"),
         &i18n("In seconds"),
-        "cache-secs",
+        keys::CACHE_SECS,
         1.0,
         600.0,
         10.0,
@@ -180,7 +178,7 @@ fn cache_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
         &group,
         &i18n("Wait Instead of Stuttering"),
         &i18n("Pauses until enough is loaded to keep playing smoothly"),
-        "cache-pause",
+        keys::CACHE_PAUSE,
         settings,
         live(mpv, MpvBackend::set_cache_pause),
     );
@@ -188,7 +186,7 @@ fn cache_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
         &group,
         &i18n("Keep on Disk"),
         &i18n("Uses disk space instead of memory; useful for very long streams"),
-        "cache-on-disk",
+        keys::CACHE_ON_DISK,
         settings,
         live(mpv, MpvBackend::set_cache_on_disk),
     );
@@ -206,7 +204,7 @@ fn cache_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Prefe
         &group,
         &i18n("Read Ahead in the File"),
         &i18n("Seconds of the file read in advance, also for local files"),
-        "demuxer-readahead-secs",
+        keys::DEMUXER_READAHEAD_SECS,
         0.0,
         60.0,
         0.5,
@@ -225,7 +223,7 @@ fn extras_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Pref
         &group,
         &i18n("Pause on the Final Frame"),
         &i18n("When the player stops at the end of a video; off lets seeking back resume playback"),
-        "keep-open-pause",
+        keys::KEEP_OPEN_PAUSE,
         settings,
         live(mpv, MpvBackend::set_keep_open_pause),
     );
@@ -233,7 +231,7 @@ fn extras_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Pref
         &group,
         &i18n("Screenshot Compression"),
         &i18n("Higher values make smaller PNG files but take longer to save"),
-        "screenshot-png-compression",
+        keys::SCREENSHOT_PNG_COMPRESSION,
         0.0,
         9.0,
         1.0,
@@ -244,7 +242,7 @@ fn extras_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Pref
         &group,
         &i18n("Screenshot Color Profile"),
         &i18n("Stores the video color space in each screenshot"),
-        "screenshot-tag-colorspace",
+        keys::SCREENSHOT_TAG_COLORSPACE,
         settings,
         live(mpv, MpvBackend::set_screenshot_tag_colorspace),
     );
@@ -252,7 +250,7 @@ fn extras_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Pref
         &group,
         &i18n("High Bit Depth Screenshots"),
         &i18n("Keeps more color precision; files get larger"),
-        "screenshot-high-bit-depth",
+        keys::SCREENSHOT_HIGH_BIT_DEPTH,
         settings,
         live(mpv, MpvBackend::set_screenshot_high_bit_depth),
     );
@@ -266,17 +264,23 @@ fn custom_group(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::Pref
             "Paths to .glsl files, separated by commas. Press Enter to apply.",
         ))
         .build();
-    add_applied_entry_row(&shaders, &i18n("Shader Files"), "glsl-shaders", settings, {
-        // Replacing the list drops the dialog's upscalers; put them back.
-        let mpv = mpv.cloned();
-        let settings = settings.clone();
-        move |shaders: &str| {
-            if let Some(mpv) = &mpv {
-                mpv.set_glsl_shaders(shaders);
-                crate::video::ui::filters::apply_saved_enhancements(mpv, &settings);
+    add_applied_entry_row(
+        &shaders,
+        &i18n("Shader Files"),
+        keys::GLSL_SHADERS,
+        settings,
+        {
+            // Replacing the list drops the dialog's upscalers; put them back.
+            let mpv = mpv.cloned();
+            let settings = settings.clone();
+            move |shaders: &str| {
+                if let Some(mpv) = &mpv {
+                    mpv.set_glsl_shaders(shaders);
+                    crate::video::ui::filters::apply_saved_enhancements(mpv, &settings);
+                }
             }
-        }
-    });
+        },
+    );
     shaders
 }
 
@@ -291,7 +295,7 @@ fn mpv_options_group(settings: &Settings) -> adw::PreferencesGroup {
         &group,
         &i18n("Options"),
         "",
-        keys::CUSTOM_MPV_OPTIONS.0,
+        keys::CUSTOM_MPV_OPTIONS,
         settings,
         |_| {},
     );
@@ -303,7 +307,7 @@ fn mpv_options_group(settings: &Settings) -> adw::PreferencesGroup {
 fn add_applied_entry_row(
     group: &adw::PreferencesGroup,
     title: &str,
-    key: &'static str,
+    key: keys::StringKey,
     settings: &Settings,
     apply: impl Fn(&str) + 'static,
 ) -> adw::EntryRow {

@@ -1,6 +1,8 @@
 use super::*;
 
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use big_media_runtime::app::ShellInputSlot;
 
 use super::trim::VideoTrimBarOutput;
 
@@ -8,6 +10,8 @@ use super::trim::VideoTrimBarOutput;
 pub enum VideoShellInput {
     /// An mpv backend event (position, duration, pause, EOF, …).
     Player(PlayerEvent),
+    /// mpv could not start; the message says why and what to do.
+    EngineFailed(String),
     /// An intent emitted by the OSD controls bar.
     Controls(VideoControlsBarOutput),
     /// An intent emitted by the folder-browser sidebar.
@@ -19,7 +23,7 @@ pub enum VideoShellInput {
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
     /// A button of the TV card over the video or of the TV pill's menu.
-    Tv(crate::shared::tv_cast::TvCardAction),
+    Tv(big_media_runtime::cast::tv::TvCardAction),
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// Add these files to the end of the playlist (dropped on the panel).
@@ -62,6 +66,8 @@ pub enum VideoShellInput {
     /// The preferences dialog closed: re-read settings the shell applies
     /// itself (the screen-awake inhibitor).
     PreferencesClosed,
+    /// The Maximum Volume preference changed while the player runs.
+    VolumeMaxChanged,
     /// Confirm + reset all settings to defaults (Settings menu).
     ShowRestoreDefaults,
     /// Restore-defaults confirmed in the alert dialog: reset the store.
@@ -70,13 +76,10 @@ pub enum VideoShellInput {
     /// playlist with these paths and start playing the first.
     OpenFiles(Vec<String>),
     /// Internal: an `OpenFiles` request whose folder-scan / playlist-file parse
-    /// has been resolved off the main thread. Carries the final playlist, the
-    /// index to start at, and the optional browse folder. Dispatched by
-    /// `open_files` so the blocking disk I/O never runs on the GTK main loop.
+    /// has been resolved off the main thread. Dispatched by `open_files` so the
+    /// blocking disk I/O never runs on the GTK main loop.
     PlaylistResolved {
-        entries: Vec<String>,
-        start: usize,
-        folder: Option<String>,
+        list: super::playback::OpenedList,
         /// The request's `open_generation`; an older one is stale.
         generation: u64,
     },
@@ -84,14 +87,12 @@ pub enum VideoShellInput {
     ShowGotoTime,
     /// Capture the current frame to the Pictures dir (Playback menu).
     Screenshot,
-    ScreenshotQueueFailed,
+    /// A screenshot never reached mpv; the message says why and what to do.
+    ScreenshotFailed(String),
     /// Jump to chapter `idx` (chapter list dialog).
     SetChapter(i64),
     /// Arm the sleep timer for `minutes`, running `action` on expiry.
-    SleepTimerStart {
-        minutes: u32,
-        action: String,
-    },
+    SleepTimerStart { minutes: u32, action: String },
     /// Disarm the sleep timer.
     SleepTimerCancel,
     /// Re-read which settings are away from normal (controls shown, a
@@ -124,10 +125,7 @@ pub enum VideoShellInput {
     /// fullscreen. It never enters fullscreen.
     Escape,
     /// Play the DVD (or Blu-ray) in `device`: a drive, an ISO or a folder.
-    OpenDisc {
-        bluray: bool,
-        device: String,
-    },
+    OpenDisc { bluray: bool, device: String },
     /// These files went to the trash.
     Trashed(Vec<String>),
     /// Keyboard: shuffle the playlist, or put it back in order.
@@ -153,39 +151,30 @@ pub enum VideoShellInput {
     Mpris(big_app_kit::mpris::MprisCommand),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct ShellInputToken(u64);
-
-static NEXT_SHELL_INPUT_TOKEN: AtomicU64 = AtomicU64::new(1);
-
 /// Set when the process starts in order to open files, read once by the
 /// shell's init: it then starts on the video area instead of the welcome
 /// screen and wallpaper, which stood for about a second before the first frame.
 static OPENING_FILES: AtomicBool = AtomicBool::new(false);
 
 thread_local! {
-    /// Main-thread handle to the running shell's input, set at init so the
-    /// application `open` handler can deliver opened files. The inputs carry
-    /// GTK objects (not `Send`), so a thread-local `Sender` is used instead of
-    /// a `MessageBroker` static.
-    static SHELL_INPUT: RefCell<Option<(ShellInputToken, relm4::Sender<VideoShellInput>)>> =
-        const { RefCell::new(None) };
+    /// The inputs carry GTK objects (not `Send`), so the slot is thread-local
+    /// instead of a `MessageBroker` static.
+    pub(super) static SHELL_INPUT: ShellInputSlot<relm4::Sender<VideoShellInput>> =
+        const { ShellInputSlot::new() };
 }
 
-/// Deliver a message to the running shell from the main thread (used by the
-/// application `open` handler). No-op if the shell is not running yet.
+/// Deliver a message to the open shell from the main thread (used by the
+/// application `open` handler). No-op when no shell is open.
 pub fn send_to_shell(message: VideoShellInput) {
-    SHELL_INPUT.with(|cell| {
-        if let Some((_, sender)) = cell.borrow().as_ref() {
-            let _ = sender.send(message);
-        }
-    });
+    if let Some(sender) = shell_input_sender() {
+        let _ = sender.send(message);
+    }
 }
 
 /// Tell the shell about to be created that files are on their way. A shell
 /// already running keeps its screen: its files replace the playing ones.
 pub fn mark_opening_files() {
-    if SHELL_INPUT.with(|cell| cell.borrow().is_none()) {
+    if shell_input_sender().is_none() {
         OPENING_FILES.store(true, Ordering::Relaxed);
     }
 }
@@ -194,23 +183,6 @@ pub(super) fn take_opening_files() -> bool {
     OPENING_FILES.swap(false, Ordering::Relaxed)
 }
 
-pub(super) fn set_shell_input(sender: relm4::Sender<VideoShellInput>) -> ShellInputToken {
-    let token = ShellInputToken(NEXT_SHELL_INPUT_TOKEN.fetch_add(1, Ordering::Relaxed));
-    SHELL_INPUT.with(|cell| {
-        *cell.borrow_mut() = Some((token, sender));
-    });
-    token
-}
-
-pub(super) fn clear_shell_input(token: ShellInputToken) {
-    SHELL_INPUT.with(|cell| {
-        let mut slot = cell.borrow_mut();
-        if slot.as_ref().is_some_and(|(current, _)| *current == token) {
-            slot.take();
-        }
-    });
-}
-
 pub(super) fn shell_input_sender() -> Option<relm4::Sender<VideoShellInput>> {
-    SHELL_INPUT.with(|cell| cell.borrow().as_ref().map(|(_, sender)| sender.clone()))
+    SHELL_INPUT.with(ShellInputSlot::sender)
 }

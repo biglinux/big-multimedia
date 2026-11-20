@@ -4,21 +4,22 @@
 //! directly. Filter string
 //! math lives in [`super::filter_specs`].
 
+use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::filter_specs::{
     active_vf_graph, colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf, vf_graph_number,
     vf_graph_param,
 };
-use super::vf_row::{VfFilterSpec, build_vf_expander_row};
+use super::vf_row::{VfFilterSpec, build_vf_expander_row, wire_filter_expander};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
-use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 /// Denoise (hqdn3d) + software CAS sharpen.
 pub(super) fn build_denoise_sharpen_group(
@@ -50,7 +51,7 @@ pub(super) fn build_denoise_sharpen_group(
             label: "cas",
             param: "strength",
             title: i18n("Sharpen (CAS)"),
-            subtitle: i18n("Software contrast-adaptive sharpening — works at any resolution"),
+            subtitle: i18n("Software contrast-adaptive sharpening that works at any resolution"),
             spin_title: i18n("Strength"),
             adjustment: (0.5, 0.0, 1.0, 0.05, 0.1),
             digits: 2,
@@ -125,21 +126,21 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
     let saturation = gtk::Adjustment::new(value("saturation", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
     let mix = gtk::Adjustment::new(value("mix", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Hue"))
             .adjustment(&hue)
             .digits(0)
             .build(),
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Saturation"))
             .adjustment(&saturation)
             .digits(2)
             .build(),
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Mix"))
             .adjustment(&mix)
             .digits(2)
@@ -164,30 +165,16 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
         }
     };
 
-    let apply_on_toggle = apply.clone();
-    let mpv_toggle = Arc::clone(mpv);
-    expander.connect_enable_expansion_notify(move |row| {
-        if row.enables_expansion() {
-            apply_on_toggle();
-        } else {
-            mpv_toggle.vf_remove(LABEL);
-        }
-    });
-
-    let debounce = DebouncedAction::new(Duration::from_millis(300));
+    let mpv = Arc::clone(mpv);
+    let changed = wire_filter_expander(
+        &expander,
+        Some(Duration::from_millis(300)),
+        apply,
+        move || mpv.vf_remove(LABEL),
+    );
     for adjustment in [&hue, &saturation, &mix] {
-        let apply = apply.clone();
-        let debounce = debounce.clone();
-        // Weak back-ref to avoid a mutual reference cycle (leaks on close).
-        let expander_weak = expander.downgrade();
-        adjustment.connect_value_changed(move |_| {
-            let Some(expander_ref) = expander_weak.upgrade() else {
-                return;
-            };
-            if expander_ref.enables_expansion() {
-                debounce.run(apply.clone());
-            }
-        });
+        let changed = Rc::clone(&changed);
+        adjustment.connect_value_changed(move |_| changed());
     }
 
     expander
@@ -275,26 +262,9 @@ pub(super) fn build_presets_group(
         }
     };
 
-    let apply_on_toggle = apply.clone();
-    let mpv_toggle = Arc::clone(mpv);
-    expander.connect_enable_expansion_notify(move |row| {
-        if row.enables_expansion() {
-            apply_on_toggle();
-        } else {
-            mpv_toggle.vf_remove(LABEL);
-        }
-    });
-    // Weak back-ref: the expander owns the combo; a strong capture here would be
-    // a mutual reference cycle (leaks on dialog close).
-    let expander_weak = expander.downgrade();
-    combo.connect_selected_notify(move |_| {
-        let Some(expander_ref) = expander_weak.upgrade() else {
-            return;
-        };
-        if expander_ref.enables_expansion() {
-            apply();
-        }
-    });
+    let mpv = Arc::clone(mpv);
+    let changed = wire_filter_expander(&expander, None, apply, move || mpv.vf_remove(LABEL));
+    combo.connect_selected_notify(move |_| changed());
 
     group.add(&expander);
     group

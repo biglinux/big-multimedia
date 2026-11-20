@@ -1,3 +1,4 @@
+use big_relm4_components::feedback::tooltip;
 use std::rc::Rc;
 
 use adw::prelude::*;
@@ -53,13 +54,12 @@ pub(crate) fn build_reorder_hint(state: &Rc<BrowserState>) {
             .css_classes(["caption"])
             .build(),
     );
-    let close = gtk::Button::builder()
-        .icon_name("window-close-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["flat", "circular"])
-        .tooltip_text(i18n("Got it"))
-        .build();
-    close.update_property(&[gtk::accessible::Property::Label(&i18n("Got it"))]);
+    let close = tooltip::icon_button(
+        "window-close-symbolic",
+        &i18n("Got it"),
+        &["flat", "circular"],
+    );
+    close.set_valign(gtk::Align::Center);
     {
         let state = state.clone();
         let row = row.downgrade();

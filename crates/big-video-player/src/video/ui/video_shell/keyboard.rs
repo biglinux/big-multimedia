@@ -37,7 +37,7 @@ const PANSCAN_STEP: f64 = 0.1;
 pub(super) fn wire_keyboard_shortcuts(
     root: &gtk::Box,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
     settings: &Settings,
     sender: &ComponentSender<VideoShell>,
     trim_active: Rc<Cell<bool>>,
@@ -142,7 +142,7 @@ struct Shortcuts {
     /// when the shortcuts dialog saves a change.
     single_key_actions: RefCell<(Option<String>, std::collections::HashMap<String, String>)>,
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: Rc<crate::shared::tv_cast::TvLink>,
+    tv: Rc<big_media_runtime::cast::tv::TvLink>,
     input: relm4::Sender<VideoShellInput>,
     settings: Settings,
     /// The control-bar and header menus: Escape closes them first.
@@ -168,7 +168,7 @@ impl Shortcuts {
     ) -> glib::Propagation {
         // Read the same volume ceiling the slider uses, so the keyboard step
         // reaches the >100% boost region instead of a hardcoded 100 cap.
-        let volume_max = f64::from(self.settings.get_int(keys::VOLUME_MAX)).max(100.0);
+        let volume_max = f64::from(self.settings.volume_max_percent());
         // Hardware media keys fire regardless of focus.
         if let Some(action) = media_key_action(keyval)
             && dispatch_video_shortcut(action, &self.mpv, &self.tv, &self.input, volume_max)
@@ -239,7 +239,7 @@ pub(super) fn paste_and_play(root: &gtk::Box, sender: &ComponentSender<VideoShel
 fn dispatch_video_shortcut(
     action: &str,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
     input: &relm4::Sender<VideoShellInput>,
     volume_max: f64,
 ) -> bool {
@@ -270,22 +270,15 @@ fn dispatch_video_shortcut(
 
     // While a TV has the controls, seeking and volume keys drive it.
     if let Some(state) = tv.attached() {
-        let seek = |offset: f64| {
-            if state.can_seek {
-                let target = (state.position + offset).clamp(0.0, state.duration.max(0.0));
-                tv.control("seek-to", target);
-            }
-        };
         let volume = state.volume.unwrap_or(1.0);
         match action {
-            "seek-forward" => seek(SEEK_SHORT_SECS),
-            "seek-backward" => seek(-SEEK_SHORT_SECS),
-            "seek-forward-long" => seek(SEEK_LONG_SECS),
-            "seek-backward-long" => seek(-SEEK_LONG_SECS),
-            "volume-up" => tv.control("volume", (volume + VOLUME_STEP / 100.0).min(1.0)),
-            "volume-down" => tv.control("volume", (volume - VOLUME_STEP / 100.0).max(0.0)),
-            "mute" if state.muted == Some(true) => tv.control("unmute", 0.0),
-            "mute" => tv.control("mute", 0.0),
+            "seek-forward" => tv.seek_by(SEEK_SHORT_SECS),
+            "seek-backward" => tv.seek_by(-SEEK_SHORT_SECS),
+            "seek-forward-long" => tv.seek_by(SEEK_LONG_SECS),
+            "seek-backward-long" => tv.seek_by(-SEEK_LONG_SECS),
+            "volume-up" => tv.set_volume(volume + VOLUME_STEP / 100.0),
+            "volume-down" => tv.set_volume(volume - VOLUME_STEP / 100.0),
+            "mute" => tv.set_muted(state.muted != Some(true)),
             // Speed and frame steps have no meaning on a TV stream.
             _ => return false,
         }
@@ -322,7 +315,7 @@ fn dispatch_video_shortcut(
             };
             mpv.set_chapter((mpv.get_current_chapter() + step).clamp(0, count - 1));
         }
-        "deinterlace" => mpv.set_deinterlace(!mpv.get_property_bool("deinterlace")),
+        "deinterlace" => mpv.set_deinterlace(!mpv.deinterlace()),
         "hwdec" => mpv.set_hwdec(if mpv.get_hwdec() == "no" {
             "auto-safe"
         } else {
@@ -366,8 +359,8 @@ mod tests {
     }
 
     /// Never connected, so no TV has the keys.
-    fn no_tv() -> Rc<crate::shared::tv_cast::TvLink> {
-        crate::shared::tv_cast::TvLink::new()
+    fn no_tv() -> Rc<big_media_runtime::cast::tv::TvLink> {
+        big_media_runtime::cast::tv::TvLink::new()
     }
 
     #[test]
@@ -419,7 +412,7 @@ mod tests {
     }
 
     #[test]
-    fn key_lookup_survives_caps_lock_and_shifted_symbols() {
+    fn key_lookup_ignores_caps_lock_shift() {
         use gtk::gdk::{Key, ModifierType};
         let map = build_single_key_map("");
         let lookup = |key, state| lookup_action(&map, key, state);

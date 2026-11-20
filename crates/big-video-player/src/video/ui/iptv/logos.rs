@@ -14,25 +14,24 @@
 use std::fs;
 use std::path::PathBuf;
 
-use gtk::glib;
-
 use crate::config;
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_with_headers};
 
-/// Logo cache directory, created on demand.
+/// Logo cache directory, created on demand. `None` without an XDG cache
+/// directory.
 #[must_use]
-pub fn cache_dir() -> PathBuf {
-    let dir = glib::user_cache_dir()
+pub(super) fn cache_dir() -> Option<PathBuf> {
+    let dir = big_os_kit::xdg_dirs::cache_dir()?
         .join(config::video::CONFIG_DIR)
         .join("iptv-logos");
     let _ = fs::create_dir_all(&dir);
-    dir
+    Some(dir)
 }
 
 // FNV-1a 64-bit; deterministic without pulling in a crypto dep.
 #[must_use]
-fn cache_file_for_url(url: &str) -> PathBuf {
-    cache_file_for_url_in_dir(cache_dir(), url)
+fn cache_file_for_url(url: &str) -> Option<PathBuf> {
+    Some(cache_file_for_url_in_dir(cache_dir()?, url))
 }
 
 fn cache_file_for_url_in_dir(cache_dir: PathBuf, url: &str) -> PathBuf {
@@ -67,13 +66,13 @@ fn extension_from_url(url: &str) -> Option<&'static str> {
 /// HTTP GET whose result is written back to the cache. Meant to run **off the
 /// main thread**: `MediaListView` calls it on a worker for visible rows only,
 /// then decodes + memory-caches the texture and cancels on recycle. No-op
-/// (`None`) for an empty URL or on fetch failure.
+/// (`None`) for an empty URL, without a cache directory, or on fetch failure.
 #[must_use]
-pub fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<Vec<u8>> {
+pub(super) fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<Vec<u8>> {
     if url.is_empty() {
         return None;
     }
-    let path = cache_file_for_url(url);
+    let path = cache_file_for_url(url)?;
     if let Ok(bytes) = fs::read(&path) {
         return Some(bytes);
     }

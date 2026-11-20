@@ -6,4 +6,4 @@ pub(crate) mod layout;
 mod theming;
 
 pub use dialogs::show_appearance_dialog;
-pub(in crate::video) use theming::apply_appearance;
+pub(in crate::video) use theming::{GRADIENT_FADE_PX, apply_appearance};

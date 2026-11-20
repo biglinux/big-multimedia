@@ -16,7 +16,8 @@ mod groups_shader;
 mod groups_vf;
 mod vf_row;
 
-pub(crate) use groups_shader::{apply_saved_enhancements, saved_enhancements};
+pub(crate) use filter_specs::vf_entries;
+pub(crate) use groups_shader::{apply_saved_enhancements, put_enhancements, saved_enhancements};
 
 use std::sync::Arc;
 
@@ -107,7 +108,7 @@ mod lifetime_tests {
         gtk::init().unwrap();
         adw::init().unwrap();
         let (sender, _receiver) = async_channel::unbounded();
-        let mpv = Arc::new(MpvBackend::new_audio_only(sender).unwrap());
+        let mpv = Arc::new(MpvBackend::new_audio_only_with_output(sender, "").unwrap());
         let finalized = Rc::new(Cell::new(0));
         let mut created = 0;
         for _ in 0..25 {

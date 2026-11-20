@@ -39,6 +39,7 @@ pub struct ChannelListView {
     pub status: gtk::Widget,
     view: MediaListView,
     all_channels: Rc<RefCell<Vec<IptvChannel>>>,
+    favorites: Rc<RefCell<IptvFavorites>>,
     user_agent: Rc<RefCell<String>>,
     referer: Rc<RefCell<String>>,
     last_query: RefCell<String>,
@@ -107,6 +108,7 @@ impl ChannelListView {
             status: status.upcast(),
             view,
             all_channels,
+            favorites,
             user_agent: Rc::new(RefCell::new(String::new())),
             referer: Rc::new(RefCell::new(String::new())),
             last_query: RefCell::new(String::new()),
@@ -125,6 +127,12 @@ impl ChannelListView {
         self.all_channels.replace(channels);
         let query = self.last_query.borrow().clone();
         self.resplice(&query);
+    }
+
+    /// Move stars saved under the first URL of each pair to the second.
+    pub fn rename_favorites(&self, renames: Vec<(String, String)>) {
+        self.favorites.borrow_mut().rename(renames);
+        self.reload_favorites();
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model

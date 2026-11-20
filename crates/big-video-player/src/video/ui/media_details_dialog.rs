@@ -15,6 +15,7 @@
 use std::sync::Arc;
 
 use adw::prelude::*;
+use big_media_components::audio::labels::bitrate_kbps_label_from_bps;
 use big_media_components::bytes::decimal_detailed;
 use big_media_components::time::duration_hms;
 use big_relm4_components::layout::{
@@ -25,7 +26,7 @@ use big_relm4_components::list::copyable_detail_row::{
 };
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{MpvBackend, TrackMetadata};
+use crate::player::mpv_backend::{MpvBackend, TrackMetadata, VideoParams};
 
 /// Build one copyable detail row and register it for "Copy All".
 fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::ActionRow {
@@ -36,9 +37,14 @@ fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::Ac
     .into_row()
 }
 
-/// Present the media-details dialog over `parent`.
-pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
-    let dialog = adw::Dialog::builder()
+/// Present the media-details dialog over `parent` for the file the playlist
+/// lists as `file_path`: an IPTV channel's stored URL, not the played one.
+pub fn show_video_media_details_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    mpv: &Arc<MpvBackend>,
+    file_path: &str,
+) {
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Media Information"))
         .content_width(500)
         .content_height(500)
@@ -51,7 +57,7 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
 
     let content = page.content().clone();
     content.set_spacing(12);
-    content.append(&build_general_group(mpv, &lines));
+    content.append(&build_general_group(mpv, file_path, &lines));
     if let Some(group) = build_metadata_group(mpv, &lines) {
         content.append(&group);
     }
@@ -73,15 +79,18 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
     dialog.present(Some(parent));
 }
 
-fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigDetailLines) -> adw::PreferencesGroup {
+fn build_general_group(
+    mpv: &Arc<MpvBackend>,
+    file_path: &str,
+    lines: &BigDetailLines,
+) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("General")).build();
 
-    let file_path = mpv.get_current_file().unwrap_or_default();
     if !file_path.is_empty() {
-        group.add(&media_detail_row(&i18n("File"), &file_path, lines));
+        group.add(&media_detail_row(&i18n("File"), file_path, lines));
         let group = group.downgrade();
         let lines = lines.clone();
-        gtk::gio::File::for_path(&file_path).query_info_async(
+        gtk::gio::File::for_path(file_path).query_info_async(
             "standard::size",
             gtk::gio::FileQueryInfoFlags::NONE,
             gtk::glib::Priority::DEFAULT,
@@ -167,7 +176,7 @@ fn build_video_group(
             lines,
         ));
     }
-    let fps = mpv.get_property_f64("estimated-vf-fps");
+    let fps = mpv.estimated_fps();
     if fps > 0.0 {
         group.add(&media_detail_row(
             &i18n("Frame Rate"),
@@ -179,11 +188,11 @@ fn build_video_group(
     if bitrate > 0.0 {
         group.add(&media_detail_row(
             &i18n("Bitrate"),
-            &format!("{:.0} kbps", bitrate / 1000.0),
+            &bitrate_kbps_label_from_bps(bitrate as i64),
             lines,
         ));
     }
-    let hwdec = mpv.get_property_string("hwdec-current");
+    let hwdec = mpv.hwdec_current();
     let decoder = if hwdec.is_empty() {
         i18n("Software")
     } else {
@@ -194,7 +203,13 @@ fn build_video_group(
         &decoder,
         lines,
     ));
-    let pixel_format = mpv.get_property_string("video-params/pixelformat");
+    let VideoParams {
+        pixel_format,
+        colormatrix,
+        primaries,
+        gamma: transfer,
+        ..
+    } = mpv.output_params();
     if !pixel_format.is_empty() {
         group.add(&media_detail_row(
             &i18n("Pixel Format"),
@@ -202,15 +217,12 @@ fn build_video_group(
             lines,
         ));
     }
-    let colormatrix = mpv.get_property_string("video-params/colormatrix");
     if !colormatrix.is_empty() {
         group.add(&media_detail_row(&i18n("Colorspace"), &colormatrix, lines));
     }
-    let primaries = mpv.get_property_string("video-params/primaries");
     if !primaries.is_empty() {
         group.add(&media_detail_row(&i18n("Primaries"), &primaries, lines));
     }
-    let transfer = mpv.get_property_string("video-params/gamma");
     if !transfer.is_empty() {
         let label = if transfer.contains("pq") || transfer.contains("hlg") {
             i18n("HDR")
@@ -236,7 +248,7 @@ fn build_audio_group(
     if bitrate > 0.0 {
         group.add(&media_detail_row(
             &i18n("Bitrate"),
-            &format!("{:.0} kbps", bitrate / 1000.0),
+            &bitrate_kbps_label_from_bps(bitrate as i64),
             lines,
         ));
     }

@@ -3,12 +3,13 @@
 //! window-button sizing. Each switch toggles visibility of its dependent rows.
 
 use adw::prelude::*;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::rc::Rc;
 
 use crate::i18n::{gettext_noop, i18n};
 use crate::settings::{Settings, keys};
-use crate::shared::preference_rows::add_spin_int_row;
+use big_player_ui::preference_rows::add_spin_int_row;
 
 pub(in crate::video) fn create_layout_page(
     settings: &Settings,
@@ -32,46 +33,46 @@ fn build_controls_bar_group(
 ) -> adw::PreferencesGroup {
     let bar_group = BigPreferencesGroupSpec::new(i18n("Controls Bar")).build();
 
-    let spin_items: &[(&str, &str, f64, f64)] = &[
+    let spin_items: &[(&str, keys::IntKey, f64, f64)] = &[
         (
             gettext_noop("Corner Radius"),
-            "ui-controls-radius",
+            keys::UI_CONTROLS_RADIUS,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Bottom Margin"),
-            "ui-controls-margin-bottom",
+            keys::UI_CONTROLS_MARGIN_BOTTOM,
             0.0,
             100.0,
         ),
         (
             gettext_noop("Side Margin"),
-            "ui-controls-margin-side",
+            keys::UI_CONTROLS_MARGIN_SIDE,
             0.0,
             100.0,
         ),
         (
             gettext_noop("Padding Top"),
-            "ui-controls-padding-top",
+            keys::UI_CONTROLS_PADDING_TOP,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Bottom"),
-            "ui-controls-padding-bottom",
+            keys::UI_CONTROLS_PADDING_BOTTOM,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Left"),
-            "ui-controls-padding-left",
+            keys::UI_CONTROLS_PADDING_LEFT,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Right"),
-            "ui-controls-padding-right",
+            keys::UI_CONTROLS_PADDING_RIGHT,
             0.0,
             48.0,
         ),
@@ -82,7 +83,7 @@ fn build_controls_bar_group(
             &bar_group,
             &i18n(label),
             "",
-            key,
+            *key,
             *min,
             *max,
             1.0,
@@ -102,7 +103,7 @@ fn build_buttons_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
         .build();
     button_group.add(&custom_button_size_row);
 
-    let button_size_row = adw::SpinRow::builder()
+    let button_size_row = accessible_spin_row()
         .title(i18n("Button Size"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_BUTTON_SIZE)),
@@ -117,7 +118,7 @@ fn build_buttons_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
     button_size_row.set_visible(settings.get_bool(keys::UI_BUTTON_CUSTOM));
     button_group.add(&button_size_row);
 
-    let button_radius_row = adw::SpinRow::builder()
+    let button_radius_row = accessible_spin_row()
         .title(i18n("Button Border Radius"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_BUTTON_RADIUS)),
@@ -177,7 +178,7 @@ fn build_window_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::Pr
         .build();
     window_group.add(&custom_window_radius_row);
 
-    let window_radius_row = adw::SpinRow::builder()
+    let window_radius_row = accessible_spin_row()
         .title(i18n("Window Corner Radius"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_WINDOW_RADIUS)),

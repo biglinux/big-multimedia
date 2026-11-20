@@ -1,0 +1,243 @@
+# AppArmor profile for big-video-player, generated from
+# crates/media-runtime/data/apparmor/player.apparmor.in; edit the template and
+# run the big-media-engines apparmor_profiles test with BLESS_APPARMOR=1.
+#
+# The player reads media, subtitle, lyrics, playlist and image files outside
+# hidden folders and lists folders; the rest of the home stays out of reach. It
+# writes media (tags, recordings, downloads, trash), playlists and screenshots
+# there, and its own config, data and cache. ffmpeg, ffprobe, rsvg-convert,
+# ImageMagick, fd, curl and yt-dlp parse outside input, so they run in the
+# narrower `decoder` profile; glycin's image loaders run in `image_loader`.
+#
+# D-Bus rules take effect only where the bus daemon enforces AppArmor; BigLinux's
+# dbus-broker does not, so there they document the calls the program makes.
+#
+# Complain mode logs what the profile would refuse without refusing it; the
+# release after the logs come back clean switches to enforce. Package upgrades
+# replace this file: local additions go in /etc/apparmor.d/local/big-video-player.
+
+abi <abi/4.0>,
+
+include <tunables/global>
+
+@{exec_path} = /usr/bin/big-video-player
+# Where media lives: the home outside its hidden folders, removable drives and
+# network shares GVfs mounts (sftp, smb, ftp through the file manager).
+@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
+@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/ @{run}/user/@{uid}/gvfs/ @{run}/user/@{uid}/gvfs/**/
+# Folders a publish stages its hidden `.big-media-*` copy in.
+@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
+@{suite_dirs} = big-audio-player big-video-player big-media-runtime
+
+@{media_ext} = {[mM][pP]4,[mM][kK][vV],[mM][kK]3[dD],[wW][eE][bB][mM],[aA][vV][iI],[mM][oO][vV],[qQ][tT],[fF][lL][vV],[wW][mM][vV],[mM][pP][gG],[mM][pP][eE][gG],[mM][pP][eE],[mM]2[vV],[tT][sS],[mM]2[tT][sS],[vV][oO][bB],[oO][gG][vV],[oO][gG][mM],3[gG][pP],3[gG]2,[mM]4[vV],[mM][tT][sS],[fF]4[vV],[dD][iI][vV][xX],[aA][sS][fF],[dD][vV],[mM][xX][fF],[rR][mM],[rR][mM][vV][bB],[nN][sS][vV],[mM][jJ]2,[mM][jJ][pP][eE][gG],[mM][jJ][pP][gG],[fF][lL][cC],[fF][lL][iI],[bB][iI][kK],[sS][mM][kK],[aA][xX][vV],3[gG][pP][pP],3[gG][pP]2,3[gG][pP][pP]2,[mM][jJ][pP]2,[mM]2[tT],[rR][vV],[bB][kK]2,[lL][rR][vV],[mM][oO][oO][vV],[mM][pP]3,[fF][lL][aA][cC],[oO][gG][gG],[oO][pP][uU][sS],[wW][aA][vV],[mM]4[aA],[mM]4[bB],[aA][aA][cC],[wW][mM][aA],[aA][pP][eE],[wW][vV],[aA][iI][fF][fF],[aA][iI][fF],[aA][iI][fF][cC],[mM][kK][aA],[oO][gG][aA],[sS][pP][xX],[aA][cC]3,[dD][tT][sS],[mM][pP][cC],[tT][tT][aA],[aA][mM][rR],[aA][wW][bB],[aA][uU],[sS][nN][dD],[dD][fF][fF],[dD][sS][fF],[wW][eE][bB][aA],[mM][oO][dD],[iI][tT],[sS]3[mM],[xX][mM],[mM][pP][gG][aA],[aA][dD][tT][sS],[fF]4[aA],[fF]4[bB],[aA][iI][fF][fF][cC],[dD][tT][sS][hH][dD],[mM][pP][pP],[lL][oO][aA][sS]}
+@{media_write_ext} = {[mM][pP]4,[mM][kK][vV],[mM][kK]3[dD],[wW][eE][bB][mM],[aA][vV][iI],[mM][oO][vV],[qQ][tT],[fF][lL][vV],[wW][mM][vV],[mM][pP][gG],[mM][pP][eE][gG],[mM][pP][eE],[mM]2[vV],[mM]2[tT][sS],[vV][oO][bB],[oO][gG][vV],[oO][gG][mM],3[gG][pP],3[gG]2,[mM]4[vV],[fF]4[vV],[dD][iI][vV][xX],[aA][sS][fF],[dD][vV],[mM][xX][fF],[rR][mM],[rR][mM][vV][bB],[nN][sS][vV],[mM][jJ]2,[mM][jJ][pP][eE][gG],[mM][jJ][pP][gG],[fF][lL][cC],[fF][lL][iI],[bB][iI][kK],[sS][mM][kK],[aA][xX][vV],3[gG][pP][pP],3[gG][pP]2,3[gG][pP][pP]2,[mM][jJ][pP]2,[mM]2[tT],[rR][vV],[bB][kK]2,[lL][rR][vV],[mM][oO][oO][vV],[mM][pP]3,[fF][lL][aA][cC],[oO][gG][gG],[oO][pP][uU][sS],[wW][aA][vV],[mM]4[aA],[mM]4[bB],[aA][aA][cC],[wW][mM][aA],[aA][pP][eE],[wW][vV],[aA][iI][fF][fF],[aA][iI][fF],[aA][iI][fF][cC],[mM][kK][aA],[oO][gG][aA],[sS][pP][xX],[aA][cC]3,[dD][tT][sS],[mM][pP][cC],[tT][tT][aA],[aA][mM][rR],[aA][wW][bB],[aA][uU],[sS][nN][dD],[dD][fF][fF],[dD][sS][fF],[wW][eE][bB][aA],[iI][tT],[sS]3[mM],[xX][mM],[mM][pP][gG][aA],[aA][dD][tT][sS],[fF]4[aA],[fF]4[bB],[aA][iI][fF][fF][cC],[dD][tT][sS][hH][dD],[mM][pP][pP],[lL][oO][aA][sS]}
+@{companion_ext} = {[sS][rR][tT],[aA][sS][sS],[sS][sS][aA],[sS][uU][bB],[vV][tT][tT],[iI][dD][xX],[sS][uU][pP],[sS][mM][iI],[jJ][pP][gG],[jJ][pP][eE][gG],[pP][nN][gG],[wW][eE][bB][pP],[bB][mM][pP],[tT][iI][fF][fF],[aA][vV][iI][fF],[hH][eE][iI][cC],[jJ][xX][lL],[sS][vV][gG],[lL][rR][cC]}
+@{playlist_ext} = {[mM]3[uU],[mM]3[uU]8,[pP][lL][sS]}
+@{screenshot_ext} = [pP][nN][gG]
+
+profile big-video-player @{exec_path} flags=(complain) {
+  include <abstractions/base>
+  include <abstractions/gnome>
+  include <abstractions/dconf>
+  include <abstractions/wayland>
+  include <abstractions/X>
+  include <abstractions/audio>
+  include <abstractions/dri-enumerate>
+  include <abstractions/mesa>
+  include <abstractions/nvidia>
+  include <abstractions/opengl>
+  include <abstractions/vulkan>
+  include <abstractions/video>
+  include <abstractions/nameservice>
+  include <abstractions/ssl_certs>
+  include <abstractions/dbus-session-strict>
+  include <abstractions/dbus-strict>
+  include <abstractions/dbus-accessibility>
+  include <abstractions/trash>
+  include <abstractions/user-tmp>
+
+  # Streams, radio, podcasts, lyrics, TV cast discovery and the phone remote.
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+  network netlink raw,
+
+  # One instance per player: the second one hands its files to the first.
+  dbus bind bus=session name=br.com.biglinux.VideoPlayer,
+  dbus send bus=session peer=(name=br.com.biglinux.VideoPlayer),
+  dbus receive bus=session path=/br/com/biglinux/VideoPlayer{,/**},
+  # MPRIS and the taskbar progress.
+  dbus bind bus=session name=org.mpris.MediaPlayer2.Big*Player{,.*},
+  dbus (send, receive) bus=session path=/org/mpris/MediaPlayer2,
+  dbus send bus=session interface=com.canonical.Unity.LauncherEntry member=Update,
+  # The tray item and its menu.
+  dbus bind bus=session name=org.kde.StatusNotifierItem-*,
+  dbus send bus=session interface=org.kde.StatusNotifierWatcher member=RegisterStatusNotifierItem,
+  dbus (send, receive) bus=session path=/{StatusNotifierItem,MenuBar},
+  # Portals: desktop settings, opening links and folders, the idle inhibitor.
+  # Only the portal calls the players make: the whole portal would let a
+  # compromised player add an autostart entry or trash any file. Links,
+  # files and folders open through OpenURI, so their handler starts outside
+  # this profile.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Settings member={Read,ReadAll,ReadOne},
+  dbus receive bus=session interface=org.freedesktop.portal.Settings member=SettingChanged,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Inhibit member=Inhibit,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member={OpenURI,OpenFile,OpenDirectory},
+  # GTK's file dialogs go through the portal's chooser, where the person picks.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.FileChooser member={OpenFile,SaveFile,SaveFiles},
+  # GTK registers a host app's id with the portal before its first call.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.host.portal.Registry member=Register,
+  dbus send bus=session interface=org.freedesktop.portal.Request member=Close,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.DBus.Properties member=Get,
+  dbus receive bus=session interface=org.freedesktop.portal.Request member=Response,
+  # Files dropped from a file manager arrive through the document portal.
+  dbus send bus=session path=/org/freedesktop/portal/documents interface=org.freedesktop.portal.FileTransfer member=RetrieveFiles,
+  # Show a file in its folder when no portal answers.
+  dbus send bus=session path=/org/freedesktop/FileManager1 interface=org.freedesktop.FileManager1 member=ShowItems,
+  dbus send bus=session interface={org.freedesktop.ScreenSaver,org.gnome.SessionManager} member={Inhibit,Uninhibit,UnInhibit},
+  # IPTV passwords through secret-tool; any client the keyring serves sees every unlocked item.
+  dbus (send, receive) bus=session peer=(name=org.freedesktop.secrets),
+  # GIO reaches GVfs mounts through its daemons.
+  # Read-only GVfs calls: its daemons run outside the profile and would write for us.
+  dbus send bus=session interface=org.gtk.vfs.MountTracker member={LookupMount,ListMounts2,ListMountableInfo},
+  dbus send bus=session interface=org.gtk.vfs.Mount member={QueryInfo,Enumerate,OpenForRead,QueryFilesystemInfo},
+  deny @{run}/user/@{uid}/gvfsd/** rw,
+  # KWin's keep-above shortcut.
+  dbus send bus=session path=/component/kwin interface=org.kde.kglobalaccel.Component member=invokeShortcut,
+  # The sleep timer suspends or powers off through logind.
+  dbus send bus=system path=/org/freedesktop/login1 interface=org.freedesktop.login1.Manager member={Suspend,PowerOff,CanSuspend,CanPowerOff},
+
+  @{exec_path} mr,
+  / r,
+  /usr/share/** r,
+  /etc/mpv/** r,
+  /etc/nvidia/** r,
+  # The NVIDIA OpenCL loader the GPU stack opens; the module helper has its own profile.
+  /opt/cuda/targets/*/lib/*.so* mr,
+  /etc/OpenCL/vendors/{,*} r,
+  /usr/bin/nvidia-modprobe Px -> nvidia_modprobe,
+  /var/lib/snapd/desktop/icons/ r,
+
+  # Programs that parse outside input.
+  /usr/bin/{ffmpeg,ffprobe,rsvg-convert,magick,convert,fd,curl,yt-dlp} Cx -> decoder,
+  # glycin's loaders run in their own profile. Its bwrap sandbox stays off: the
+  # player could hand bwrap any mount, so glycin starts the loader directly.
+  deny /usr/bin/bwrap x,
+  /usr/lib/glycin-loaders/** Cx -> image_loader,
+  # Helpers that only talk to the desktop.
+  /usr/bin/{secret-tool,gsettings,qdbus6,wmctrl,systemctl} ix,
+  # The converter packages ship these profiles; a converter installed without
+  # its profile is refused in enforce mode, so enforce waits for their release.
+  /usr/bin/big-{audio,video}-converter-gui Px,
+  signal (send) set=(term, kill) peer=big-video-player//{decoder,image_loader},
+  unix (send, receive) type=stream peer=(label=big-video-player//image_loader),
+
+  # Folder views list every folder; files are read by type.
+  @{user_dirs} r,
+  @{user_files}.@{media_ext} r,
+  owner @{user_files}.@{media_write_ext} wl,
+  @{user_files}.@{companion_ext} r,
+  owner @{user_files}.@{playlist_ext} rwl,
+  owner @{user_files}.@{screenshot_ext} wl,
+  # Writes publish by hard-linking a hidden staging copy beside the target.
+  owner @{staging_parents}/.big-media-*/ rw,
+  owner @{staging_parents}/.big-media-*/*.@{media_write_ext} rw,
+  owner @{staging_parents}/.big-media-*/*.@{playlist_ext} rw,
+  owner @{staging_parents}/.big-media-*/*.@{screenshot_ext} rw,
+  owner @{staging_parents}/.big-media-*.@{media_write_ext} rw,
+
+  # The suite's own settings, library, caches and watch-later state.
+  owner @{HOME}/.config/@{suite_dirs}/ rw,
+  owner @{HOME}/.config/@{suite_dirs}/** rwk,
+  owner @{HOME}/.local/share/@{suite_dirs}/ rw,
+  owner @{HOME}/.local/share/@{suite_dirs}/** rwk,
+  owner @{HOME}/.local/state/@{suite_dirs}/ rw,
+  owner @{HOME}/.local/state/@{suite_dirs}/** rwk,
+  owner @{HOME}/.cache/@{suite_dirs}/ rw,
+  owner @{HOME}/.cache/@{suite_dirs}/** rwk,
+  # Thumbnails other programs made.
+  owner @{HOME}/.cache/thumbnails/** r,
+  # Trash folders of drives udisks mounts, which abstractions/trash leaves out.
+  owner /run/media/*/*/.Trash-@{uid}/{,**} rw,
+  owner /mnt/*/.Trash-@{uid}/{,**} rw,
+
+  # Desktop settings the players follow.
+  owner @{HOME}/.config/user-dirs.dirs r,
+  # GTK 4's settings.ini and gtk.css with the theme files it imports;
+  # abstractions/gnome covers only gtk-3.0.
+  owner @{HOME}/.config/gtk-4.0/{,**} r,
+  owner @{HOME}/.config/big-shell/shell.json r,
+  owner @{HOME}/.config/plasma-org.kde.plasma.desktop-appletsrc r,
+  owner @{HOME}/.config/mpv/** r,
+
+  # The BigLinux file index answers library searches.
+  owner @{run}/user/@{uid}/biglinux/indexd.sock rw,
+
+  # GPU, network and process facts the players read about themselves.
+  owner @{PROC}/@{pid}/{stat,status,mountinfo,cgroup,cmdline} r,
+  owner @{PROC}/@{pid}/task/@{tid}/{stat,comm} r,
+  @{PROC}/driver/nvidia/version r,
+  @{sys}/class/net/ r,
+  @{sys}/class/net/*/device r,
+
+  include if exists <local/big-video-player>
+
+  profile decoder flags=(complain) {
+    include <abstractions/base>
+    include <abstractions/nameservice>
+    include <abstractions/ssl_certs>
+    include <abstractions/python>
+    include <abstractions/fonts>
+
+    # Streams, podcasts, lyrics and yt-dlp's page and media requests.
+    network inet stream,
+    network inet6 stream,
+    network inet dgram,
+    network inet6 dgram,
+
+    /usr/bin/{ffmpeg,ffprobe,rsvg-convert,magick,convert,fd,curl,yt-dlp} mr,
+    # yt-dlp checks ffmpeg and runs a JavaScript runtime for some sites.
+    /usr/bin/{ffmpeg,ffprobe,deno,node} ix,
+    /usr/bin/python3* ix,
+    /usr/share/** r,
+    /etc/ImageMagick-*/** r,
+    /opt/cuda/targets/*/lib/*.so* mr,
+    signal (receive) set=(term, kill) peer=big-video-player,
+    # Descriptors the player leaves open and a terminal ffmpeg looks for: never needed.
+    deny /dev/dri/* rw,
+    deny @{HOME}/.nv/** rwk,
+    deny /dev/tty rw,
+
+    @{user_dirs} r,
+    @{user_files}.@{media_ext} r,
+    @{user_files}.@{companion_ext} r,
+    # Tag edits: ffmpeg writes the hidden copy the player then publishes.
+    owner @{staging_parents}/.big-media-*.@{media_write_ext} w,
+    # Thumbnails, scrub frames and wallpaper copies, written under staging names.
+    owner @{HOME}/.cache/big-video-player/{,thumbnails/,scrub/}.big-media-* w,
+    owner @{HOME}/.cache/yt-dlp/** rw,
+    owner @{HOME}/.config/yt-dlp/** r,
+
+    include if exists <local/big-video-player.decoder>
+  }
+
+  profile image_loader flags=(complain) {
+    include <abstractions/base>
+    include <abstractions/fonts>
+
+    # glycin talks to its loader over a socket pair the player opened.
+    unix (send, receive) type=stream peer=(label=big-video-player),
+
+    signal (receive) set=(term, kill) peer=big-video-player,
+    deny /dev/dri/* rw,
+    deny @{HOME}/.nv/** rwk,
+
+    /usr/lib/glycin-loaders/** mr,
+    /usr/share/** r,
+    @{user_files}.@{companion_ext} r,
+    owner @{HOME}/.cache/glycin/{,**} rw,
+
+    include if exists <local/big-video-player.image_loader>
+  }
+}

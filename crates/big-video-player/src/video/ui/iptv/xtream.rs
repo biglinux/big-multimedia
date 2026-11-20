@@ -12,17 +12,65 @@
 //! panels without the JSON API.
 //!
 //! The channels are turned into M3U text, so the cache and the parser are the
-//! same as for an M3U provider. Engine-free helper; blocking, so call it from
-//! a worker thread.
+//! same as for an M3U provider. Its stream URLs carry [`CREDENTIALS`] in place
+//! of the account's user name and password, which [`stream_url`] puts back
+//! when a channel plays. Engine-free helper; blocking, so call it from a
+//! worker thread.
+
+use std::fmt;
 
 use big_os_kit::http_client::RequestHeaders;
 use big_os_kit::url::encode_query_value as urlencode;
+use serde::Deserialize;
+use serde::de::{
+    DeserializeOwned, DeserializeSeed, Deserializer, IgnoredAny, MapAccess, SeqAccess, Visitor,
+};
 use serde_json::Value;
 
 use super::fetcher::{FetchError, fetch_text};
+use crate::media::iptv::MAX_PLAYLIST_ENTRIES;
 
-/// The live line-up of a Xtream account as M3U text.
-pub fn fetch_xtream_m3u(
+/// Largest account answer parsed into a JSON tree; a real one is a few
+/// kilobytes.
+const MAX_ACCOUNT_BYTES: usize = 1024 * 1024;
+
+/// The path segment standing for `user/password` in a stored stream URL.
+/// Braces are not valid in a URL path, so no panel URL holds it.
+const CREDENTIALS: &str = "/{credentials}/";
+
+/// `url` from a stored line-up with the account's credentials put back.
+#[must_use]
+pub(super) fn stream_url(url: &str, username: &str, password: &str) -> String {
+    url.replacen(
+        CREDENTIALS,
+        &format!("/{}/{}/", urlencode(username), urlencode(password)),
+        1,
+    )
+}
+
+/// Whether `url` is a stored stream URL waiting for an account's credentials.
+#[must_use]
+pub(super) fn names_credentials(url: &str) -> bool {
+    url.contains(CREDENTIALS)
+}
+
+/// Whether `url` carries `password` as written or URL-encoded.
+#[must_use]
+pub(super) fn shows_password(url: &str, password: &str) -> bool {
+    !password.is_empty() && (url.contains(password) || url.contains(&urlencode(password)))
+}
+
+/// `m3u` with the account's `/user/password/` path segments, as the panel
+/// writes them or URL-encoded, replaced by [`CREDENTIALS`].
+fn without_credentials(m3u: &str, username: &str, password: &str) -> String {
+    let raw = format!("/{username}/{password}/");
+    let encoded = format!("/{}/{}/", urlencode(username), urlencode(password));
+    m3u.replace(&raw, CREDENTIALS)
+        .replace(&encoded, CREDENTIALS)
+}
+
+/// The live line-up of a Xtream account as M3U text, without its credentials.
+pub(super) fn fetch_xtream_m3u(
     server: &str,
     username: &str,
     password: &str,
@@ -30,24 +78,165 @@ pub fn fetch_xtream_m3u(
 ) -> Result<String, FetchError> {
     let base = server.trim_end_matches('/');
     let api = player_api_url(base, username, password);
-    let account = match fetch_text(&api, headers).map(|text| serde_json::from_str::<Value>(&text)) {
-        Ok(Ok(account)) => account,
-        // No JSON API here: the panel's M3U export.
-        Ok(Err(_)) | Err(FetchError::Status(404)) => {
-            return fetch_text(&get_php_url(base, username, password), headers);
-        }
+    let account = match fetch_text(&api, headers) {
+        Ok(text) if text.len() <= MAX_ACCOUNT_BYTES => serde_json::from_str::<Value>(&text).ok(),
+        Ok(_) | Err(FetchError::Status(404)) => None,
         Err(error) => return Err(error),
+    };
+    // No JSON API here: the panel's M3U export.
+    let Some(account) = account else {
+        let m3u = fetch_text(&get_php_url(base, username, password), headers)?;
+        return Ok(without_credentials(&m3u, username, password));
     };
     let extension = check_account(&account)?;
     let categories = fetch_text(&format!("{api}&action=get_live_categories"), headers)?;
     let streams = fetch_text(&format!("{api}&action=get_live_streams"), headers)?;
-    let categories: Value = serde_json::from_str(&categories).map_err(|_| FetchError::Empty)?;
-    let streams: Value = serde_json::from_str(&streams).map_err(|_| FetchError::Empty)?;
-    let m3u = live_m3u(base, username, password, extension, &categories, &streams);
+    let categories = first_entries(&categories, |_: &Category| true)?;
+    let streams = live_streams(&streams)?;
+    let m3u = live_m3u(base, extension, &categories, &streams);
     if m3u.lines().count() <= 1 {
         return Err(FetchError::Empty);
     }
     Ok(m3u)
+}
+
+#[derive(Deserialize)]
+struct Category {
+    #[serde(default, deserialize_with = "panel_text")]
+    category_id: String,
+    #[serde(default, deserialize_with = "panel_text")]
+    category_name: String,
+}
+
+#[derive(Deserialize)]
+struct LiveStream {
+    #[serde(default, deserialize_with = "panel_text")]
+    name: String,
+    #[serde(default, deserialize_with = "panel_text")]
+    stream_id: String,
+    #[serde(default, deserialize_with = "panel_text")]
+    stream_icon: String,
+    #[serde(default, deserialize_with = "panel_text")]
+    epg_channel_id: String,
+    #[serde(default, deserialize_with = "panel_text")]
+    category_id: String,
+}
+
+/// The streams of a `get_live_streams` answer whose id is a number, the only
+/// form a panel's stream URL takes.
+fn live_streams(json: &str) -> Result<Vec<LiveStream>, FetchError> {
+    first_entries(json, |stream: &LiveStream| {
+        !stream.stream_id.is_empty() && stream.stream_id.bytes().all(|b| b.is_ascii_digit())
+    })
+}
+
+/// The elements of a JSON array that pass `keep`, up to one past
+/// [`MAX_PLAYLIST_ENTRIES`] so the M3U parser reports the list as truncated.
+/// Later elements are skipped without being built.
+fn first_entries<T: DeserializeOwned>(
+    json: &str,
+    keep: fn(&T) -> bool,
+) -> Result<Vec<T>, FetchError> {
+    let mut deserializer = serde_json::Deserializer::from_str(json);
+    let entries = FirstEntries { keep }
+        .deserialize(&mut deserializer)
+        .and_then(|entries| deserializer.end().map(|()| entries))
+        .map_err(|_| FetchError::Empty)?;
+    Ok(entries)
+}
+
+struct FirstEntries<T> {
+    keep: fn(&T) -> bool,
+}
+
+impl<'de, T: Deserialize<'de>> DeserializeSeed<'de> for FirstEntries<T> {
+    type Value = Vec<T>;
+
+    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Vec<T>, D::Error> {
+        deserializer.deserialize_any(self)
+    }
+}
+
+/// A panel with nothing to list may answer an object or `null`.
+impl<'de, T: Deserialize<'de>> Visitor<'de> for FirstEntries<T> {
+    type Value = Vec<T>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("an array")
+    }
+
+    fn visit_unit<E>(self) -> Result<Vec<T>, E> {
+        Ok(Vec::new())
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Vec<T>, A::Error> {
+        while map.next_entry::<IgnoredAny, IgnoredAny>()?.is_some() {}
+        Ok(Vec::new())
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Vec<T>, A::Error> {
+        let mut entries = Vec::new();
+        while entries.len() <= MAX_PLAYLIST_ENTRIES {
+            let Some(entry) = seq.next_element::<T>()? else {
+                return Ok(entries);
+            };
+            if (self.keep)(&entry) {
+                entries.push(entry);
+            }
+        }
+        while seq.next_element::<IgnoredAny>()?.is_some() {}
+        Ok(entries)
+    }
+}
+
+/// A field the panel may send as a string or a number; anything else reads as
+/// empty.
+fn panel_text<'de, D: Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    deserializer.deserialize_any(TextVisitor)
+}
+
+struct TextVisitor;
+
+impl<'de> Visitor<'de> for TextVisitor {
+    type Value = String;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a string or a number")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<String, E> {
+        Ok(value.to_owned())
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_bool<E>(self, _: bool) -> Result<String, E> {
+        Ok(String::new())
+    }
+
+    fn visit_unit<E>(self) -> Result<String, E> {
+        Ok(String::new())
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<String, A::Error> {
+        while seq.next_element::<IgnoredAny>()?.is_some() {}
+        Ok(String::new())
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<String, A::Error> {
+        while map.next_entry::<IgnoredAny, IgnoredAny>()?.is_some() {}
+        Ok(String::new())
+    }
 }
 
 /// `player_api.php` for the account (URL-encoding the credentials).
@@ -62,7 +251,7 @@ fn player_api_url(base: &str, username: &str, password: &str) -> String {
 
 /// The panel's whole-account M3U export.
 #[must_use]
-pub fn get_php_url(base: &str, username: &str, password: &str) -> String {
+pub(super) fn get_php_url(base: &str, username: &str, password: &str) -> String {
     let base = base.trim_end_matches('/');
     format!(
         "{base}/get.php?username={}&password={}&type=m3u_plus&output=m3u8",
@@ -95,58 +284,46 @@ fn check_account(account: &Value) -> Result<&'static str, FetchError> {
     Ok(if serves_hls { "m3u8" } else { "ts" })
 }
 
-/// Text of a JSON field the panel may send as a string or a number.
-fn field(value: &Value, key: &str) -> String {
-    match &value[key] {
-        Value::String(text) => text.clone(),
-        Value::Number(number) => number.to_string(),
-        _ => String::new(),
-    }
+/// `text` on one M3U line: a line break would start an entry of its own.
+fn one_line(text: &str) -> String {
+    text.replace(['\n', '\r'], " ")
 }
 
 /// An M3U attribute value: a double quote would end it early.
 fn attribute(text: &str) -> String {
-    text.replace('"', "'").replace(['\n', '\r'], " ")
+    one_line(&text.replace('"', "'"))
 }
 
 /// The live streams as M3U, grouped by their category names.
 fn live_m3u(
     base: &str,
-    username: &str,
-    password: &str,
     extension: &str,
-    categories: &Value,
-    streams: &Value,
+    categories: &[Category],
+    streams: &[LiveStream],
 ) -> String {
-    let names: std::collections::HashMap<String, String> = categories
-        .as_array()
-        .into_iter()
-        .flatten()
+    let names: std::collections::HashMap<&str, &str> = categories
+        .iter()
         .map(|category| {
             (
-                field(category, "category_id"),
-                field(category, "category_name"),
+                category.category_id.as_str(),
+                category.category_name.as_str(),
             )
         })
         .collect();
+    let base = one_line(base);
     let mut m3u = String::from("#EXTM3U\n");
-    for stream in streams.as_array().into_iter().flatten() {
-        let id = field(stream, "stream_id");
-        if id.is_empty() {
-            continue;
-        }
+    for stream in streams {
         let group = names
-            .get(&field(stream, "category_id"))
-            .cloned()
+            .get(stream.category_id.as_str())
+            .copied()
             .unwrap_or_default();
         m3u.push_str(&format!(
-            "#EXTINF:-1 tvg-id=\"{}\" tvg-logo=\"{}\" group-title=\"{}\",{}\n{base}/live/{}/{}/{id}.{extension}\n",
-            attribute(&field(stream, "epg_channel_id")),
-            attribute(&field(stream, "stream_icon")),
-            attribute(&group),
-            field(stream, "name").replace(['\n', '\r'], " "),
-            urlencode(username),
-            urlencode(password),
+            "#EXTINF:-1 tvg-id=\"{}\" tvg-logo=\"{}\" group-title=\"{}\",{}\n{base}/live{CREDENTIALS}{}.{extension}\n",
+            attribute(&stream.epg_channel_id),
+            attribute(&stream.stream_icon),
+            attribute(group),
+            one_line(&stream.name),
+            stream.stream_id,
         ));
     }
     m3u
@@ -157,23 +334,6 @@ mod tests {
     use super::*;
     use crate::media::iptv::parse_m3u_content;
     use serde_json::json;
-
-    #[test]
-    fn urlencodes_special_chars() {
-        assert_eq!(urlencode("user@example"), "user%40example");
-        assert_eq!(urlencode("pa&ss"), "pa%26ss");
-        assert_eq!(urlencode("plain123-_.~"), "plain123-_.~");
-    }
-
-    #[test]
-    fn urlencodes_plus_and_equal() {
-        assert_eq!(urlencode("a+b=c"), "a%2Bb%3Dc");
-    }
-
-    #[test]
-    fn urlencodes_empty_string() {
-        assert_eq!(urlencode(""), "");
-    }
 
     #[test]
     fn get_php_url_trims_and_encodes() {
@@ -211,25 +371,108 @@ mod tests {
 
     #[test]
     fn live_streams_become_grouped_channels() {
-        let categories = json!([
+        let categories = r#"[
             {"category_id": "1", "category_name": "News"},
             {"category_id": 2, "category_name": "Sports \"HD\""}
-        ]);
-        let streams = json!([
+        ]"#;
+        let streams = r#"[
             {"name": "Globo, SP", "stream_id": 101, "stream_icon": "http://logo/1.png",
-             "epg_channel_id": "globo.br", "category_id": "1"},
+             "epg_channel_id": "globo.br", "category_id": "1", "tv_archive": [1, {"a": 2}]},
             {"name": "ESPN", "stream_id": "202", "stream_icon": null, "category_id": 2},
             {"name": "No id"}
-        ]);
-        let m3u = live_m3u("http://srv", "u@x", "p", "m3u8", &categories, &streams);
-        let channels = parse_m3u_content(&m3u);
+        ]"#;
+        let categories = first_entries(categories, |_: &Category| true).unwrap();
+        let streams = live_streams(streams).unwrap();
+        let m3u = live_m3u("http://srv", "m3u8", &categories, &streams);
+        assert!(m3u.contains("tvg-id=\"globo.br\""));
+        let channels = parse_m3u_content(&m3u).entries;
         assert_eq!(channels.len(), 2);
         assert_eq!(channels[0].name, "Globo, SP");
         assert_eq!(channels[0].group, "News");
         assert_eq!(channels[0].logo, "http://logo/1.png");
-        assert_eq!(channels[0].tvg_id, "globo.br");
-        assert_eq!(channels[0].url, "http://srv/live/u%40x/p/101.m3u8");
         assert_eq!(channels[1].group, "Sports 'HD'");
-        assert_eq!(channels[1].url, "http://srv/live/u%40x/p/202.m3u8");
+        let urls: Vec<String> = channels
+            .iter()
+            .map(|channel| stream_url(&channel.url, "u@x", "p"))
+            .collect();
+        assert_eq!(
+            urls,
+            [
+                "http://srv/live/u%40x/p/101.m3u8",
+                "http://srv/live/u%40x/p/202.m3u8"
+            ]
+        );
+    }
+
+    #[test]
+    fn stored_line_ups_hold_no_credentials() {
+        let streams = live_streams(r#"[{"name": "One", "stream_id": 1}]"#).unwrap();
+        let json_api = live_m3u("http://srv", "ts", &[], &streams);
+        let export = without_credentials(
+            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n",
+            "joe",
+            "s3cr?t",
+        );
+        for m3u in [&json_api, &export] {
+            assert!(!m3u.contains("joe") && !m3u.contains("s3cr"), "{m3u}");
+        }
+        let played: Vec<String> = parse_m3u_content(&export)
+            .entries
+            .iter()
+            .map(|channel| stream_url(&channel.url, "joe", "s3cr?t"))
+            .collect();
+        assert_eq!(
+            played,
+            [
+                "http://srv/joe/s3cr%3Ft/1",
+                "http://srv/live/joe/s3cr%3Ft/2.ts"
+            ]
+        );
+    }
+
+    #[test]
+    fn hostile_panel_fields_stay_on_their_lines() {
+        let streams = r#"[
+            {"name": "Bad id", "stream_id": "7\nav://lavfi:sine"},
+            {"name": "Path id", "stream_id": "../7"},
+            {"name": "Float id", "stream_id": 7.5},
+            {"name": "N\r\nav://lavfi:sine", "stream_id": 8, "stream_icon": "a\nb",
+             "epg_channel_id": "c\rd", "category_id": "1"}
+        ]"#;
+        let categories = r#"[{"category_id": "1", "category_name": "G\nfdclose://0"}]"#;
+        let categories = first_entries(categories, |_: &Category| true).unwrap();
+        let streams = live_streams(streams).unwrap();
+        let m3u = live_m3u("http://srv\n/x", "ts", &categories, &streams);
+        assert_eq!(m3u.lines().count(), 3, "{m3u}");
+        let channels = parse_m3u_content(&m3u).entries;
+        assert_eq!(channels.len(), 1, "{m3u}");
+        assert_eq!(channels[0].url, "http://srv /x/live/{credentials}/8.ts");
+    }
+
+    #[test]
+    fn streams_past_the_cap_are_skipped() {
+        let mut streams = String::from(r#"[{"name": "No id"}"#);
+        for id in 0..100_005 {
+            streams.push_str(&format!(r#",{{"stream_id": {id}}}"#));
+        }
+        streams.push(']');
+        let streams = live_streams(&streams).unwrap();
+        assert_eq!(streams.len(), 100_001);
+        assert_eq!(streams[0].stream_id, "0");
+
+        let m3u = live_m3u("http://srv", "ts", &[], &streams);
+        let channels = parse_m3u_content(&m3u);
+        assert_eq!(
+            (channels.entries.len(), channels.truncated),
+            (100_000, true)
+        );
+    }
+
+    #[test]
+    fn empty_answers_list_nothing() {
+        for answer in ["[]", "{}", "null"] {
+            assert!(live_streams(answer).unwrap().is_empty(), "{answer}");
+        }
+        assert_eq!(live_streams("[").err(), Some(FetchError::Empty));
     }
 }

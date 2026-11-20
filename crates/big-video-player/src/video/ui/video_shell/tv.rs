@@ -5,14 +5,14 @@
 use super::playback::seek_fraction;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::{TvCardAction, TvMedia, saved_height};
+use big_media_runtime::cast::tv::{TvCardAction, TvMedia, saved_height};
 
 impl VideoShell {
     pub(super) fn on_tv_card(&mut self, action: TvCardAction) {
         match action {
             TvCardAction::Stop => {
                 self.tv_pill.popdown();
-                self.tv.control("stop", 0.0);
+                self.tv.stop();
             }
             TvCardAction::ToggleRelease if self.tv.released() => self.attach_tv(),
             TvCardAction::ToggleRelease => self.release_tv(),
@@ -347,7 +347,9 @@ impl VideoShell {
         let controls = self.controls.sender();
         let _ = controls.send(VideoControlsBarInput::SetVolumeOfTv(false));
         let position = mpv.get_position();
-        let _ = controls.send(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+        let _ = controls.send(VideoControlsBarInput::SetPaused(
+            mpv.is_paused() || self.ended,
+        ));
         let _ = controls.send(VideoControlsBarInput::SetPosition(playback_time(position)));
         let _ = controls.send(VideoControlsBarInput::SetDuration(playback_time(
             self.duration_secs,

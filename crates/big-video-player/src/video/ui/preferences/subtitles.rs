@@ -10,7 +10,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
 
 use super::{
-    add_color_row, add_combo_row, add_entry_row, add_spin_double_row, add_spin_int_row,
+    add_combo_row, add_entry_row, add_mpv_color_row, add_spin_double_row, add_spin_int_row,
     add_switch_row, live, live_str,
 };
 
@@ -30,7 +30,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &loading,
         &i18n("Preferred Languages"),
         "",
-        "preferred-sub-lang",
+        keys::PREFERRED_SUB_LANG,
         settings,
         live_str(mpv, MpvBackend::set_preferred_sub_lang),
     );
@@ -45,7 +45,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
             &i18n("Never"),
         ],
         &["fuzzy", "exact", "all", "no"],
-        "sub-auto",
+        keys::SUB_AUTO,
         settings,
         live_str(mpv, MpvBackend::set_sub_auto),
     );
@@ -57,7 +57,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &text,
         &i18n("Size"),
         "",
-        "subtitle-font-size",
+        keys::SUBTITLE_FONT_SIZE,
         10.0,
         100.0,
         1.0,
@@ -68,15 +68,15 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &text,
         &i18n("Bold"),
         &i18n("Thicker letters are easier to read"),
-        "sub-bold",
+        keys::SUB_BOLD,
         settings,
         live(mpv, MpvBackend::set_sub_bold),
     );
-    add_color_row(
+    add_mpv_color_row(
         &text,
         &i18n("Color"),
         "",
-        "sub-color",
+        keys::SUB_COLOR,
         settings,
         live_str(mpv, MpvBackend::set_sub_color),
     );
@@ -96,7 +96,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
             &i18n("Box behind the text"),
         ],
         &["outline-and-shadow", "opaque-box", "background-box"],
-        "sub-border-style",
+        keys::SUB_BORDER_STYLE,
         settings,
         live_str(mpv, MpvBackend::set_sub_border_style),
     );
@@ -104,7 +104,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &outline,
         &i18n("Outline Thickness"),
         "",
-        "sub-border-size",
+        keys::SUB_BORDER_SIZE,
         0.0,
         10.0,
         0.5,
@@ -112,11 +112,11 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         settings,
         live(mpv, MpvBackend::set_sub_border_size),
     );
-    add_color_row(
+    add_mpv_color_row(
         &outline,
         &i18n("Outline Color"),
         "",
-        "sub-border-color",
+        keys::SUB_BORDER_COLOR,
         settings,
         live_str(mpv, MpvBackend::set_sub_border_color),
     );
@@ -124,7 +124,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &outline,
         &i18n("Shadow Distance"),
         "",
-        "sub-shadow-offset",
+        keys::SUB_SHADOW_OFFSET,
         0.0,
         10.0,
         0.5,
@@ -132,11 +132,11 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         settings,
         live(mpv, MpvBackend::set_sub_shadow_offset),
     );
-    add_color_row(
+    add_mpv_color_row(
         &outline,
         &i18n("Shadow Color"),
         &i18n("Lower the opacity for a softer shadow"),
-        "sub-shadow-color",
+        keys::SUB_SHADOW_COLOR,
         settings,
         live_str(mpv, MpvBackend::set_sub_shadow_color),
     );
@@ -149,7 +149,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &position,
         &i18n("Distance From the Bottom"),
         &i18n("In pixels"),
-        "sub-margin-y",
+        keys::SUB_MARGIN_Y,
         0.0,
         200.0,
         1.0,
@@ -160,7 +160,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &position,
         &i18n("Grow With the Window"),
         &i18n("Larger windows show larger subtitles"),
-        "sub-scale-with-window",
+        keys::SUB_SCALE_WITH_WINDOW,
         settings,
         live(mpv, MpvBackend::set_sub_scale_with_window),
     );
@@ -168,7 +168,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &position,
         &i18n("Grow Styled Subtitles Too"),
         &i18n("Also resize styled ASS/SSA subtitles, common in anime"),
-        "sub-ass-scale-with-window",
+        keys::SUB_ASS_SCALE_WITH_WINDOW,
         settings,
         live(mpv, MpvBackend::set_sub_ass_scale_with_window),
     );
@@ -184,7 +184,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &descriptions,
         &i18n("Hide Sound Descriptions"),
         "",
-        "sub-filter-sdh",
+        keys::SUB_FILTER_SDH,
         settings,
         live(mpv, MpvBackend::set_sub_filter_sdh),
     );
@@ -192,7 +192,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &descriptions,
         &i18n("Stricter Filtering"),
         &i18n("Removes more descriptions, but may also remove some dialogue"),
-        "sub-filter-sdh-harder",
+        keys::SUB_FILTER_SDH_HARDER,
         settings,
         live(mpv, MpvBackend::set_sub_filter_sdh_harder),
     );
@@ -210,7 +210,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &pictures,
         &i18n("Smooth Edges"),
         &i18n("Blurs pixelated letters slightly; 0 turns it off"),
-        "sub-gauss",
+        keys::SUB_GAUSS,
         0.0,
         3.0,
         0.1,
@@ -222,7 +222,7 @@ pub(super) fn page(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::P
         &pictures,
         &i18n("Show in Gray"),
         &i18n("Replaces colored subtitles with gray ones"),
-        "sub-gray",
+        keys::SUB_GRAY,
         settings,
         live(mpv, MpvBackend::set_sub_gray),
     );
@@ -236,10 +236,16 @@ fn font_row(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::ActionRo
     let button = gtk::FontDialogButton::new(Some(gtk::FontDialog::new()));
     button.set_level(gtk::FontLevel::Family);
     button.set_valign(gtk::Align::Center);
-    let current = settings.get_string(keys::SUB_FONT);
-    if !current.is_empty() {
-        button.set_font_desc(&pango::FontDescription::from_string(&current));
+    let mut current = settings.get_string(keys::SUB_FONT);
+    if current.is_empty() {
+        // Unset, mpv asks fontconfig for sans-serif: name the family it gets.
+        current = button
+            .pango_context()
+            .load_font(&pango::FontDescription::from_string("sans-serif"))
+            .and_then(|font| font.describe().family())
+            .map_or_else(|| "sans-serif".to_string(), |family| family.to_string());
     }
+    button.set_font_desc(&pango::FontDescription::from_string(&current));
     let settings = settings.clone();
     let mpv = mpv.cloned();
     button.connect_font_desc_notify(move |button| {

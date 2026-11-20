@@ -4,10 +4,12 @@
 //! single-parameter `vf` filter, keyed by `label`, driving an
 //! `Arc<MpvBackend>` handle.
 
+use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 
 use crate::player::mpv_backend::MpvBackend;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
@@ -51,7 +53,7 @@ pub(super) fn build_vf_expander_row(
         .and_then(|graph| super::filter_specs::vf_graph_number(&graph, spec.param))
         .map_or(default, |value| value.clamp(min, max));
     let adjustment = gtk::Adjustment::new(value, min, max, step, page, 0.0);
-    let mut spin_builder = adw::SpinRow::builder()
+    let mut spin_builder = accessible_spin_row()
         .title(&spec.spin_title)
         .adjustment(&adjustment);
     if spec.digits > 0 {
@@ -74,29 +76,49 @@ pub(super) fn build_vf_expander_row(
         }
     };
 
+    let mpv = Arc::clone(mpv);
+    let changed = wire_filter_expander(
+        &expander,
+        Some(Duration::from_millis(spec.debounce_ms)),
+        apply,
+        move || mpv.vf_remove(label),
+    );
+    adjustment.connect_value_changed(move |_| changed());
+
+    expander
+}
+
+/// Run `apply` when `expander` is switched on and `remove` when it is switched
+/// off. The returned callback reapplies after a value change, after `debounce`
+/// when given, and only while the expander is on.
+pub(super) fn wire_filter_expander(
+    expander: &adw::ExpanderRow,
+    debounce: Option<Duration>,
+    apply: impl Fn() + Clone + 'static,
+    remove: impl Fn() + 'static,
+) -> Rc<dyn Fn()> {
     let apply_on_toggle = apply.clone();
-    let mpv_toggle = Arc::clone(mpv);
     expander.connect_enable_expansion_notify(move |row| {
         if row.enables_expansion() {
             apply_on_toggle();
         } else {
-            mpv_toggle.vf_remove(label);
+            remove();
         }
     });
-
-    let debounce = DebouncedAction::new(Duration::from_millis(spec.debounce_ms));
-    // Weak back-ref: the expander owns the SpinRow (→ adjustment); a strong
-    // capture here would be a mutual reference cycle (leaks on dialog close).
-    let expander_weak = expander.downgrade();
-    adjustment.connect_value_changed(move |_| {
-        let Some(expander_ref) = expander_weak.upgrade() else {
-            return;
-        };
-        if !expander_ref.enables_expansion() {
+    let debounce = debounce.map(DebouncedAction::new);
+    // Weak: the expander owns the value widgets whose handlers keep this
+    // callback, so a strong capture would be a cycle that leaks on close.
+    let expander = expander.downgrade();
+    Rc::new(move || {
+        if !expander
+            .upgrade()
+            .is_some_and(|row| row.enables_expansion())
+        {
             return;
         }
-        debounce.run(apply.clone());
-    });
-
-    expander
+        match &debounce {
+            Some(debounce) => debounce.run(apply.clone()),
+            None => apply(),
+        }
+    })
 }

@@ -1,21 +1,20 @@
 //! Shell-side trim glue (`impl VideoShell`): enter/exit trim mode, mark cuts at
 //! the live mpv position, paint the cuts on the transport seek bar, and hand them
-//! to the video converter. Also hosts the manual segment time-edit form.
+//! to the video converter.
 
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use adw::prelude::*;
 use gtk::glib;
 use relm4::ComponentController;
 
-use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
-use big_relm4_components::input::preference_cards::BigSpinRange;
-use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_player_ui::cut_edit_dialog::present_cut_edit_dialog;
+use big_player_ui::cut_list::{Cut, play_only_cuts_seek};
 
 use crate::i18n::i18n;
-use crate::shared::converter_handoff;
 use crate::video::ui::video_controls_bar::VideoControlsBarInput;
+use big_media_runtime::converter_handoff;
 
 use super::super::VideoShell;
 use super::bar::{VideoTrimBarInput, VideoTrimBarOutput};
@@ -62,9 +61,8 @@ impl VideoShell {
             });
         }
         if let Some(mpv) = self.mpv.borrow().as_ref() {
-            self.trim.emit(VideoTrimBarInput::SetPlayhead(
-                mpv.get_property_f64("time-pos"),
-            ));
+            self.trim
+                .emit(VideoTrimBarInput::SetPlayhead(mpv.get_position()));
         }
     }
 
@@ -100,35 +98,17 @@ impl VideoShell {
         }
     }
 
-    /// "Play only the marked cuts": when the playhead leaves / reaches the end of
-    /// a cut, jump to the next cut (or restart at the first). Mirrors the audio
-    /// editor's play-selection. Called every position tick while trim is active.
+    /// "Play only the marked cuts": seek on to the next cut where the owner
+    /// says. Called every position tick while trim is active.
     pub(in crate::video::ui::video_shell) fn apply_play_selection(&self, pos: f64) {
         if !self.trim_play_selection.get() {
             return;
         }
-        let ranges = self.trim_ranges.borrow();
-        let Some(&(first_start, _)) = ranges.first() else {
+        let Some(target) = play_only_cuts_seek(&self.trim_ranges.borrow(), pos) else {
             return;
         };
-        let mpv_ref = self.mpv.borrow();
-        let Some(mpv) = mpv_ref.as_ref() else {
-            return;
-        };
-        const EPS: f64 = 0.05;
-        if let Some((idx, &(_, end))) = ranges
-            .iter()
-            .enumerate()
-            .find(|&(_, &(s, e))| pos >= s - EPS && pos <= e + EPS)
-        {
-            if pos >= end - EPS {
-                let next = ranges.get(idx + 1).map_or(first_start, |&(s, _)| s);
-                mpv.seek_absolute(next);
-            }
-        } else if let Some(&(next, _)) = ranges.iter().find(|&&(s, _)| s > pos) {
-            mpv.seek_absolute(next);
-        } else {
-            mpv.seek_absolute(first_start);
+        if let Some(mpv) = self.mpv.borrow().as_ref() {
+            mpv.seek_absolute(target);
         }
     }
 
@@ -159,7 +139,7 @@ impl VideoShell {
             .mpv
             .borrow()
             .as_ref()
-            .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"));
+            .map_or(0.0, |mpv| mpv.get_position());
         self.trim.emit(VideoTrimBarInput::Mark(t));
     }
 
@@ -171,10 +151,8 @@ impl VideoShell {
     ) {
         match out {
             VideoTrimBarOutput::SegmentsChanged { segments, pending } => {
-                let mut ranges: Vec<(f64, f64)> =
+                *self.trim_ranges.borrow_mut() =
                     segments.iter().map(|(_, s, e)| (*s, *e)).collect();
-                ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
-                *self.trim_ranges.borrow_mut() = ranges;
                 self.controls
                     .emit(VideoControlsBarInput::SetCutSegments(segments));
                 self.controls
@@ -191,7 +169,17 @@ impl VideoShell {
             }
             VideoTrimBarOutput::EditSegment { id, start, end } => {
                 if let Some(root) = root {
-                    self.show_segment_edit_dialog(id, start, end, root);
+                    let mpv = Rc::clone(&self.mpv);
+                    let trim = self.trim.sender().clone();
+                    present_cut_edit_dialog(
+                        root,
+                        Cut { id, start, end },
+                        self.trim_duration(),
+                        move || mpv.borrow().as_ref().map_or(0.0, |mpv| mpv.get_position()),
+                        move |id, start, end| {
+                            let _ = trim.send(VideoTrimBarInput::SetSegmentTimes(id, start, end));
+                        },
+                    );
                 }
             }
             VideoTrimBarOutput::Exit => self.exit_trim_mode(),
@@ -199,96 +187,6 @@ impl VideoShell {
                 self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &ranges);
             }
         }
-    }
-
-    /// Manual time-edit form for one cut: two hundredth-second spin rows seeded
-    /// with the segment's current bounds; Apply pushes the new times back.
-    fn show_segment_edit_dialog(
-        &self,
-        id: u64,
-        start: f64,
-        end: f64,
-        root: &adw::ApplicationWindow,
-    ) {
-        let duration = self.trim_duration();
-        let spin_range = BigSpinRange::new(0.0, duration, 0.1, 5.0);
-        let spin_set = BigInlineSpinSet::new(&[
-            BigInlineSpinFieldSpec::new("start", i18n("Start (seconds)"), start, spin_range)
-                .digits(2)
-                .width_chars(7)
-                .unit(i18n("s")),
-            BigInlineSpinFieldSpec::new("end", i18n("End (seconds)"), end, spin_range)
-                .digits(2)
-                .width_chars(7)
-                .unit(i18n("s")),
-        ]);
-        let Some(start_spin) = spin_set.spin("start").cloned() else {
-            log::warn!("trim edit dialog ignored because the start spin is missing");
-            return;
-        };
-        let Some(end_spin) = spin_set.spin("end").cloned() else {
-            log::warn!("trim edit dialog ignored because the end spin is missing");
-            return;
-        };
-
-        let section = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(6)
-            .build();
-        let title = gtk::Label::builder()
-            .label(i18n("Cut times"))
-            .xalign(0.0)
-            .css_classes(["heading"])
-            .build();
-        let description = gtk::Label::builder()
-            .label(i18n("Hundredth-second precision; either order is fine"))
-            .xalign(0.0)
-            .wrap(true)
-            .css_classes(["dim-label"])
-            .build();
-        section.append(&title);
-        section.append(&description);
-        section.append(spin_set.root());
-
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Edit Cut"))
-            .content_width(380)
-            .content_height(340)
-            .build();
-        let page = BigDialogPage::scrolled_clamped(360, 320);
-        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Apply")));
-        page.content().append(&section);
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(&page.into_root()));
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let trim = self.trim.sender().clone();
-        let dialog_ref = dialog.downgrade();
-        footer.accept_button().connect_clicked(glib::clone!(
-            #[strong]
-            dialog_ref,
-            #[weak]
-            start_spin,
-            #[weak]
-            end_spin,
-            move |_| {
-                let _ = trim.send(VideoTrimBarInput::SetSegmentTimes(
-                    id,
-                    start_spin.value(),
-                    end_spin.value(),
-                ));
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
-                }
-            }
-        ));
-        dialog.present(Some(root));
     }
 
     /// The current local (non-stream) input path, or `None`.
@@ -313,7 +211,7 @@ impl VideoShell {
             self.mpv
                 .borrow()
                 .as_ref()
-                .map_or(0.0, |mpv| mpv.get_property_f64("duration"))
+                .map_or(0.0, |mpv| mpv.get_duration())
                 .max(1.0)
         }
     }

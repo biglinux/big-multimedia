@@ -1,9 +1,8 @@
 //! Video-player appearance application: reads the `ui-*` palette + OSD layout
 //! settings and pushes the resulting CSS into one app-owned `CssProvider` slot.
-//! Covers the palette foundation, OSD widget styles, gradient/button/window
-//! customizations, and the high-contrast override. Kept app-local because the
-//! OSD class names
-//! (`osd-controls`, `osd-btn`, …) are video-specific.
+//! Covers the palette foundation, OSD widget styles and gradient/button/window
+//! customizations. Kept app-local because the OSD class names (`osd-controls`,
+//! `osd-btn`, …) are video-specific.
 //!
 //! The provider slot lives on the `VideoShell`; a re-apply (boot or the
 //! Appearance dialog's `on_changed`) replaces the slot, never stacks.
@@ -12,7 +11,12 @@
 //! dialog can reapply `ui-zone-bottom-*` and `ui-show-*` live while this module
 //! refreshes the CSS provider.
 
+use big_relm4_components::theme::CssSlot;
+
 use crate::settings::{Settings, keys};
+
+/// Height in pixels of the gradient look's fade beyond each OSD bar.
+pub(crate) const GRADIENT_FADE_PX: i32 = 80;
 
 /// All `ui-*` settings the OSD CSS reads, snapshotted once per apply.
 struct OsdCssConfig {
@@ -60,7 +64,7 @@ impl OsdCssConfig {
 
     // Following the system, `player_icon_color` is `window_fg_color`.
     fn css_color_foundation(&self, settings: &Settings) -> String {
-        crate::shared::theming::build_palette_css(
+        big_media_runtime::theming::build_palette_css(
             settings,
             &self.color_source,
             keys::UI_BG_COLOR,
@@ -135,7 +139,7 @@ menubutton.osd-btn > button:checked {{
   padding: 4px;
   -gtk-icon-size: 16px;
 }}
-/* The header is drawn over the video in the player's colours. Desktop themes
+/* The header is drawn over the video in the player's colors. Desktop themes
  * restyle headerbar through libadwaita's variables (BigStyle maps them to the
  * KDE title bar, dark text on dark video) and give :backdrop a light plate, so
  * the header names its own in every focus state. */
@@ -200,13 +204,14 @@ button.adjustment-reset {{
             css += &format!(
                 ".osd-controls {{\n\
                    background: linear-gradient(to top, rgba(0,0,0,{op:.2}), transparent);\n\
-                   padding-top: 80px;\n\
+                   padding-top: {fade}px;\n\
                  }}\n\
                  .osd-header {{\n\
                    background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}), transparent);\n\
-                   padding-bottom: 80px;\n\
+                   padding-bottom: {fade}px;\n\
                  }}\n",
                 op = self.bg_opacity,
+                fade = GRADIENT_FADE_PX,
             );
         }
 
@@ -295,8 +300,8 @@ button.adjustment-reset {{
 }
 
 /// The volume control while no sound plays (muted or at 0): a pill in the
-/// theme's warning colours, after every palette rule so no customization
-/// dims it. Its text ("No sound") and shape say it too, not colour alone.
+/// theme's warning colors, after every palette rule so no customization
+/// dims it. Its text ("No sound") and shape say it too, not color alone.
 const SOUND_OFF_CSS: &str = "
 .sound-off {
   background: @warning_bg_color;
@@ -311,7 +316,7 @@ const SOUND_OFF_CSS: &str = "
   text-shadow: none;
 }
 /* The TV/PC mark beside the level, dimmed elsewhere: dimmed on the
-   warning colour it fell short of contrast. */
+   warning color it fell short of contrast. */
 .sound-off label.dim-label {
   opacity: 1;
 }
@@ -339,7 +344,7 @@ const PANEL_CSS: &str = "
 }
 .settings-panel button.settings-block,
 .settings-panel button.settings-link,
-.settings-panel button.colour-choice,
+.settings-panel button.color-choice,
 .settings-panel button.recent-card,
 .settings-panel list.boxed-list,
 .settings-panel .panel-backed {
@@ -361,12 +366,12 @@ const PANEL_CSS: &str = "
 .settings-panel .block-state {
   font-weight: normal;
 }
-.settings-panel button.colour-choice {
+.settings-panel button.color-choice {
   background-image: linear-gradient(alpha(@window_fg_color, 0.08), alpha(@window_fg_color, 0.08));
   border-radius: 10px;
   padding: 8px 10px;
 }
-.settings-panel button.colour-choice:checked {
+.settings-panel button.color-choice:checked {
   background: @accent_bg_color;
   color: @accent_fg_color;
 }
@@ -418,7 +423,7 @@ const PANEL_CSS: &str = "
 ";
 
 /// Secondary text (descriptions, subtitles, captions) at 75% instead of
-/// Adwaita's 55%: 55% reads at about 3.2:1 even on the plain window colour,
+/// Adwaita's 55%: 55% reads at about 3.2:1 even on the plain window color,
 /// under WCAG's 4.5:1; 75% gives 5.6:1 there, and over the see-through
 /// panel and bars on the worst frame.
 const DIM_TEXT_CSS: &str = "
@@ -434,40 +439,30 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     css += SOUND_OFF_CSS;
     css += PANEL_CSS;
     css += DIM_TEXT_CSS;
-
-    if settings.get_bool(keys::AUDIO_HIGH_CONTRAST) {
-        css += crate::shared::theming::HIGH_CONTRAST_CSS;
-    }
-
     css
 }
 
-/// Apply the saved colour source, OSD palette + layout CSS, and high-contrast
-/// override. `provider_slot` is the persistent provider slot (replaced in
-/// place, never stacked). Call at boot and from the Appearance dialog's
-/// `on_changed`.
-pub(in crate::video) fn apply_appearance(
-    settings: &Settings,
-    provider_slot: &mut Option<gtk::CssProvider>,
-) {
-    if let Some(old) = provider_slot.as_ref()
-        && let Some(display) = gtk::gdk::Display::default()
-    {
-        gtk::style_context_remove_provider_for_display(&display, old);
-    }
-
+/// Apply the saved color source and the OSD palette and layout CSS into
+/// `slot`. Call at boot and from the Appearance dialog's `on_changed`.
+pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
-    crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
-    let css = build_osd_css(settings, &osd_css_config);
+    big_media_runtime::theming::apply_color_scheme(
+        settings,
+        &osd_css_config.color_source,
+        keys::UI_BG_COLOR,
+    );
+    slot.set(&build_osd_css(settings, &osd_css_config));
+}
 
-    let provider = gtk::CssProvider::new();
-    provider.load_from_string(&css);
-    if let Some(display) = gtk::gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_USER + 1,
-        );
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_high_contrast_leaves_video_css() {
+        let settings = Settings::memory_only();
+        settings.put_bool(keys::AUDIO_HIGH_CONTRAST, true);
+        let css = build_osd_css(&settings, &OsdCssConfig::from_settings(&settings));
+        assert!(!css.contains(big_media_runtime::theming::HIGH_CONTRAST_CSS));
     }
-    *provider_slot = Some(provider);
 }

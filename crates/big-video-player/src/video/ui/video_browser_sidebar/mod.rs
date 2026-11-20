@@ -27,6 +27,7 @@
 mod chrome;
 mod fileops;
 mod library;
+mod navigation;
 mod scrub;
 mod views;
 
@@ -98,6 +99,8 @@ pub enum VideoBrowserSidebarInput {
 pub enum VideoBrowserSidebarOutput {
     /// Activate a video: make `paths` the playlist and start at `start`.
     PlayFromList { paths: Vec<String>, start: usize },
+    /// Open a playlist file as the play queue, as an opened file would be.
+    OpenPlaylist(String),
     /// Append these paths to the mpv playlist without disrupting playback
     /// (Files "add to playlist" / the header add button).
     Enqueue(Vec<String>),
@@ -203,6 +206,11 @@ pub(crate) struct BrowserState {
 }
 
 impl BrowserState {
+    /// Any `playlist-view` value but "grid" shows the list.
+    fn is_grid_view(&self) -> bool {
+        self.settings.get_string(keys::PLAYLIST_VIEW) == "grid"
+    }
+
     /// Upgrade the weak container ref; `None` only mid-teardown.
     fn container(&self) -> Option<gtk::Box> {
         self.container.upgrade()
@@ -377,152 +385,6 @@ impl BrowserState {
         }
     }
 
-    /// Back to the library's places, leaving the open folder.
-    fn show_places(self: &Rc<Self>) {
-        self.scan_generation
-            .set(self.scan_generation.get().wrapping_add(1));
-        self.folder.replace(None);
-        self.entries.replace(Vec::new());
-        self.subfolders.replace(Vec::new());
-        self.selection.borrow_mut().clear();
-        self.select_mode.set(false);
-        self.recompute_pos();
-        self.rebuild();
-    }
-
-    /// Scan `folder` (flat or recursive per settings) and rebuild, cancelling
-    /// any scan still in flight. Browsing never touches playback; only a video
-    /// activation does.
-    fn navigate_to_folder(self: &Rc<Self>, folder: &str) {
-        let folder_owned = folder.to_string();
-        let recursive = self.settings.get_bool(keys::PLAYLIST_FOLDER_RECURSIVE);
-
-        self.folder.replace(Some(folder_owned.clone()));
-        self.customizing.set(false);
-        self.settings
-            .put_string(keys::PLAYLIST_LAST_FOLDER, &folder_owned);
-
-        let generation = self.scan_generation.get().wrapping_add(1);
-        self.scan_generation.set(generation);
-
-        // Spinner while the blocking scan runs.
-        self.show_scanning_spinner();
-
-        // The saved sort applies to every listing, not only after a pick.
-        let sort_key = self.settings.get_string(keys::PLAYLIST_SORT);
-        let sort_desc = self.settings.get_bool(keys::PLAYLIST_SORT_DESC);
-        let state = self.clone();
-        glib::spawn_future_local(async move {
-            let folder_clone = folder_owned.clone();
-            // Sub-folder rows (flat mode only) are enumerated in the same
-            // off-thread pass as the file scan, so the view builder reads them
-            // from the cache instead of doing a blocking `read_dir` on the loop.
-            let (scan, subfolders) = gio::spawn_blocking(move || {
-                use crate::media::playlist;
-                let path = std::path::Path::new(&folder_clone);
-                let mut scan = if recursive {
-                    playlist::scan_folder_recursive(path)
-                } else {
-                    playlist::ScanResult {
-                        files: playlist::scan_folder_flat(path),
-                        ..Default::default()
-                    }
-                };
-                playlist::sort_paths(&mut scan.files, &sort_key, sort_desc);
-                let subfolders = if recursive {
-                    Vec::new()
-                } else {
-                    playlist::list_subfolders(path)
-                };
-                (scan, subfolders)
-            })
-            .await
-            .unwrap_or_default();
-
-            // Folder switched again while scanning → drop this stale result.
-            if state.scan_generation.get() != generation {
-                return;
-            }
-
-            state
-                .truncated_total
-                .set(scan.truncated.then_some(scan.total_found));
-            state.entries.replace(scan.files);
-            state.subfolders.replace(subfolders);
-            state.recompute_pos();
-            state.rebuild();
-        });
-    }
-
-    /// Enumerate the current `folder`'s sub-folders off the main thread, then
-    /// re-run the listing so the browse context shows them. Used by the
-    /// single-file-open path (which sets `folder` without a full folder scan).
-    /// No-op in recursive mode (flat tree → no sub-folder rows) or with no
-    /// folder. Guarded by `scan_generation`: a navigation that supersedes this
-    /// drops the stale result.
-    fn refresh_subfolders(self: &Rc<Self>) {
-        if self.settings.get_bool(keys::PLAYLIST_FOLDER_RECURSIVE) {
-            return;
-        }
-        let Some(folder) = self.folder.borrow().clone() else {
-            return;
-        };
-        let generation = self.scan_generation.get();
-        let state = self.clone();
-        glib::spawn_future_local(async move {
-            let scanned_folder = folder.clone();
-            let subfolders = gio::spawn_blocking(move || {
-                crate::media::playlist::list_subfolders(std::path::Path::new(&folder))
-            })
-            .await
-            .unwrap_or_default();
-            // Folder navigated/changed while enumerating → drop this stale
-            // result (generation bumps on navigation; identity guards a second
-            // single-file open that swapped the folder at the same generation).
-            if state.scan_generation.get() != generation
-                || state.folder.borrow().as_deref() != Some(scanned_folder.as_str())
-            {
-                return;
-            }
-            if subfolders.is_empty() {
-                return;
-            }
-            state.subfolders.replace(subfolders);
-            state.rebuild();
-        });
-    }
-
-    /// Replace the container with a centered scanning spinner (header kept).
-    fn show_scanning_spinner(self: &Rc<Self>) {
-        let Some(container) = self.container() else {
-            return;
-        };
-        clear_sidebar_container(&container);
-        chrome::build_header(self);
-
-        let spinner_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(12)
-            .valign(gtk::Align::Center)
-            .vexpand(true)
-            .build();
-        spinner_box.append(
-            &adw::Spinner::builder()
-                .width_request(32)
-                .height_request(32)
-                .halign(gtk::Align::Center)
-                .build(),
-        );
-        spinner_box.append(
-            &gtk::Label::builder()
-                .label(crate::i18n::i18n("Scanning…"))
-                .css_classes(["dim-label"])
-                .halign(gtk::Align::Center)
-                .build(),
-        );
-        container.append(&spinner_box);
-    }
-
     /// Clear and rebuild the sidebar: shared chrome (header + mode switcher),
     /// then the mode-specific body.
     fn rebuild(self: &Rc<Self>) {
@@ -548,7 +410,7 @@ impl BrowserState {
 
     /// Files mode: breadcrumb + search + kind chips + the folder browser.
     fn rebuild_files(self: &Rc<Self>) {
-        let is_grid = self.settings.get_string(keys::PLAYLIST_VIEW) == "grid";
+        let is_grid = self.is_grid_view();
         let recursive_on = self.settings.get_bool(keys::PLAYLIST_FOLDER_RECURSIVE);
         let folder_opt = self.folder.borrow().clone();
         let items = self.entries.borrow().clone();
@@ -608,12 +470,12 @@ impl BrowserState {
     fn rebuild_playlist(self: &Rc<Self>) {
         let items = self.queue.borrow().clone();
 
-        let search_entry = chrome::build_search(self);
-
+        // An empty playlist has nothing to filter.
         if items.is_empty() {
             chrome::build_playlist_empty_state(self);
             return;
         }
+        let search_entry = chrome::build_search(self);
 
         self.build_summary(&items);
         if items.len() >= 2 && !self.settings.get_bool(keys::PLAYLIST_REORDER_HINT_SEEN) {
@@ -817,6 +679,7 @@ impl Component for VideoBrowserSidebar {
             filter: RefCell::new(None),
         });
         state.rebuild();
+        state.restore_last_folder();
         ComponentParts {
             model: Self { state },
             widgets: (),
@@ -943,6 +806,36 @@ mod lifetime_tests {
             assert!(
                 state.upgrade().is_none(),
                 "state retained after cycle {cycle}"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn reopens_last_folder_when_present() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let existing = std::env::temp_dir().to_string_lossy().into_owned();
+        let missing = format!("{existing}/missing-folder-{}", std::process::id());
+        for (saved, expected) in [
+            (existing.as_str(), Some(existing.as_str())),
+            (missing.as_str(), None),
+            ("", None),
+        ] {
+            let settings = Settings::memory_only();
+            settings.put_string(keys::PLAYLIST_LAST_FOLDER, saved);
+            let controller = VideoBrowserSidebar::builder().launch(settings).detach();
+            for _ in 0..100 {
+                while context.pending() {
+                    context.iteration(false);
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            assert_eq!(
+                controller.model().state.folder.borrow().as_deref(),
+                expected,
+                "saved {saved:?}"
             );
         }
     }

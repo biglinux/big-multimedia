@@ -8,43 +8,43 @@
 
 /// FSR shader sharpness (0..=2, lower = sharper) → UI percent (0..=100).
 #[must_use]
-pub fn fsr_shader_to_ui_pct(sharpness: f64) -> f64 {
+pub(super) fn fsr_shader_to_ui_pct(sharpness: f64) -> f64 {
     (1.0 - sharpness / 2.0) * 100.0
 }
 
 /// UI percent (0..=100) → FSR shader sharpness (0..=2).
 #[must_use]
-pub fn fsr_ui_pct_to_shader(pct: f64) -> f64 {
+pub(super) fn fsr_ui_pct_to_shader(pct: f64) -> f64 {
     2.0 * (1.0 - pct / 100.0)
 }
 
 /// CAS shader sharpening (0..=1) → UI percent (0..=100).
 #[must_use]
-pub fn cas_shader_to_ui_pct(sharpening: f64) -> f64 {
+pub(super) fn cas_shader_to_ui_pct(sharpening: f64) -> f64 {
     sharpening * 100.0
 }
 
 /// UI percent (0..=100) → CAS shader sharpening (0..=1).
 #[must_use]
-pub fn cas_ui_pct_to_shader(pct: f64) -> f64 {
+pub(super) fn cas_ui_pct_to_shader(pct: f64) -> f64 {
     pct / 100.0
 }
 
 /// `colortemperature` vf string for a Kelvin temperature.
 #[must_use]
-pub fn colortemp_vf(kelvin: f64) -> String {
+pub(super) fn colortemp_vf(kelvin: f64) -> String {
     format!("colortemperature=temperature={kelvin:.0}")
 }
 
 /// `colorize` vf string from hue (deg), saturation (0..1), mix (0..1).
 #[must_use]
-pub fn colorize_vf(hue: f64, saturation: f64, mix: f64) -> String {
+pub(super) fn colorize_vf(hue: f64, saturation: f64, mix: f64) -> String {
     format!("colorize=hue={hue:.0}:saturation={saturation:.2}:mix={mix:.2}")
 }
 
 /// `hqdn3d` denoise vf string from a single strength value.
 #[must_use]
-pub fn hqdn3d_vf(strength: f64) -> String {
+pub(super) fn hqdn3d_vf(strength: f64) -> String {
     format!(
         "hqdn3d=luma_spatial={strength}:chroma_spatial={}:luma_tmp={}",
         strength * 0.75,
@@ -54,20 +54,20 @@ pub fn hqdn3d_vf(strength: f64) -> String {
 
 /// `pixelize` vf string from a block size (rounded to an integer).
 #[must_use]
-pub fn pixelize_vf(block: f64) -> String {
+pub(super) fn pixelize_vf(block: f64) -> String {
     let block = block as i32;
     format!("pixelize=width={block}:height={block}")
 }
 
 /// mpv's `vf` property split into its entries. A graph comes either as
-/// `%N%` followed by N bytes taken as they are, or in brackets; a comma
-/// inside either belongs to the graph.
-fn vf_entries(vf: &str) -> Vec<&str> {
+/// `%N%` followed by N bytes taken as they are, or in balanced brackets that
+/// quote everything inside them; a comma inside either belongs to the graph.
+pub(crate) fn vf_entries(vf: &str) -> Vec<&str> {
     let bytes = vf.as_bytes();
     let (mut entries, mut start, mut depth, mut i) = (Vec::new(), 0, 0_usize, 0);
     while i < bytes.len() {
         match bytes[i] {
-            b'%' => {
+            b'%' if depth == 0 => {
                 let digits = bytes[i + 1..]
                     .iter()
                     .take_while(|b| b.is_ascii_digit())
@@ -75,7 +75,7 @@ fn vf_entries(vf: &str) -> Vec<&str> {
                 let close = i + 1 + digits;
                 if digits > 0 && bytes.get(close) == Some(&b'%') {
                     let length: usize = vf[i + 1..close].parse().unwrap_or(0);
-                    i = (close + 1 + length).min(bytes.len());
+                    i = (close + 1).saturating_add(length).min(bytes.len());
                     continue;
                 }
             }
@@ -98,7 +98,7 @@ fn vf_entries(vf: &str) -> Vec<&str> {
 /// The lavfi graph of the `@label` entry of mpv's `vf` property, which mpv
 /// lists as `@label:lavfi=graph=%N%<graph>`; `None` when no such entry is on.
 #[must_use]
-pub fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
+pub(super) fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
     let prefix = format!("@{label}:");
     let entry = vf_entries(vf)
         .into_iter()
@@ -119,7 +119,7 @@ pub fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
 
 /// The value of `key` in a single-filter graph such as `cas=strength=0.50`.
 #[must_use]
-pub fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
+pub(super) fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
     let (_, options) = graph.split_once('=')?;
     options.split(':').find_map(|option| {
         let (name, value) = option.split_once('=')?;
@@ -129,7 +129,7 @@ pub fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
 
 /// [`vf_graph_param`] as a number.
 #[must_use]
-pub fn vf_graph_number(graph: &str, key: &str) -> Option<f64> {
+pub(super) fn vf_graph_number(graph: &str, key: &str) -> Option<f64> {
     vf_graph_param(graph, key)?.parse().ok()
 }
 
@@ -165,10 +165,115 @@ mod tests {
     }
 
     #[test]
-    fn a_comma_inside_a_graph_does_not_split_it() {
+    fn graph_keeps_its_inner_commas() {
         let vf = "@a:lavfi=graph=%11%x=1,y=2:z=3,@b:lavfi=[b=k=7]";
         assert_eq!(active_vf_graph(vf, "a").as_deref(), Some("x=1,y=2:z=3"));
         assert_eq!(active_vf_graph(vf, "b").as_deref(), Some("b=k=7"));
+    }
+
+    /// xorshift64, so every run walks the same inputs.
+    struct Rng(u64);
+
+    impl Rng {
+        fn below(&mut self, bound: usize) -> usize {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            (self.0 % bound as u64) as usize
+        }
+    }
+
+    const GRAPH_CHARS: [char; 14] = [
+        'a', 'z', '0', '9', '=', ':', ',', '%', ';', ' ', 'é', '日', '🎬', '\'',
+    ];
+
+    /// A graph whose brackets balance, which mpv's `[...]` quoting requires.
+    fn balanced_graph(rng: &mut Rng, depth: usize) -> String {
+        let mut graph = String::new();
+        for _ in 0..rng.below(8) {
+            if depth < 3 && rng.below(5) == 0 {
+                graph.push('[');
+                graph.push_str(&balanced_graph(rng, depth + 1));
+                graph.push(']');
+            } else {
+                graph.push(GRAPH_CHARS[rng.below(GRAPH_CHARS.len())]);
+            }
+        }
+        graph
+    }
+
+    /// A graph with lone brackets too, which only `%N%` quoting can carry.
+    fn any_graph(rng: &mut Rng) -> String {
+        let mut graph = balanced_graph(rng, 0);
+        for _ in 0..rng.below(3) {
+            let at = graph
+                .char_indices()
+                .map(|(index, _)| index)
+                .nth(rng.below(graph.chars().count() + 1))
+                .unwrap_or(graph.len());
+            graph.insert(at, if rng.below(2) == 0 { '[' } else { ']' });
+        }
+        graph
+    }
+
+    /// The two quotings mpv's option parser documents for a value holding
+    /// commas: `%N%` with N in bytes, and balanced brackets.
+    #[test]
+    fn quoted_graphs_read_back_unchanged() {
+        let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
+        for _ in 0..2000 {
+            let mut pairs = Vec::new();
+            let mut entries = Vec::new();
+            for index in 0..=rng.below(4) {
+                let label =
+                    ["cas", "cascade", "a-b", "x_1"][rng.below(4)].to_owned() + &index.to_string();
+                let graph = if rng.below(2) == 0 {
+                    let graph = any_graph(&mut rng);
+                    entries.push(format!("@{label}:lavfi=graph=%{}%{graph}", graph.len()));
+                    graph
+                } else {
+                    let graph = balanced_graph(&mut rng, 0);
+                    entries.push(format!("@{label}:lavfi=[{graph}]"));
+                    graph
+                };
+                pairs.push((label, graph));
+            }
+            let vf = entries.join(",");
+            for (label, graph) in &pairs {
+                assert_eq!(
+                    active_vf_graph(&vf, label).as_deref(),
+                    Some(graph.as_str()),
+                    "label {label} in {vf:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn vf_entries_take_any_string() {
+        let hostile = [
+            "%18446744073709551615%",
+            "%18446744073709551615%,x",
+            "%99999999999999999999999%",
+            "[[[,%3%é,]]]]],",
+            "%2%日",
+            "%",
+            "%%",
+            ",,",
+        ];
+        for vf in hostile {
+            vf_entries(vf);
+        }
+        let alphabet = ['%', '1', '8', '[', ']', ',', 'é', '日', '@', ':'];
+        let mut rng = Rng(0x2545_f491_4f6c_dd1d);
+        for _ in 0..20_000 {
+            let vf: String = (0..rng.below(24))
+                .map(|_| alphabet[rng.below(alphabet.len())])
+                .collect();
+            for entry in vf_entries(&vf) {
+                assert!(vf.contains(entry));
+            }
+        }
     }
 
     #[test]
