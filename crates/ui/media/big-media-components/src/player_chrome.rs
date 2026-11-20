@@ -25,8 +25,9 @@ pub use big_relm4_components::feedback::hover_popover::{
     setup_exclusive_hover_popover_group, setup_hover_controller_exclusive,
 };
 
+/// The video stylesheet animates this class.
 const PLAY_BUTTON_PULSE_CSS_CLASS: &str = "play-pulse";
-const PLAY_BUTTON_PULSE_MILLISECONDS: u64 = 250;
+const PLAY_BUTTON_PULSE: Duration = Duration::from_millis(250);
 const PLAYER_SCALE_HEIGHT_REQUEST: i32 = 200;
 const TROUGH_STYLE_PROVIDER_PRIORITY_OFFSET: u32 = 2;
 const VOLUME_MINIMUM_PERCENT: f64 = 0.0;
@@ -68,10 +69,10 @@ pub use big_relm4_components::task::{spawn_blocking_result, spawn_blocking_task}
 
 /// Briefly pulse the play/pause button (CSS class for ~250ms).
 pub fn pulse_play_button(button: &gtk::Button) {
-    button.add_css_class(play_button_pulse_css_class());
+    button.add_css_class(PLAY_BUTTON_PULSE_CSS_CLASS);
     let pulsed_button = button.clone();
-    glib::timeout_add_local_once(play_button_pulse_duration(), move || {
-        pulsed_button.remove_css_class(play_button_pulse_css_class());
+    glib::timeout_add_local_once(PLAY_BUTTON_PULSE, move || {
+        pulsed_button.remove_css_class(PLAY_BUTTON_PULSE_CSS_CLASS);
     });
 }
 
@@ -304,14 +305,6 @@ pub fn build_voice_popover(
     popover
 }
 
-fn play_button_pulse_css_class() -> &'static str {
-    PLAY_BUTTON_PULSE_CSS_CLASS
-}
-
-fn play_button_pulse_duration() -> Duration {
-    Duration::from_millis(PLAY_BUTTON_PULSE_MILLISECONDS)
-}
-
 fn volume_scale_popover_spec(
     maximum_volume_percent: f64,
     initial_volume_percent: f64,
@@ -422,12 +415,6 @@ mod tests {
                 "{volume} muted={muted}"
             );
         }
-    }
-
-    #[test]
-    fn play_pulse_names_class_and_duration() {
-        assert_eq!(play_button_pulse_css_class(), "play-pulse");
-        assert_eq!(play_button_pulse_duration(), Duration::from_millis(250));
     }
 
     #[test]
