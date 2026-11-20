@@ -143,6 +143,13 @@ pub fn cut_span(a: f64, b: f64) -> Option<(f64, f64)> {
 #[must_use]
 pub fn play_only_cuts_seek(ranges: &[(f64, f64)], position: f64) -> Option<f64> {
     let &(first_start, _) = ranges.first()?;
+    // A cut that holds the position wins over a neighbor's tolerance.
+    if ranges
+        .iter()
+        .any(|&(start, end)| position >= start && position < end - PLAY_ONLY_CUTS_TOLERANCE)
+    {
+        return None;
+    }
     let within = ranges.iter().enumerate().find(|(_, (start, end))| {
         position >= start - PLAY_ONLY_CUTS_TOLERANCE && position <= end + PLAY_ONLY_CUTS_TOLERANCE
     });
@@ -310,6 +317,15 @@ mod tests {
             );
         }
         assert_eq!(play_only_cuts_seek(&[], 5.0), None);
+    }
+
+    /// Playback just inside a cut that starts within the tolerance of the
+    /// previous one's end stays in it.
+    #[test]
+    fn close_next_cut_plays_through() {
+        let ranges = [(10.0, 20.0), (20.01, 30.0)];
+        assert_eq!(play_only_cuts_seek(&ranges, 20.01), None);
+        assert_eq!(play_only_cuts_seek(&ranges, 20.0), Some(20.01));
     }
 
     /// The shell steps over the cuts the list hands it, so a cut inside
