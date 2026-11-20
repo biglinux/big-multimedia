@@ -15,7 +15,8 @@
 //!   [`playlist_order`].
 //! - File and metadata helpers: [`media`], [`ffmpeg`].
 //! - GTK widgets and dialogs: [`audio`], [`playback`], [`surface`],
-//!   [`preference_rows`], [`initials_avatar`].
+//!   [`preference_rows`], [`initials_avatar`], and the shared player chrome
+//!   (popovers, play pulse, off-thread spawn) in [`player_chrome`].
 //! - Translation hook: [`text`] and [`install_media_components_translator`].
 //!
 //! # Translation
@@ -50,7 +51,7 @@ pub mod playback;
 /// Player-UI chrome shared across player front-ends: off-thread spawn, play
 /// pulse, volume/speed/voice popovers.
 pub mod player_chrome;
-/// Playlist ordering: shuffle and stable path sort.
+/// Playlist ordering: natural and stable path sort.
 pub mod playlist_order;
 /// libadwaita preference-row builders for player/converter settings.
 pub mod preference_rows;

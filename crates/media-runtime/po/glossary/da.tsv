@@ -1,0 +1,29 @@
+source	translation	source of the choice
+track (music)	nummer, pl. numre	catalog: All Tracks, tracks imported
+track (video/audio stream)	spor	catalog: Video Tracks, Audio Tracks
+playlist	afspilningsliste	catalog: Playlist
+queue	kø	catalog: Queue
+library	bibliotek	catalog: Library
+station	station	catalog: My Stations
+episode	afsnit	catalog: No episodes found
+podcast subscriptions	podcastabonnementer	catalog: Podcasts, Subscriptions
+screenshot	skærmbillede	catalog: Screenshot
+recording	optagelse	catalog: Recording saved
+provider	udbyder	catalog: IPTV Provider
+password	adgangskode	catalog: Password; gnome-keyring
+keyring	nøglering	gnome-keyring, libsecret
+playback engine	afspilningsmotor	new; matches player wording
+Preferences	Indstillinger	catalog: Preferences
+Advanced	Avanceret	catalog: Advanced
+mpv Options	mpv-indstillinger	catalog: mpv Options
+Video Output	Videoudgang	catalog: Video Output
+Audio Output	Lydudgang	catalog: Audio Output
+sidebar	sidepanel	catalog: Toggle playlist sidebar
+lyrics	sangtekster	catalog: Show only lyrics
+web remote	webfjernbetjening	catalog: Web Remote
+scan	scanning	catalog: Cancel scan
+Return (key)	Retur	gtk40 keyboard label
+Left / Right (keys)	Venstre / Højre	gtk40 keyboard label; catalog Alt+Up style
+Pictures folder	Billeder-mappe	catalog: Pictures folder
+Retry	Prøv igen	catalog: try again phrasing
+quotation marks	“ ”	catalog: “Håndtér…”

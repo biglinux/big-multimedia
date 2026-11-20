@@ -4,8 +4,11 @@
 //! thin binary (`src/main.rs`) calls [`run`]; multicall hosts (big-host,
 //! big-modules) embed the player through [`open_in_application`] and
 //! [`open_paths`].
+//!
+//! - `resources`: the player shell's GTK resource bundle.
+//! - [`video`]: the player shell, its dialogs and panels.
 
-pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings, shared};
+pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings};
 
 mod resources;
 pub mod video;
@@ -37,13 +40,7 @@ fn build_player_window(
 /// App-specific boot done exactly once for the embed/pane paths.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        // Read lazily at backend install (realize), so defaulting here is safe. See
-        // `run` for why the offload path is not the default.
-        shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-        shared::app_base::boot_player(&[
-            big_media_runtime::resources::VIDEO,
-            resources::VIDEO_PLAYER_SHELL,
-        ]);
+        big_media_runtime::app::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
     });
 }
 
@@ -62,14 +59,13 @@ pub struct VideoEmbed {
 
 /// Open the video-player shell as a window of the host's running
 /// application (multicall hosts: big-host). Performs the app-specific boot
-/// exactly once (gettext with the shared media domain, numeric locale, GResource
-/// bundles, the graphics-offload default) and launches a detached
-/// [`video::ui::video_shell::VideoShell`]. The host keeps the returned
-/// controller alive for as long as the module is open; dropping it shuts
-/// the component tree down. The caller owns process-wide concerns ([`run`]
-/// steps this skips): logging, allocator tuning, the GSK renderer
-/// choice (the host's renderer is already decided), and the
-/// `gtk::Application` itself.
+/// exactly once (the shared media gettext domain, GResource bundles) and
+/// launches a detached [`video::ui::video_shell::VideoShell`]. The host keeps
+/// the returned controller alive for as long as the module is open; dropping it
+/// shuts the component tree down. The caller owns process-wide concerns ([`run`]
+/// steps this skips), set before its threads start: logging, allocator tuning,
+/// the GSK renderer, [`big_media_runtime::app::init_process_locale`], without which
+/// mpv does not start, and the `gtk::Application` itself.
 pub fn open_in_application() -> VideoEmbed {
     use gtk::prelude::*;
     use relm4::{Component, ComponentController};
@@ -104,7 +100,7 @@ pub fn open_paths(paths: Vec<String>) {
 /// then run the GTK application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    shared::app_base::init_logging(
+    big_media_runtime::app::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
     // mpv renders through GL, so the GSK renderer has to be the OpenGL one.
@@ -112,18 +108,9 @@ pub fn run() -> gtk::glib::ExitCode {
     // would push every frame through a software upload. "opengl" is the name
     // GTK 4.18+ accepts without a warning: it ignores "ngl" and falls back to
     // its own default, which may be Vulkan.
-    shared::app_base::use_gl_renderer(true);
-    // Keep the GLArea video path as the default. With a non-blocking render
-    // call (see `FastRenderContext::render`), offload and GLArea cost the same
-    // CPU, and offload holds an extra GL context and texture pool while idle.
-    // It does give
-    // real DMA-BUF zero-copy, so it stays one variable away for anyone whose
-    // compositor benefits from the subsurface; it just buys nothing by default.
-    shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-    shared::app_base::boot_player(&[
-        big_media_runtime::resources::VIDEO,
-        resources::VIDEO_PLAYER_SHELL,
-    ]);
+    big_media_runtime::app::use_gl_renderer(true);
+    big_media_runtime::app::init_process_locale();
+    big_media_runtime::app::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
 
     // The `VideoShell` Root is mountable content (a `gtk::Box`), not a
     // window, so we boot manually instead of `RelmApp::run` (which
@@ -134,6 +121,7 @@ pub fn run() -> gtk::glib::ExitCode {
     use relm4::{Component, ComponentController};
 
     let app = video::app::Application::new();
+    let maximized = video::app::launched_with(std::env::args_os(), "--maximized");
     let shell: std::rc::Rc<
         std::cell::RefCell<Option<relm4::Controller<video::ui::video_shell::VideoShell>>>,
     > = std::rc::Rc::new(std::cell::RefCell::new(None));
@@ -147,8 +135,11 @@ pub fn run() -> gtk::glib::ExitCode {
             .launch(())
             .detach();
         let window = build_player_window(app, controller.widget());
-        shared::app_base::log_active_renderer_once(&window);
-        shared::app_base::ignore_repeated_pointer_motion(&window);
+        big_media_runtime::app::log_active_renderer_once(&window);
+        big_media_runtime::app::ignore_repeated_pointer_motion(&window);
+        if maximized {
+            window.maximize();
+        }
         window.present();
         *shell_for_activate.borrow_mut() = Some(controller);
     });
@@ -164,10 +155,13 @@ mod lifetime_tests {
     #[test]
     #[ignore = "requires an isolated GTK session and home"]
     fn embedded_video_finalizes_after_close() {
+        // A host sets the process locale before its threads start; the test
+        // keeps the C locale mpv needs instead of taking the session's.
+        gtk::disable_setlocale();
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.VideoLifetimeTest")
+            .application_id("br.com.biglinux.VideoLifetimeTest")
             .build();
         app.register(gtk::gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);

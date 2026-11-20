@@ -9,13 +9,11 @@ pub fn insert_radio_station(
     favicon: &str,
     group_name: &str,
 ) -> crate::Result<i64> {
-    let pos: i64 = conn
-        .query_row(
-            "SELECT COALESCE(MAX(position), -1) + 1 FROM radio_stations",
-            [],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
+    let pos: i64 = conn.query_row(
+        "SELECT COALESCE(MAX(position), -1) + 1 FROM radio_stations",
+        [],
+        |r| r.get(0),
+    )?;
     conn.execute(
         "INSERT OR IGNORE INTO radio_stations (name, url, favicon, group_name, position) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![name, url, favicon, group_name, pos],
@@ -35,7 +33,7 @@ pub fn get_all_radio_stations(conn: &Connection) -> crate::Result<Vec<RadioStati
             favicon: row.get(3)?,
             group_name: row.get(4)?,
         })
-    })?);
+    })?)?;
     Ok(stations)
 }
 
@@ -44,33 +42,5 @@ pub fn delete_radio_station(conn: &Connection, station_id: i64) -> crate::Result
         "DELETE FROM radio_stations WHERE id = ?1",
         params![station_id],
     )?;
-    Ok(())
-}
-
-/// One-shot: imports legacy `radio_stations.json` then renames it to
-/// `.json.migrated` so re-runs no-op.
-pub fn migrate_radio_from_json(conn: &Connection) -> crate::Result<()> {
-    let Some(config) = big_os_kit::xdg_dirs::config_dir() else {
-        return Ok(());
-    };
-    let path = config.join("big-audio-player").join("radio_stations.json");
-    let Ok(Some(data)) = big_os_kit::storage::read_regular_limited(&path, 4 * 1024 * 1024) else {
-        return Ok(());
-    };
-    if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&data)
-        && let Some(arr) = val.as_array()
-    {
-        for item in arr {
-            let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("");
-            let url = item.get("url").and_then(|v| v.as_str()).unwrap_or("");
-            let favicon = item.get("favicon").and_then(|v| v.as_str()).unwrap_or("");
-            let group = item.get("group").and_then(|v| v.as_str()).unwrap_or("");
-            if !url.is_empty() {
-                let _ = insert_radio_station(conn, name, url, favicon, group);
-            }
-        }
-    }
-    let migrated = path.with_extension("json.migrated");
-    let _ = std::fs::rename(&path, &migrated);
     Ok(())
 }

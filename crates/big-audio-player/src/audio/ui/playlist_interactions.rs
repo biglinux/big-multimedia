@@ -15,9 +15,10 @@ use big_relm4_components::layout::{
 
 use crate::db::models::Track;
 use crate::i18n::i18n;
-use crate::shared::converter_handoff;
+use big_media_runtime::converter_handoff;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
+use super::track_count_text;
 
 fn is_queue_delete_key(keyval: gdk::Key) -> bool {
     keyval == gdk::Key::Delete || keyval == gdk::Key::BackSpace
@@ -46,9 +47,7 @@ fn should_show_single_track_actions(count: usize) -> bool {
 fn downloadable_episode_items(selected: &[(usize, Track)]) -> Vec<(String, String)> {
     selected
         .iter()
-        .filter(|(_, track)| {
-            track.file_path.starts_with("http://") || track.file_path.starts_with("https://")
-        })
+        .filter(|(_, track)| big_os_kit::url::is_http_url(&track.file_path))
         .map(|(_, track)| (track.file_path.clone(), track.display_title().to_string()))
         .collect()
 }
@@ -61,7 +60,7 @@ fn download_episode_label(episode_count: usize) -> Option<String> {
     }
 }
 
-/// Delete/Backspace on the selection → `RemoveTracks` (queue indices, desc).
+/// Delete/Backspace on the selection → `RemoveTracks` (queue indices).
 pub(super) fn wire_delete_key(
     view: &big_item_view::ItemView,
     selection: &gtk::MultiSelection,
@@ -77,11 +76,9 @@ pub(super) fn wire_delete_key(
             return glib::Propagation::Proceed;
         };
         let bitset = sel.selection();
-        // Highest-first so the shell's removals keep lower indices valid.
-        let mut indices: Vec<usize> = (0..bitset.size())
+        let indices: Vec<usize> = (0..bitset.size())
             .map(|nth| bitset.nth(nth as u32) as usize)
             .collect();
-        indices.sort_unstable_by(|a, b| b.cmp(a));
         if indices.is_empty() {
             return glib::Propagation::Proceed;
         }
@@ -113,9 +110,7 @@ pub(super) fn show_track_context_menu(
     }
     {
         let label = remove_from_queue_label(count);
-        let mut indices: Vec<usize> = selected.iter().map(|(i, _)| *i).collect();
-        indices.sort_unstable_by(|a, b| b.cmp(a));
-        indices.dedup();
+        let indices: Vec<usize> = selected.iter().map(|(i, _)| *i).collect();
         let out = sender.clone();
         menu.append_button(label, &[], move || {
             let _ = out.output(PlaylistPanelOutput::RemoveTracks {
@@ -223,7 +218,7 @@ fn show_delete_confirm(
         items.first().map(|(_, track)| track.display_title()),
     );
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(&heading)
         .content_width(440)
         .content_height(280)
@@ -235,7 +230,7 @@ fn show_delete_confirm(
     let group = BigPreferencesGroupSpec::untitled().build();
     let perm_row = adw::SwitchRow::builder()
         .title(i18n("Delete permanently"))
-        .subtitle(i18n("Skip trash — cannot be undone"))
+        .subtitle(i18n("Skip trash: cannot be undone"))
         .active(false)
         .build();
     group.add(&perm_row);
@@ -286,10 +281,9 @@ fn delete_storage_body(count: usize, single_title: Option<&str>) -> String {
         )
     } else {
         format!(
-            "{}\n\n{} {}",
+            "{}\n\n{}",
             i18n("Move these files to the trash?"),
-            count,
-            i18n("tracks")
+            track_count_text(count as u64)
         )
     }
 }

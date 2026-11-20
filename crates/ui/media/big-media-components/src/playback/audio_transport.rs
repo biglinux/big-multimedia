@@ -17,13 +17,16 @@ use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
 use relm4::gtk;
 
+use super::cut_timeline::CutTimeline;
+
 /// Translated tooltip/accessible labels for the audio transport controls.
 #[allow(missing_docs)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigAudioTransportLabels {
     pub seek: String,
     pub cut_timeline: String,
-    pub play_pause: String,
+    pub play: String,
+    pub pause: String,
     pub previous: String,
     pub next: String,
     pub shuffle: String,
@@ -85,7 +88,7 @@ pub struct BigAudioTransport {
     root: gtk::Overlay,
     playback_bar: gtk::Box,
     seek_bar: gtk::Scale,
-    cut_timeline: gtk::DrawingArea,
+    cut_timeline: CutTimeline,
     bar_stack: gtk::Stack,
     position_label: gtk::Inscription,
     duration_label: gtk::Label,
@@ -100,6 +103,9 @@ pub struct BigAudioTransport {
     voice_label: gtk::Label,
     prev_button: gtk::Button,
     play_button: gtk::Button,
+    /// The play button's name in each state: the action a click takes.
+    play_label: String,
+    pause_label: String,
     next_button: gtk::Button,
     status_label: gtk::Label,
     trim_export_button: gtk::Button,
@@ -137,6 +143,24 @@ impl BigAudioTransport {
         seek_row.append(&duration_label);
         playback_bar.append(&seek_row);
 
+        // A row of its own: beside the buttons, the bar's narrowest width left
+        // room for a few letters of a status.
+        let status_label = gtk::Label::builder()
+            .xalign(1.0)
+            .justify(gtk::Justification::Right)
+            .wrap(true)
+            .wrap_mode(gtk::pango::WrapMode::WordChar)
+            .lines(2)
+            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .margin_start(16)
+            .margin_end(16)
+            .visible(false)
+            .css_classes(["caption"])
+            .build();
+        status_label.update_property(&[gtk::accessible::Property::Label(&labels.status)]);
+        status_label.connect_label_notify(|label| label.set_visible(!label.label().is_empty()));
+        playback_bar.append(&status_label);
+
         let controls_row = gtk::CenterBox::builder()
             .margin_start(12)
             .margin_end(12)
@@ -173,7 +197,7 @@ impl BigAudioTransport {
         prev_button.set_has_frame(false);
         let play_button = tooltip::icon_button(
             "media-playback-start-symbolic",
-            &labels.play_pause,
+            &labels.play,
             &["circular", "suggested-action"],
         );
         play_button.set_size_request(42, 42);
@@ -189,15 +213,7 @@ impl BigAudioTransport {
         center_box.append(&next_button);
         controls_row.set_center_widget(Some(&center_box));
 
-        // end: status / trim-export / shuffle / repeat / lyrics
-        let status_label = gtk::Label::builder()
-            .label("")
-            .xalign(1.0)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .max_width_chars(20)
-            .css_classes(["caption"])
-            .build();
-        status_label.update_property(&[gtk::accessible::Property::Label(&labels.status)]);
+        // end: trim-export / shuffle / repeat / lyrics
         let trim_export_button =
             tooltip::icon_button("edit-cut-symbolic", &labels.trim_export, &[]);
         trim_export_button.set_has_frame(false);
@@ -222,7 +238,6 @@ impl BigAudioTransport {
             .spacing(4)
             .valign(gtk::Align::Center)
             .build();
-        end_box.append(&status_label);
         end_box.append(&trim_export_button);
         end_box.append(&shuffle_button);
         end_box.append(&repeat_button);
@@ -270,6 +285,8 @@ impl BigAudioTransport {
             voice_label,
             prev_button,
             play_button,
+            play_label: labels.play.clone(),
+            pause_label: labels.pause.clone(),
             next_button,
             status_label,
             trim_export_button,
@@ -300,7 +317,7 @@ impl BigAudioTransport {
 
     /// Borrow the trim-mode cut timeline.
     #[must_use]
-    pub fn cut_timeline(&self) -> &gtk::DrawingArea {
+    pub fn cut_timeline(&self) -> &CutTimeline {
         &self.cut_timeline
     }
 
@@ -431,13 +448,14 @@ impl BigAudioTransport {
         &self.blur_bg
     }
 
-    /// Update the play button's icon to reflect `paused`.
+    /// Show on the play button the action a click takes while `paused`.
     pub fn set_paused(&self, paused: bool) {
-        self.play_button.set_icon_name(if paused {
-            "media-playback-start-symbolic"
-        } else {
-            "media-playback-pause-symbolic"
-        });
+        super::set_play_pause(
+            &self.play_button,
+            paused,
+            &self.play_label,
+            &self.pause_label,
+        );
     }
 }
 
@@ -453,10 +471,9 @@ fn build_hover_control(
         .orientation(gtk::Orientation::Horizontal)
         .spacing(2)
         .build();
-    // The popover that opens on hover names the control.
-    let button = gtk::Button::from_icon_name(icon_name);
-    button.update_property(&[gtk::accessible::Property::Label(label)]);
-    button.set_has_frame(false);
+    let button = tooltip::icon_button(icon_name, label, &["image-button", "flat"]);
+    // The popover that opens on hover names the control; a tooltip would cover it.
+    button.set_has_tooltip(false);
     let value_label = gtk::Label::builder()
         .label(initial_text)
         .width_chars(width_chars)
@@ -468,22 +485,22 @@ fn build_hover_control(
     (hover_box, button, value_label)
 }
 
-/// Build the seek row scale plus the position/duration labels.
-/// Characters reserved for the elapsed time: "0:00" plus a spare, so digits of
-/// uneven width never clip. [`time_label_chars`] widens it for long media.
+/// Characters reserved for each time label: "0:00" plus a spare, so digits of
+/// uneven width never clip. [`time_label_chars`] widens both for long media.
 pub const TIME_CHARS: u32 = 5;
 
-/// Characters the elapsed time needs to show a position as long as `duration`.
+/// Characters a time label needs to show a time as long as `duration`.
 #[must_use]
 pub fn time_label_chars(duration: &str) -> u32 {
     u32::try_from(duration.chars().count()).map_or(TIME_CHARS, |chars| (chars + 1).max(TIME_CHARS))
 }
 
+/// Build the seek row scale plus the position/duration labels.
 fn build_seek_row(
     labels: &BigAudioTransportLabels,
 ) -> (
     gtk::Scale,
-    gtk::DrawingArea,
+    CutTimeline,
     gtk::Stack,
     gtk::Inscription,
     gtk::Label,
@@ -508,11 +525,7 @@ fn build_seek_row(
         .build();
     seek_bar.set_tooltip_text(Some(&labels.seek));
     seek_bar.update_property(&[gtk::accessible::Property::Label(&labels.seek)]);
-    let cut_timeline = gtk::DrawingArea::builder()
-        .hexpand(true)
-        .height_request(20)
-        .build();
-    cut_timeline.update_property(&[gtk::accessible::Property::Label(&labels.cut_timeline)]);
+    let cut_timeline = CutTimeline::new(&labels.cut_timeline);
     cut_timeline.set_tooltip_text(Some(&labels.cut_timeline));
     let bar_stack = gtk::Stack::builder().hexpand(true).build();
     bar_stack.add_named(&seek_bar, Some("seek"));
@@ -520,7 +533,7 @@ fn build_seek_row(
     bar_stack.set_visible_child_name("seek");
     let duration_label = gtk::Label::builder()
         .label("0:00")
-        .width_chars(5)
+        .width_chars(TIME_CHARS.cast_signed())
         .xalign(0.0)
         .css_classes(["caption"])
         .build();

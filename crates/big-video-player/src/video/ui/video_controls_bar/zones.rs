@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use super::*;
 use crate::settings::keys;
+use crate::video::ui::appearance::layout::{CONTROLS, OsdControl, ZONE_KEYS};
 use big_media_components::player_chrome::{
     build_speed_popover, build_voice_popover, build_volume_popover,
-    setup_exclusive_hover_popover_group,
+    setup_exclusive_hover_popover_group, volume_icon_name,
 };
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::zone_layout::{ZoneLayout, ZonePlacement, slot_key};
@@ -39,41 +40,13 @@ pub(crate) struct ButtonLayoutWidgets {
 }
 
 impl ButtonLayoutWidgets {
-    /// Reparent the OSD controls into their bottom-bar zones and apply
-    /// per-control visibility from the `ui-zone-*` / `ui-show-*` settings, via
-    /// the shared leak-safe [`apply_zone_layout`] primitive.
-    ///
-    /// The three `ui-zone-bottom-*` CSVs become a
-    /// [`ZoneLayout`](big_relm4_components::input::zone_layout::ZoneLayout) (each
-    /// token mapped through `control_name`, dropping unknown/legacy-aliased
-    /// entries); the applier reparents each control into its zone and appends any
-    /// control the CSVs omit to its default fallback slot. Visibility comes from
-    /// the `ui-show-*` flags, the voice control additionally gated on a
-    /// noise-reduction backend being installed.
+    /// Place and show the bottom-bar controls as the `ui-zone-bottom-*` and
+    /// `ui-show-*` settings say; voice also needs a noise-reduction backend.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
         let start = slot_key("bottom", ZonePlacement::Start);
         let center = slot_key("bottom", ZonePlacement::Center);
         let end = slot_key("bottom", ZonePlacement::End);
-
-        // The three saved CSVs → an ordered ZoneLayout (aliases normalised,
-        // unknown ids dropped). Cross-zone dedup + missing-default fallback are
-        // the applier's job.
-        let mut layout = ZoneLayout::default();
-        for (csv_key, slot) in [
-            (keys::UI_ZONE_BOTTOM_LEFT, &start),
-            (keys::UI_ZONE_BOTTOM_CENTER, &center),
-            (keys::UI_ZONE_BOTTOM_RIGHT, &end),
-        ] {
-            let ids: Vec<String> = settings
-                .get_string(csv_key)
-                .split(',')
-                .map(str::trim)
-                .map(control_name)
-                .filter(|name| !name.is_empty())
-                .map(String::from)
-                .collect();
-            layout.slots.insert(slot.clone(), ids);
-        }
+        let layout = read_zones(settings, "bottom", &bottom_control_ids());
 
         let controls: HashMap<String, gtk::Widget> = [
             ("volume", self.volume_box.clone().upcast::<gtk::Widget>()),
@@ -82,7 +55,7 @@ impl ButtonLayoutWidgets {
             ("prev", self.previous_button.clone().upcast()),
             ("play", self.play_button.clone().upcast()),
             ("next", self.next_button.clone().upcast()),
-            ("edit-export", self.export_menu_button.clone().upcast()),
+            (EDIT_EXPORT, self.export_menu_button.clone().upcast()),
             ("subtitle", self.subtitle_menu_button.clone().upcast()),
             ("audio-track", self.audio_track_menu_button.clone().upcast()),
             ("tv", self.tv_button.clone().upcast()),
@@ -98,70 +71,75 @@ impl ButtonLayoutWidgets {
             (end.as_str(), &self.end_zone),
         ];
 
-        let fallback = [
-            ("volume", start.as_str()),
-            ("speed", start.as_str()),
-            ("voice", start.as_str()),
-            ("prev", center.as_str()),
-            ("play", center.as_str()),
-            ("next", center.as_str()),
-            ("edit-export", end.as_str()),
-            ("subtitle", end.as_str()),
-            ("audio-track", end.as_str()),
-            ("tv", end.as_str()),
-            ("fullscreen", end.as_str()),
-        ];
+        // The edit menu leads the end zone.
+        let fallback_slots: Vec<(&str, String)> = [(EDIT_EXPORT, end.clone())]
+            .into_iter()
+            .chain(
+                bottom_bar_controls()
+                    .map(|control| (control.id, slot_key(control.bar, control.placement))),
+            )
+            .collect();
+        let fallback: Vec<(&str, &str)> = fallback_slots
+            .iter()
+            .map(|(id, slot)| (*id, slot.as_str()))
+            .collect();
 
         // Visibility: the `ui-show-*` flags, and for what acts on the open
-        // file, one being open. `edit-export` has no flag of its own. Voice is
+        // file, one being open. The edit menu has no flag of its own. Voice is
         // also gated on a real noise-reduction backend.
         let media = self.has_media.get();
-        let visibility: HashMap<String, bool> = [
-            ("volume", settings.get_bool(keys::UI_SHOW_VOLUME)),
-            ("speed", settings.get_bool(keys::UI_SHOW_SPEED)),
-            (
-                "voice",
-                settings.get_bool(keys::UI_SHOW_VOICE)
-                    && crate::shared::audio_effects::has_noise_reduction_backend(),
-            ),
-            ("prev", media && settings.get_bool(keys::UI_SHOW_PREV)),
-            ("play", media && settings.get_bool(keys::UI_SHOW_PLAY)),
-            ("next", media && settings.get_bool(keys::UI_SHOW_NEXT)),
-            ("edit-export", media),
-            (
-                "subtitle",
-                media && settings.get_bool(keys::UI_SHOW_SUBTITLE),
-            ),
-            (
-                "audio-track",
-                media && settings.get_bool(keys::UI_SHOW_AUDIO_TRACK),
-            ),
-            ("tv", media && settings.get_bool(keys::UI_SHOW_TV)),
-            ("fullscreen", settings.get_bool(keys::UI_SHOW_FULLSCREEN)),
-        ]
-        .into_iter()
-        .map(|(id, visible)| (id.to_owned(), visible))
-        .collect();
+        let mut visibility: HashMap<String, bool> = bottom_bar_controls()
+            .map(|control| {
+                let shown = settings.get_bool(control.show)
+                    && match control.id {
+                        "volume" | "speed" | "fullscreen" => true,
+                        "voice" => big_media_runtime::audio_effects::has_noise_reduction_backend(),
+                        _ => media,
+                    };
+                (control.id.to_owned(), shown)
+            })
+            .collect();
+        visibility.insert(EDIT_EXPORT.to_owned(), media);
 
         apply_zone_layout(&layout, &controls, &slots, &fallback, &visibility);
     }
 }
 
-fn control_name(name: &str) -> &'static str {
-    match name {
-        "volume" => "volume",
-        "speed" => "speed",
-        "voice" => "voice",
-        "prev" | "previous" => "prev",
-        "play" => "play",
-        "next" => "next",
-        "edit-export" | "export" => "edit-export",
-        "subtitle" | "subtitles" => "subtitle",
-        "audio-track" | "audio" => "audio-track",
-        "tv" => "tv",
-        "fullscreen" => "fullscreen",
-        _ => "",
+/// The edit and export menu: always in the bottom bar, so the Buttons page
+/// does not list it.
+const EDIT_EXPORT: &str = "edit-export";
+
+fn bottom_bar_controls() -> impl Iterator<Item = &'static OsdControl> {
+    CONTROLS.iter().filter(|control| control.bar == "bottom")
+}
+
+/// The ids the bottom bar places.
+fn bottom_control_ids() -> Vec<&'static str> {
+    bottom_bar_controls()
+        .map(|control| control.id)
+        .chain([EDIT_EXPORT])
+        .collect()
+}
+
+/// `bar`'s `ui-zone-*` CSVs, each into its slot. Ids outside `known` are
+/// dropped here; a repeated id is left to [`apply_zone_layout`], which places
+/// it once, in the first zone that names it.
+pub(crate) fn read_zones(settings: &Settings, bar: &str, known: &[&str]) -> ZoneLayout {
+    let mut layout = ZoneLayout::default();
+    for (zone_bar, placement, csv_key) in ZONE_KEYS {
+        if *zone_bar != bar {
+            continue;
+        }
+        let ids = settings
+            .get_string(*csv_key)
+            .split(',')
+            .map(str::trim)
+            .filter(|id| known.contains(id))
+            .map(String::from)
+            .collect();
+        layout.slots.insert(slot_key(bar, *placement), ids);
     }
+    layout
 }
 
 /// START box widgets: the reparentable control boxes, the readout value labels
@@ -196,19 +174,12 @@ impl SoundIndicator {
         self.muted.get()
     }
 
-    /// Show `muted` at `volume`. Muted, the readout says "No sound" instead of
-    /// the level, which would read as sound while nothing plays. Muted and
-    /// level 0 have different icons, and either silent state wears the
-    /// `sound-off` pill, so no sound is visible at a glance and not by colour
-    /// alone. The button names the action it will take, for the tooltip and
-    /// for screen readers, and reports itself pressed while muted.
+    /// Show `muted` at `volume`: silent, by mute or at level 0, reads "No sound"
+    /// with the crossed-out speaker and the `sound-off` pill, not color alone.
+    /// The button names the action it will take and reports pressed while muted.
     pub(super) fn show(&self, muted: bool, volume: f64) {
         self.muted.set(muted);
-        self.button.set_icon_name(if muted {
-            "audio-volume-muted-symbolic"
-        } else {
-            volume_icon(volume)
-        });
+        self.button.set_icon_name(volume_icon_name(volume, muted));
         let silent = muted || volume <= 0.0;
         self.label.set_label(&if silent {
             i18n("No sound")
@@ -272,7 +243,7 @@ impl WeakSoundIndicator {
 pub(super) fn build_start_box(
     settings: &Settings,
     mpv: &MpvSlot,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
 ) -> StartBoxWidgets {
     let start_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
@@ -282,7 +253,7 @@ pub(super) fn build_start_box(
 
     // Volume: the one the player has, and the PC's own beside it while the
     // player plays along with a TV that has the first.
-    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+    let initial_volume = settings.video_volume_percent();
     let volume = build_volume_control(settings, mpv, Some(tv), &i18n("TV"), initial_volume);
     let pc_volume = build_volume_control(settings, mpv, None, &i18n("PC"), initial_volume);
     pc_volume.volume_box.set_visible(false);
@@ -338,7 +309,7 @@ pub(super) fn build_start_box(
     let stored_noise_reduction_strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
     let initial_noise_reduction_percent =
         (stored_noise_reduction_strength * 100.0).clamp(0.0, 100.0);
-    let voice_strength = Rc::new(crate::shared::popovers::VoiceStrength::new(
+    let voice_strength = Rc::new(big_media_runtime::audio_effects::VoiceStrength::new(
         stored_noise_reduction_strength > 0.0,
     ));
     let voice_popover = build_voice_popover(
@@ -350,7 +321,7 @@ pub(super) fn build_start_box(
             let settings = settings.clone();
             let mpv = mpv.clone();
             move |pct| {
-                crate::shared::popovers::handle_voice_strength_changed(
+                big_media_runtime::audio_effects::handle_voice_strength_changed(
                     &settings,
                     mpv.borrow().as_ref(),
                     pct,
@@ -358,14 +329,14 @@ pub(super) fn build_start_box(
                 );
             }
         },
-        &crate::shared::audio_effects::nr_settings_panel(settings, {
+        &big_media_runtime::audio_effects::nr_settings_panel(settings, {
             let settings = settings.clone();
             let mpv = mpv.clone();
             move || {
                 if let Some(mpv) = mpv.borrow().as_ref()
                     && settings.get_double(keys::NOISE_STRENGTH) > 0.0
                 {
-                    crate::shared::audio_effects::apply_voice_change(&settings, mpv);
+                    big_media_runtime::audio_effects::apply_voice_change(&settings, mpv);
                 }
             }
         }),
@@ -373,7 +344,7 @@ pub(super) fn build_start_box(
 
     // Hide the voice control if no noise-reduction backend is installed (old
     // `setup_hover_popovers` did the same).
-    if !crate::shared::audio_effects::has_noise_reduction_backend() {
+    if !big_media_runtime::audio_effects::has_noise_reduction_backend() {
         voice_box.set_visible(false);
     }
 
@@ -425,12 +396,25 @@ pub(super) struct VolumeControl {
     pub(super) title: Option<gtk::Label>,
 }
 
+impl VolumeControl {
+    /// Follow the Maximum Volume preference; the player already holds its
+    /// level within it, so a lowered value is only mirrored.
+    pub(super) fn set_maximum(&self, maximum: f64) {
+        big_media_components::player_chrome::set_volume_maximum(&self.scale, maximum);
+        if self.scale.value() > maximum {
+            self.suppress.set(true);
+            self.scale.set_value(maximum);
+            self.suppress.set(false);
+        }
+    }
+}
+
 /// A volume control for mpv, or for the TV while `tv` has the controls.
 /// `mark` is the word that tells it apart from the other one.
 fn build_volume_control(
     settings: &Settings,
     mpv: &MpvSlot,
-    tv: Option<&Rc<crate::shared::tv_cast::TvLink>>,
+    tv: Option<&Rc<big_media_runtime::cast::tv::TvLink>>,
     mark: &str,
     initial_volume: f64,
 ) -> VolumeControl {
@@ -452,7 +436,7 @@ fn build_volume_control(
     volume_box.append(&volume_button);
     volume_box.append(&volume_label);
 
-    let maximum_volume = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
+    let maximum_volume = f64::from(settings.volume_max_percent());
     let (volume_popover, volume_scale) =
         build_volume_popover(&volume_box, maximum_volume, initial_volume);
     // Mute said in words, for whoever reaches the volume by hovering and does
@@ -500,9 +484,9 @@ fn build_volume_control(
             }
             // The TV's level is 0–1: its own 100 is the ceiling there.
             if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
-                tv.control("volume", (value / 100.0).clamp(0.0, 1.0));
+                tv.set_volume(value / 100.0);
                 if state.muted == Some(true) {
-                    tv.control("unmute", 0.0);
+                    tv.set_muted(false);
                 }
                 return;
             }
@@ -522,7 +506,7 @@ fn build_volume_control(
         button.connect_clicked(move |_| {
             if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
                 let muted = state.muted != Some(true);
-                tv.control(if muted { "mute" } else { "unmute" }, 0.0);
+                tv.set_muted(muted);
                 if let (Some(sound), Some(scale)) = (sound.upgrade(), scale.upgrade()) {
                     sound.show(muted, scale.value());
                 }
@@ -612,7 +596,11 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Subtitles"),
         &["osd-btn"],
     );
-    let subtitle_menu_popover = gtk::Popover::new();
+    // Both track menus are groups, set here: the role cannot change once an
+    // assistive technology has read it.
+    let subtitle_menu_popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     setup_end_menu_popover(&subtitle_menu_button, &subtitle_menu_popover);
 
     let audio_track_menu_button = tooltip::icon_button(
@@ -620,7 +608,9 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Audio Track"),
         &["osd-btn"],
     );
-    let audio_track_menu_popover = gtk::Popover::new();
+    let audio_track_menu_popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     setup_end_menu_popover(&audio_track_menu_button, &audio_track_menu_popover);
 
     // Here rather than in the menu, where many never look: the corner is
@@ -686,31 +676,13 @@ fn build_export_menu_model() -> gio::Menu {
 
 /// OSD icon button, its name in the tooltip and for screen readers.
 fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
-    let button = gtk::Button::builder()
-        .icon_name(icon_name)
-        .tooltip_text(label)
-        .valign(gtk::Align::Center)
-        .css_classes(["osd-btn"])
-        .build();
-    button.update_property(&[gtk::accessible::Property::Label(label)]);
+    let button = tooltip::icon_button(icon_name, label, &["osd-btn"]);
+    button.set_valign(gtk::Align::Center);
     button
 }
 
 /// Level restored by unmuting a control left at 0.
 const UNMUTE_MINIMUM_VOLUME: f64 = 20.0;
-
-/// Volume icon for a 0..max level. Level 0 shows the lowest speaker, not the
-/// crossed-out one: that one means muted, a different state with a different
-/// way out.
-pub(super) fn volume_icon(value: f64) -> &'static str {
-    if value < 34.0 {
-        "audio-volume-low-symbolic"
-    } else if value < 67.0 {
-        "audio-volume-medium-symbolic"
-    } else {
-        "audio-volume-high-symbolic"
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -729,34 +701,26 @@ mod tests {
     }
 
     #[test]
-    fn control_names_accept_canonical_and_legacy_aliases() {
-        assert_eq!(control_name("volume"), "volume");
-        assert_eq!(control_name("speed"), "speed");
-        assert_eq!(control_name("voice"), "voice");
-        assert_eq!(control_name("prev"), "prev");
-        assert_eq!(control_name("previous"), "prev");
-        assert_eq!(control_name("play"), "play");
-        assert_eq!(control_name("next"), "next");
-        assert_eq!(control_name("edit-export"), "edit-export");
-        assert_eq!(control_name("export"), "edit-export");
-        assert_eq!(control_name("subtitle"), "subtitle");
-        assert_eq!(control_name("subtitles"), "subtitle");
-        assert_eq!(control_name("audio-track"), "audio-track");
-        assert_eq!(control_name("audio"), "audio-track");
-        assert_eq!(control_name("fullscreen"), "fullscreen");
-        assert_eq!(control_name("unknown"), "");
-    }
+    fn bottom_zones_drop_unknown_ids() {
+        let settings = Settings::memory_only();
+        settings.set_string(keys::UI_ZONE_BOTTOM_LEFT.0, "volume, speed,voice,previous");
+        settings.set_string(keys::UI_ZONE_BOTTOM_CENTER.0, "prev,play,next,export");
+        settings.set_string(
+            keys::UI_ZONE_BOTTOM_RIGHT.0,
+            "edit-export,subtitles,subtitle,audio,audio-track,tv,fullscreen,unknown",
+        );
+        let start = slot_key("bottom", ZonePlacement::Start);
+        let center = slot_key("bottom", ZonePlacement::Center);
+        let end = slot_key("bottom", ZonePlacement::End);
 
-    #[test]
-    fn volume_icon_uses_low_medium_high_thresholds() {
-        assert_eq!(volume_icon(-1.0), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(0.0), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(0.1), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(33.9), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(34.0), "audio-volume-medium-symbolic");
-        assert_eq!(volume_icon(66.9), "audio-volume-medium-symbolic");
-        assert_eq!(volume_icon(67.0), "audio-volume-high-symbolic");
-        assert_eq!(volume_icon(100.0), "audio-volume-high-symbolic");
+        let layout = read_zones(&settings, "bottom", &bottom_control_ids());
+
+        assert_eq!(layout.slots[&start], ["volume", "speed", "voice"]);
+        assert_eq!(layout.slots[&center], ["prev", "play", "next"]);
+        assert_eq!(
+            layout.slots[&end],
+            ["edit-export", "subtitle", "audio-track", "tv", "fullscreen"]
+        );
     }
 
     #[cfg(not(miri))]

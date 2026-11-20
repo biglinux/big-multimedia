@@ -186,6 +186,45 @@ mod tests {
     }
 
     #[test]
+    fn history_location_validated() {
+        let state_directory = temp_state_dir("recent-location");
+        let store = RecentStore::new(&state_directory, 5);
+        for kind in ["", "audio-2_b", &"k".repeat(64)] {
+            assert!(store.try_load(kind).is_ok(), "{kind:?}");
+        }
+        for kind in ["../escape", "a/b", "a.b", "a b", &"k".repeat(65)] {
+            assert!(store.try_load(kind).is_err(), "{kind:?}");
+            assert!(store.clear(kind).is_err(), "{kind:?}");
+        }
+        assert!(RecentStore::new("relative", 5).try_load("audio").is_err());
+
+        let _ = fs::remove_dir_all(state_directory);
+    }
+
+    /// Caps from the store's contract: 1 MiB per file, 10 000 entries.
+    #[test]
+    fn history_size_caps() {
+        let state_directory = temp_state_dir("recent-caps");
+        let store = RecentStore::new(&state_directory, 10_000);
+        let history = |count: usize| {
+            (0..count)
+                .map(|i| format!(r#"{{"path":"/media/{i:06}.mkv","ts":{i}}}"#))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        fs::write(store.path_for_kind("video"), history(10_000)).unwrap();
+        assert_eq!(store.try_load("video").unwrap().len(), 10_000);
+        let file = state_directory.join("new.mkv");
+        fs::write(&file, b"").unwrap();
+        store.add(file.to_str().unwrap(), "video", 10_001).unwrap();
+
+        fs::write(store.path_for_kind("video"), history(10_001)).unwrap();
+        assert!(store.try_load("video").is_err());
+
+        let _ = fs::remove_dir_all(state_directory);
+    }
+
+    #[test]
     fn clear_missing_recent_file_is_idempotent() {
         let state_directory = temp_state_dir("recent-clear-missing");
         let store = RecentStore::new(&state_directory, 5);

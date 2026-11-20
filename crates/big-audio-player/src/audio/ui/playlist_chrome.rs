@@ -7,35 +7,22 @@ use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
-    preferences::BigPreferencesGroupSpec,
+    name_prompt::{prompt_name, trimmed_name},
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
-use gtk::{gio, glib};
+use gtk::gio;
 use relm4::ComponentSender;
 
 use crate::i18n::i18n;
 
+use super::playlist_library_dialog::save_queue_prompt_spec;
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
+use big_player_ui::radio_panel::RADIO_ICON;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct WelcomeTipSpec {
     icon_name: &'static str,
     text: String,
-}
-
-fn can_save_queue_playlist_name(candidate_name: &str) -> bool {
-    !candidate_name.trim().is_empty()
-}
-
-fn normalized_queue_playlist_name(candidate_name: &str) -> Option<String> {
-    let trimmed_name = candidate_name.trim();
-    if trimmed_name.is_empty() {
-        None
-    } else {
-        Some(trimmed_name.to_string())
-    }
 }
 
 fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
@@ -45,15 +32,15 @@ fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
 fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
     vec![
         WelcomeTipSpec {
-            icon_name: "media-playlist-shuffle-symbolic",
+            icon_name: "list-add-symbolic",
             text: i18n("Drag and drop files to create a playlist"),
         },
         WelcomeTipSpec {
-            icon_name: "folder-symbolic",
+            icon_name: "emblem-music-symbolic",
             text: i18n("Use the Music tab on the left to browse your library"),
         },
         WelcomeTipSpec {
-            icon_name: "audio-speakers-symbolic",
+            icon_name: RADIO_ICON,
             text: i18n("Explore Radio and Podcasts in the sidebar tabs"),
         },
     ]
@@ -67,12 +54,13 @@ fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
 /// the label so it can refresh the stats on every queue change).
 pub(super) fn build_toolbar(
     sender: &ComponentSender<PlaylistPanel>,
+    split_view: &adw::OverlaySplitView,
 ) -> (adw::HeaderBar, gtk::Label) {
     // An AdwHeaderBar so the queue info shares the window's title row with the
     // controls. The sidebar header owns the left window buttons; this one owns
     // the right. Only the hamburger is exposed; every queue/settings action
     // lives in its menu.
-    // Centred title widget: the queue name when empty, "N tracks · duration"
+    // Centered title widget: the queue name when empty, "N tracks · duration"
     // when full (the panel refreshes it on every queue change).
     let header_label = gtk::Label::builder()
         .label(i18n("Playlist"))
@@ -92,10 +80,32 @@ pub(super) fn build_toolbar(
         &i18n("Main Menu"),
         &["flat"],
     );
-    menu_button.set_menu_model(Some(&main_menu()));
+    big_relm4_components::feedback::popover_menu::set_menu_model(&menu_button, &main_menu());
     menu_button.set_primary(true);
     install_queue_menu_actions(&menu_button, sender);
     bar.pack_end(&menu_button);
+
+    // While the sidebar is folded, this bar is the window's only title row.
+    let sidebar_button = big_relm4_components::feedback::tooltip::icon_toggle_button(
+        "sidebar-show-symbolic",
+        &i18n("Show Sidebar"),
+        false,
+        &["flat"],
+    );
+    split_view
+        .bind_property("show-sidebar", &sidebar_button, "active")
+        .bidirectional()
+        .sync_create()
+        .build();
+    split_view
+        .bind_property("collapsed", &sidebar_button, "visible")
+        .sync_create()
+        .build();
+    split_view
+        .bind_property("collapsed", bar.root(), "show-start-title-buttons")
+        .sync_create()
+        .build();
+    bar.pack_start(&sidebar_button);
 
     (bar.into_root(), header_label)
 }
@@ -199,92 +209,122 @@ fn prompt_queue_playlist_name(
     parent: Option<&gtk::Window>,
     sender: &ComponentSender<PlaylistPanel>,
 ) {
-    let dialog = adw::Dialog::builder()
-        .title(i18n("Save Queue as Playlist"))
-        .content_width(420)
-        .content_height(240)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n("Name for the new playlist"));
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n("Playlist name"))
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(can_save_queue_playlist_name(row.text().as_str()));
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
+    let spec = save_queue_prompt_spec();
     let out = sender.clone();
-    let entry_for_accept = entry.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = normalized_queue_playlist_name(entry_for_accept.text().as_str()) else {
-            return;
-        };
-        let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let entry_for_focus = entry.clone();
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_focus.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            entry_for_idle.select_region(0, -1);
-        });
-    });
-    dialog.present(parent);
+    prompt_name(
+        parent.map(AsRef::as_ref),
+        &spec,
+        trimmed_name,
+        move |name| {
+            let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
+            true
+        },
+    );
 }
 
-/// Empty-queue placeholder: a drop hint when the library already has tracks,
-/// otherwise the first-run welcome page.
+/// Empty-queue placeholder: where podcast episodes come from, a drop hint when
+/// the library already has tracks, otherwise the first-run welcome page.
 pub(super) fn build_empty_state(
+    podcasts: bool,
     library_has_items: bool,
     sender: &ComponentSender<PlaylistPanel>,
 ) -> gtk::Widget {
-    if library_has_items {
+    if podcasts {
+        build_podcast_hint().upcast()
+    } else if library_has_items {
         build_drop_hint().upcast()
     } else {
         build_welcome(sender).upcast()
     }
 }
 
-/// Library populated but queue empty: invite a drag-drop or library add.
+/// Podcast queue empty: episodes come from choosing a podcast.
+fn build_podcast_hint() -> adw::StatusPage {
+    adw::StatusPage::builder()
+        .icon_name("microphone-sensitivity-high-symbolic")
+        .title(i18n("No episodes queued"))
+        .description(i18n("Choose a podcast on the left to queue its episodes."))
+        .vexpand(true)
+        .build()
+}
+
+/// Library populated but queue empty: the ways a library track gets here.
 fn build_drop_hint() -> adw::StatusPage {
     adw::StatusPage::builder()
         .icon_name("list-add-symbolic")
         .title(i18n("Drop tracks here"))
-        .description(i18n("or use \u{FF0B} to add from the library"))
+        .description(i18n(
+            "Or double-click a track in the library, or select it and press Return.",
+        ))
         .vexpand(true)
         .build()
+}
+
+/// The card over the list while a radio station holds the player.
+pub(super) struct RadioCard {
+    pub(super) root: gtk::Box,
+    pub(super) station: gtk::Label,
+    /// Hidden while the list is empty: there is nothing to play.
+    pub(super) play_list: gtk::Button,
+}
+
+/// Says the radio, not the list, is playing, and offers to play the list.
+pub(super) fn build_radio_card(sender: &ComponentSender<PlaylistPanel>) -> RadioCard {
+    let root = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .halign(gtk::Align::Center)
+        .valign(gtk::Align::Start)
+        .spacing(6)
+        .margin_top(48)
+        .margin_start(24)
+        .margin_end(24)
+        .visible(false)
+        .accessible_role(gtk::AccessibleRole::Group)
+        .css_classes(["card", "radio-now-playing"])
+        .build();
+    let icon = gtk::Image::builder()
+        .icon_name(RADIO_ICON)
+        .pixel_size(48)
+        .margin_bottom(6)
+        .build();
+    root.append(&icon);
+    let listening = gtk::Label::new(Some(&i18n("Listening to the radio")));
+    listening.add_css_class("caption-heading");
+    listening.add_css_class("dim-label");
+    root.append(&listening);
+    let station = gtk::Label::builder()
+        .wrap(true)
+        .justify(gtk::Justification::Center)
+        .max_width_chars(32)
+        .build();
+    station.add_css_class("title-2");
+    root.append(&station);
+    let note = gtk::Label::new(Some(&i18n("The list is not playing.")));
+    note.add_css_class("dim-label");
+    root.append(&note);
+    let play_list = build_button(
+        &BigButtonContentSpec::new("media-playback-start-symbolic", i18n("Play the list"))
+            .css_classes(["suggested-action", "pill"]),
+    );
+    play_list.set_halign(gtk::Align::Center);
+    play_list.set_margin_top(12);
+    {
+        let out = sender.clone();
+        play_list.connect_clicked(move |_| {
+            let _ = out.output(PlaylistPanelOutput::PlayQueue);
+        });
+    }
+    root.append(&play_list);
+    big_gtk_kit::accessible::relate(
+        &root,
+        gtk::AccessibleRelation::LabelledBy,
+        &[listening.upcast_ref(), station.upcast_ref()],
+    );
+    RadioCard {
+        root,
+        station,
+        play_list,
+    }
 }
 
 /// First run (empty library + empty queue): welcome with an Open Files action
@@ -316,7 +356,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
 
     let subtitle = gtk::Label::builder()
         .label(i18n(
-            "Add a folder with your music files to get started.\n\
+            "Open music files to play them now, or add your music folder in the Music tab.\n\
              Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more.",
         ))
         .wrap(true)
@@ -434,19 +474,6 @@ mod tests {
     }
 
     #[test]
-    fn queue_name_needs_non_blank_text() {
-        assert!(!can_save_queue_playlist_name(""));
-        assert!(!can_save_queue_playlist_name("  "));
-        assert!(can_save_queue_playlist_name(" Road Trip "));
-
-        assert_eq!(
-            normalized_queue_playlist_name("  Road Trip  "),
-            Some("Road Trip".to_string())
-        );
-        assert_eq!(normalized_queue_playlist_name("\t\n"), None);
-    }
-
-    #[test]
     fn empty_picker_emits_nothing() {
         assert!(!should_emit_open_audio_paths(&[]));
         assert!(should_emit_open_audio_paths(&[
@@ -464,17 +491,14 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 (
-                    "media-playlist-shuffle-symbolic",
+                    "list-add-symbolic",
                     "Drag and drop files to create a playlist",
                 ),
                 (
-                    "folder-symbolic",
+                    "emblem-music-symbolic",
                     "Use the Music tab on the left to browse your library",
                 ),
-                (
-                    "audio-speakers-symbolic",
-                    "Explore Radio and Podcasts in the sidebar tabs",
-                ),
+                (RADIO_ICON, "Explore Radio and Podcasts in the sidebar tabs",),
             ]
         );
     }

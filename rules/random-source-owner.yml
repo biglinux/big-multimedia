@@ -1,0 +1,10 @@
+id: random-source-owner
+language: rust
+severity: error
+message: Draw random ids and tokens with big_os_kit::random
+note: crates/foundation/big-os-kit/src/random.rs owns the read of the OS random source and its error.
+rule:
+  kind: string_literal
+  regex: '/dev/u?random'
+ignores:
+  - crates/foundation/big-os-kit/src/random.rs

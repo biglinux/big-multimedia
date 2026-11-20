@@ -3,12 +3,16 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::desktop::install_action;
 use big_app_kit::file_dialogs::FilePicker;
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use gtk::{gio, glib};
 
-use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput};
+use super::super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
+use big_media_runtime::media::playlist_export::{
+    playlist_export_message, playlist_save_picker, show_playlist_export_result,
+};
 
 /// Register the stateful + plain actions backing the overflow menu.
 pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::SimpleActionGroup) {
@@ -185,59 +189,34 @@ fn save_playlist(state: &Rc<BrowserState>) {
         return;
     };
     let state = state.clone();
-    FilePicker::new(i18n("Save Playlist"))
-        .initial_name("playlist.m3u8")
-        .save(&window, move |path| {
-            let items = state.queue.borrow().clone();
-            let parent = state.window().map(|w| w.downgrade());
-            crate::settings::saving::acknowledged_task(
-                false,
-                move || {
-                    playlist::write_m3u(&path, &items).map_err(|_| {
-                        std::io::Error::other("Playlist export failed; existing files were kept")
-                    })
-                },
-                move |result| {
-                    let Some(parent) = parent.and_then(|p| p.upgrade()) else {
-                        return;
-                    };
-                    let message = if result.is_ok() {
-                        i18n("Playlist exported")
-                    } else {
-                        i18n(
-                            "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
-                        )
-                    };
-                    let alert = adw::AlertDialog::builder()
-                        .heading(i18n("Playlist export"))
-                        .body(message)
-                        .build();
-                    alert.add_response("close", &i18n("Close"));
-                    alert.present(Some(&parent));
-                },
-            );
-        });
+    playlist_save_picker(i18n("Save Playlist")).save(&window, move |path| {
+        let items = state.queue.borrow().clone();
+        let parent = state.window().map(|w| w.downgrade());
+        crate::settings::saving::acknowledged_task(
+            false,
+            move || playlist::write_m3u(&path, &items).map_err(std::io::Error::other),
+            move |result| {
+                let message = playlist_export_message(result.is_ok());
+                show_playlist_export_result(parent.as_ref(), &message);
+            },
+        );
+    });
 }
 
-/// Load an `.m3u`/`.m3u8` as the play queue, show it and start it (overflow
-/// menu action). The shell loads it into mpv and pushes the queue back.
+/// Load a playlist file as the play queue and start it (overflow menu
+/// action). The shell reads it off the main loop and pushes the queue back.
 fn load_playlist_file(state: &Rc<BrowserState>) {
     let Some(window) = state.window() else {
         return;
     };
-    let state = state.clone();
+    let sender = state.sender.clone();
     FilePicker::new(i18n("Load Playlist"))
-        .pattern_filter(&i18n("Playlists"), &["*.m3u", "*.m3u8"])
+        .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
         .open(&window, move |path| {
-            let paths = playlist::parse_m3u(&path);
-            if paths.is_empty() {
-                return;
-            }
-            state.queue.replace(paths.clone());
-            state.switch_mode(SidebarMode::Playlist);
-            state
-                .sender
-                .output(VideoBrowserSidebarOutput::PlayFromList { paths, start: 0 })
+            sender
+                .output(VideoBrowserSidebarOutput::OpenPlaylist(
+                    path.to_string_lossy().into_owned(),
+                ))
                 .ok();
         });
 }

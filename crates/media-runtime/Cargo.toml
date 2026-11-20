@@ -40,6 +40,7 @@ big-os-kit.workspace = true
 big-gtk-kit = { workspace = true, optional = true }
 big-relm4-components = { workspace = true, optional = true }
 big-media-components = { workspace = true, optional = true }
+big-player-ui = { workspace = true, optional = true }
 big-mpv-render = { workspace = true, optional = true }
 # GTK-free data services (SQLite library, settings store, radio/library clients),
 # re-exported from `lib.rs` as `db`, `library`, `settings`, `config`, `i18n`.
@@ -47,10 +48,12 @@ big-media-data.workspace = true
 
 gettext-rs.workspace = true
 
-rusqlite = { version = "0.40.1", default-features = false, optional = true }
+rusqlite = { version = "0.43.0", default-features = false, optional = true }
 
 log.workspace = true
-env_logger = "0.11"
+# No `humantime`: the journal stamps each line, and the feature's jiff dependency
+# puts defmt-macros and its unmaintained proc-macro-error2 in Cargo.lock.
+env_logger = { version = "0.11", default-features = false, features = ["auto-color", "regex"] }
 async-channel = "2.5"
 serde.workspace = true
 serde_json.workspace = true
@@ -78,6 +81,7 @@ ui-core = [
     "dep:big-gtk-kit",
     "dep:big-relm4-components",
     "dep:big-media-components",
+    "dep:big-player-ui",
 ]
 # Audio player: the SQLite music library, radio directory and podcast data.
 audio = [
@@ -95,8 +99,8 @@ video = [
 ]
 # Both player feature sets; the integration tests in `tests/` require it.
 ui = ["audio", "video"]
-# Gates slow property tests so default `cargo test` stays fast. CI runs
-# `cargo test --features fuzz` on a dedicated job.
+# Gates slow property tests so default `cargo test` stays fast; run them with
+# `cargo test --features ui,fuzz`.
 fuzz = []
 
 [dev-dependencies]
@@ -159,3 +163,5 @@ unused_mut = "warn"
 unreachable_code = "warn"
 unreachable_patterns = "warn"
 trivial_numeric_casts = "warn"
+# cargo-fuzz sets cfg(fuzzing) for the entry points the fuzz targets call.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }

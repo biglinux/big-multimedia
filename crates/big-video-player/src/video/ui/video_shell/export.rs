@@ -23,10 +23,10 @@ impl VideoShell {
             self.notify(&i18n("Cannot export a network stream"));
             return;
         }
-        // The converter reads the colours as the player was told to.
-        let colours = self.video_transform.source_colours();
+        // The converter reads the colors as the player was told to.
+        let colors = self.video_transform.source_colors();
         let source_hdr =
-            (program == converter_handoff::VIDEO_CONVERTER && colours != "auto").then_some(colours);
+            (program == converter_handoff::VIDEO_CONVERTER && colors != "auto").then_some(colors);
         if let Some(failure) = converter_handoff::open(program, &[input], cuts, source_hdr) {
             self.notify(&failure);
         }

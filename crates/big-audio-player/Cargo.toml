@@ -30,10 +30,12 @@ big-relm4-components.workspace = true
 big-media-components.workspace = true
 relm4.workspace = true
 async-channel = "2.5"
-dirs = "6"
 log.workspace = true
 lru = "0.18"
-rusqlite = "0.40.1"
+rusqlite = "0.43.0"
+
+[dev-dependencies]
+tempfile = "3"
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

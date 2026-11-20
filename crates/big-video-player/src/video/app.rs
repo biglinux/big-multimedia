@@ -1,7 +1,9 @@
 //! Video player `adw::Application` subclass: single-instance activation,
 //! file-open (delivered to the Relm4 `VideoShell` via its thread-local
 //! broker), startup (decoration-icon strip, color-scheme, actions, accels).
-//! `--new-window` env opt-in flips `NON_UNIQUE` for multi-instance debugging.
+//! `--new-window` (the desktop file's New Window action) sets `NON_UNIQUE`,
+//! so the player opens its own window instead of activating the running one.
+//! `--maximized` maps the window this process builds maximized.
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -9,6 +11,7 @@ use big_app_kit::desktop::install_quit_action;
 use gtk::{gio, glib};
 
 use crate::config;
+use crate::i18n::i18n;
 use crate::settings::keys;
 
 mod imp {
@@ -47,17 +50,21 @@ mod imp {
             if !paths.is_empty() {
                 crate::video::ui::video_shell::mark_opening_files();
             }
-            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
+            big_media_runtime::app::present_for_open(self.obj().upcast_ref());
             crate::open_paths(paths);
         }
 
         fn startup(&self) {
             self.parent_startup();
             big_gtk_kit::install();
-            crate::shared::app_base::strip_decoration_icon();
+            big_media_runtime::app::strip_decoration_icon();
 
             let settings = crate::settings::Settings::for_video();
-            crate::shared::app_base::apply_startup_color_scheme(&settings, keys::UI_COLOR_SOURCE);
+            big_media_runtime::app::apply_startup_color_scheme(
+                &settings,
+                keys::UI_COLOR_SOURCE,
+                keys::UI_BG_COLOR,
+            );
 
             let app = self.obj();
             Self::setup_actions(&app);
@@ -73,8 +80,8 @@ mod imp {
             let about = gio::ActionEntry::builder("about")
                 .activate(|app: &super::Application, _, _| {
                     let win = app.active_window();
-                    let dialog = crate::shared::app_base::build_about_dialog(
-                        &crate::shared::app_base::AboutDialogConfig {
+                    let dialog = big_media_runtime::app::build_about_dialog(
+                        &big_media_runtime::app::AboutDialogConfig {
                             app_name: config::video::APP_NAME,
                             app_icon: config::video::ICON_NAME,
                             comments: "",
@@ -101,11 +108,20 @@ glib::wrapper! {
         @implements gio::ActionGroup, gio::ActionMap;
 }
 
+/// Whether `flag` is among `args`. GLib's parser reads these options too, but
+/// only after the application flags are set; argv may hold non-UTF-8 paths.
+pub(crate) fn launched_with(
+    args: impl IntoIterator<Item = std::ffi::OsString>,
+    flag: &str,
+) -> bool {
+    args.into_iter().any(|argument| argument == flag)
+}
+
 impl Application {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mut flags = gio::ApplicationFlags::HANDLES_OPEN;
-        if std::env::args().any(|a| a == "--new-window") {
+        if launched_with(std::env::args_os(), "--new-window") {
             flags |= gio::ApplicationFlags::NON_UNIQUE;
         }
         let app: Self = glib::Object::builder()
@@ -119,7 +135,17 @@ impl Application {
             glib::Char::from(0),
             glib::OptionFlags::NONE,
             glib::OptionArg::None,
-            "Open a separate player window instead of using the running one",
+            &i18n("Open a separate player window instead of using the running one"),
+            None,
+        );
+        // Read from argv by `crate::run`; a launch forwarded to the running
+        // player leaves its window as it is.
+        app.add_main_option(
+            "maximized",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::None,
+            &i18n("Open the player window maximized"),
             None,
         );
         app
@@ -133,7 +159,22 @@ impl Application {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn about_icon_is_the_icon_the_package_installs() {
+    fn flag_found_beside_non_utf8_paths() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        let args = || {
+            [
+                OsString::from("big-video-player"),
+                OsString::from_vec(b"/media/v\xeddeo.mp4".to_vec()),
+                OsString::from("--maximized"),
+            ]
+        };
+        assert!(super::launched_with(args(), "--maximized"));
+        assert!(!super::launched_with(args(), "--new-window"));
+    }
+
+    #[test]
+    fn about_icon_matches_installed_icon() {
         let icon = crate::config::video::ICON_NAME;
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.VideoPlayer.desktop");

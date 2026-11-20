@@ -13,6 +13,7 @@ mod menu;
 use glib::variant::{ObjectPath, ToVariant};
 use gtk::{gio, glib};
 use log::{debug, info, warn};
+use std::cell::OnceCell;
 use std::rc::Rc;
 
 const ITEM_PATH: &str = "/StatusNotifierItem";
@@ -281,58 +282,76 @@ fn register_with_watcher(connection: &gio::DBusConnection, shown: Rc<std::cell::
 
 /// A tray icon; dropping it removes the icon.
 pub struct Tray {
+    /// Set once the connection is up and the icon is exported; kept for its
+    /// Drop, which removes the icon.
+    _service: Rc<OnceCell<TrayService>>,
+    /// Whether a tray host took the icon and still runs.
+    shown: Rc<std::cell::Cell<bool>>,
+    /// Aborted in Drop, which cancels a connection still being made.
+    connecting: glib::JoinHandle<()>,
+}
+
+struct TrayService {
     connection: gio::DBusConnection,
     /// Stops watching for the tray host; run in Drop before the connection
     /// closes. gio does not export the watcher id's type, so it stays captured.
     unwatch: Option<Box<dyn FnOnce()>>,
-    /// Whether a tray host took the icon and still runs.
-    shown: Rc<std::cell::Cell<bool>>,
 }
 
 impl Tray {
     /// Export the icon and its menu and show it in the tray, now or as soon as
-    /// a tray host starts. `None` if the session bus cannot be reached.
-    pub fn new(spec: TraySpec, command: TrayCallback) -> Option<Self> {
-        let connection = match crate::mpris::private_session_bus() {
-            Ok(connection) => connection,
-            Err(e) => {
-                warn!("tray: failed to connect a private session bus: {e}");
-                return None;
-            }
-        };
-        let spec = Rc::new(spec);
-        let exported = export_item(&connection, &spec, &command)
-            .and_then(|()| export_menu(&connection, &spec, &command));
-        if let Err(e) = exported {
-            warn!("tray: failed to export {e}");
-            let _ = connection.close_sync(gio::Cancellable::NONE);
-            return None;
-        }
-        // The host may start, restart or never run (GNOME without the
-        // AppIndicator extension): register each time the watcher appears.
+    /// a tray host starts. The session bus is reached in the background; a
+    /// failure is logged and leaves [`Self::is_shown`] false.
+    pub fn new(spec: TraySpec, command: TrayCallback) -> Self {
+        let service = Rc::new(OnceCell::new());
         let shown = Rc::new(std::cell::Cell::new(false));
-        let watcher = gio::bus_watch_name_on_connection(
-            &connection,
-            WATCHER_NAME,
-            gio::BusNameWatcherFlags::NONE,
-            {
-                let shown = shown.clone();
-                move |connection, _, _| register_with_watcher(&connection, shown.clone())
-            },
-            {
-                let shown = shown.clone();
+        let slot = Rc::downgrade(&service);
+        let watched = shown.clone();
+        let connecting = glib::spawn_future_local(async move {
+            let connection = match crate::mpris::private_session_bus().await {
+                Ok(connection) => connection,
+                Err(e) => {
+                    warn!("tray: failed to connect a private session bus: {e}");
+                    return;
+                }
+            };
+            let Some(slot) = slot.upgrade() else {
+                return;
+            };
+            let spec = Rc::new(spec);
+            let exported = export_item(&connection, &spec, &command)
+                .and_then(|()| export_menu(&connection, &spec, &command));
+            if let Err(e) = exported {
+                warn!("tray: failed to export {e}");
+                connection.close(gio::Cancellable::NONE, |_| {});
+                return;
+            }
+            // The host may start, restart or never run (GNOME without the
+            // AppIndicator extension): register each time the watcher appears.
+            let watcher = gio::bus_watch_name_on_connection(
+                &connection,
+                WATCHER_NAME,
+                gio::BusNameWatcherFlags::NONE,
+                {
+                    let shown = watched.clone();
+                    move |connection, _, _| register_with_watcher(&connection, shown.clone())
+                },
                 move |_, _| {
                     debug!("tray: no {WATCHER_NAME} on the session bus");
-                    shown.set(false);
-                }
-            },
-        );
-        info!("tray: icon {} exported", spec.icon_name);
-        Some(Self {
-            connection,
-            unwatch: Some(Box::new(move || gio::bus_unwatch_name(watcher))),
+                    watched.set(false);
+                },
+            );
+            info!("tray: icon {} exported", spec.icon_name);
+            let _ = slot.set(TrayService {
+                connection,
+                unwatch: Some(Box::new(move || gio::bus_unwatch_name(watcher))),
+            });
+        });
+        Self {
+            _service: service,
             shown,
-        })
+            connecting,
+        }
     }
 
     /// Whether a tray host shows the icon now: with none (GNOME without the
@@ -352,17 +371,23 @@ impl Tray {
 
 impl Drop for Tray {
     fn drop(&mut self) {
+        self.connecting.abort();
+    }
+}
+
+impl Drop for TrayService {
+    fn drop(&mut self) {
         // Unwatch before closing: a closed connection would call the vanished
         // handler with a NULL connection.
         if let Some(unwatch) = self.unwatch.take() {
             unwatch();
         }
-        let _ = self.connection.close_sync(gio::Cancellable::NONE);
+        self.connection.close(gio::Cancellable::NONE, |_| {});
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::cell::RefCell;
 
@@ -447,7 +472,7 @@ mod tests {
     fn menu_replies_match_the_declared_signatures() {
         let command: TrayCallback = Rc::new(|_| {});
         let items = spec().items;
-        let info = interface(MENU_XML).unwrap();
+        let menu_interface = interface(MENU_XML).unwrap();
         // The out arguments of menu.xml.
         let calls = [
             (
@@ -471,7 +496,7 @@ mod tests {
         ];
         for (method, params, reply_type) in calls {
             assert!(
-                info.lookup_method(method).is_some(),
+                menu_interface.lookup_method(method).is_some(),
                 "{method} is not declared"
             );
             let reply = handle_menu_method(&items, method, &params, &command)
@@ -485,7 +510,7 @@ mod tests {
         <method name='RegisterStatusNotifierItem'><arg type='s' direction='in'/></method>\
         </interface></node>";
 
-    fn iterate_until(done: impl Fn() -> bool) {
+    pub(crate) fn iterate_until(done: impl Fn() -> bool) {
         let context = glib::MainContext::default();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         while !done() {
@@ -494,7 +519,7 @@ mod tests {
         }
     }
 
-    fn call(
+    pub(crate) fn call(
         connection: &gio::DBusConnection,
         dest: &str,
         path: &str,
@@ -524,14 +549,17 @@ mod tests {
     /// A tray host registers the icon, reads it and clicks a menu entry.
     #[test]
     #[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit tray -- --ignored"]
-    fn a_tray_host_registers_reads_and_clicks_the_icon() {
-        let host = crate::mpris::private_session_bus().unwrap();
-        let registered = Rc::new(RefCell::new(None::<(String, String)>));
+    fn tray_host_reads_and_clicks_icon() {
+        let host = glib::MainContext::default()
+            .block_on(crate::mpris::private_session_bus())
+            .unwrap();
+        let registered = Rc::new(RefCell::new(Vec::<(String, String)>::new()));
         let slot = registered.clone();
         host.register_object("/StatusNotifierWatcher", &interface(WATCHER_XML).unwrap())
             .method_call(move |_, sender, _, _, _, params, invocation| {
                 let (service,) = params.get::<(String,)>().unwrap();
-                *slot.borrow_mut() = Some((sender.unwrap_or_default().to_owned(), service));
+                slot.borrow_mut()
+                    .push((sender.unwrap_or_default().to_owned(), service));
                 invocation.return_value(None);
             })
             .build()
@@ -552,9 +580,11 @@ mod tests {
             let sent = sent.clone();
             Rc::new(move |command| sent.borrow_mut().push(command))
         };
-        let tray = Tray::new(spec(), command).unwrap();
-        iterate_until(|| registered.borrow().is_some());
-        let (item, path) = registered.borrow().clone().unwrap();
+        // Dropped while still connecting: it never reaches the host.
+        drop(Tray::new(spec(), Rc::new(|_| {})));
+        let tray = Tray::new(spec(), command);
+        iterate_until(|| !registered.borrow().is_empty());
+        let (item, path) = registered.borrow()[0].clone();
         assert_eq!(path, ITEM_PATH);
         iterate_until(|| tray.is_shown());
 
@@ -599,8 +629,29 @@ mod tests {
             *sent.borrow(),
             [TrayCommand::Menu("quit".into()), TrayCommand::Activate]
         );
+        // Every registration is kept, so a cancelled tray that still reached
+        // the host shows up here.
+        assert_eq!(registered.borrow().len(), 1);
 
         drop(tray);
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            let owned = call(
+                &host,
+                "org.freedesktop.DBus",
+                "/org/freedesktop/DBus",
+                "org.freedesktop.DBus",
+                "NameHasOwner",
+                (item.as_str(),).to_variant(),
+            );
+            if !owned.child_value(0).get::<bool>().unwrap() {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the icon outlived its tray"
+            );
+        }
         gio::bus_unown_name(owner);
         let _ = host.close_sync(gio::Cancellable::NONE);
     }

@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 
 use log::error;
 
-use super::{Inner, defaults, keys};
+use super::{Inner, keys};
 
 const LIMIT: usize = 1024 * 1024;
 use big_os_kit::storage;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::sync::{Mutex, OnceLock, Weak};
 
@@ -26,20 +26,24 @@ fn observe(inner: &Shared) {
     items.push(Arc::downgrade(inner));
 }
 
-fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
+pub(super) fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
     let text = std::str::from_utf8(content)
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "settings are not UTF-8"))?;
     let mut values = HashMap::new();
     for line in text.lines() {
-        let line = line.trim();
+        let line = line.trim_start();
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
         let (key, value) = line
             .split_once('=')
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid settings line"))?;
-        let key = key.trim();
-        if !super::schema::valid(key, value) || values.insert(key.into(), value.into()).is_some() {
+        let key = key.trim_end();
+        let rejected = match super::schema::normalized(key, value) {
+            Some(value) => values.insert(key.into(), value.into()).is_some(),
+            None => true,
+        };
+        if rejected {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid or duplicate setting",
@@ -49,7 +53,7 @@ fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
     Ok(values)
 }
 
-fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
+pub(super) fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
     let mut entries: Vec<_> = values.iter().collect();
     entries.sort_by_key(|(key, _)| *key);
     let mut bytes = Vec::new();
@@ -91,12 +95,6 @@ pub struct Settings {
     inner: Arc<RwLock<Inner>>,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Self::new(crate::config::runtime::CONFIG_DIR)
-    }
-}
-
 impl Settings {
     #[must_use]
     pub fn for_audio() -> Self {
@@ -121,10 +119,10 @@ impl Settings {
     #[must_use]
     pub fn memory_only() -> Self {
         let inner = Arc::new(RwLock::new(Inner {
-            settings_values: defaults::defaults(),
+            settings_values: keys::defaults(),
             path: PathBuf::new(),
             dirty: false,
-            disk_bytes: None,
+            changed: HashSet::new(),
             load_error: None,
             revision: 0,
             persisted_revision: 0,
@@ -154,17 +152,14 @@ impl Settings {
             return Self { inner };
         }
         let loaded = storage::read_regular_limited(&path, LIMIT);
-        let mut values = defaults::defaults();
-        let (disk_bytes, load_error) = match loaded {
-            Ok(Some(bytes)) => match parse(&bytes) {
-                Ok(saved) => {
-                    values.extend(saved);
-                    (Some(bytes), None)
-                }
-                Err(error) => (Some(bytes), Some(error.to_string())),
-            },
-            Ok(None) => (None, None),
-            Err(error) => (None, Some(error.to_string())),
+        let mut values = keys::defaults();
+        let load_error = match loaded.and_then(|bytes| bytes.map(|bytes| parse(&bytes)).transpose())
+        {
+            Ok(saved) => {
+                values.extend(saved.unwrap_or_default());
+                None
+            }
+            Err(error) => Some(error.to_string()),
         };
         let phase = if load_error.is_some() {
             SavePhase::Failed
@@ -176,7 +171,7 @@ impl Settings {
             settings_values: values,
             path: path.clone(),
             dirty: false,
-            disk_bytes,
+            changed: HashSet::new(),
             load_error,
             revision: 0,
             persisted_revision: 0,
@@ -192,7 +187,7 @@ impl Settings {
 
     #[cfg(test)]
     pub(crate) fn defaults() -> std::collections::HashMap<String, String> {
-        defaults::defaults()
+        keys::defaults()
     }
 
     #[inline]
@@ -200,15 +195,12 @@ impl Settings {
     fn debug_check_key(&self, key: &str) {
         #[cfg(debug_assertions)]
         {
-            if key.starts_with("dlg-") {
-                return;
-            }
             let inner = self
                 .inner
                 .read()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             if !inner.settings_values.contains_key(key) {
-                log::warn!("Settings: unknown key {key:?} — consider adding to defaults()");
+                log::warn!("Settings: unknown key {key:?}; add it to the catalog in keys.rs");
             }
         }
     }
@@ -237,36 +229,17 @@ impl Settings {
     }
 
     #[must_use]
-    pub fn boolean_or(&self, key: &str, default: bool) -> bool {
-        self.debug_check_key(key);
-        let inner = self
-            .inner
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        match inner.settings_values.get(key) {
-            Some(value) => value == "true",
-            None => default,
-        }
-    }
-
-    #[must_use]
     pub fn int(&self, key: &str) -> i32 {
-        self.int_or(key, 0)
-    }
-
-    /// Unlike [`Self::int`], keeps zero distinguishable from "never stored",
-    /// which matters for volume-like settings where 0 is a real user choice.
-    #[must_use]
-    pub fn int_or(&self, key: &str, default: i32) -> i32 {
         self.debug_check_key(key);
         let inner = self
             .inner
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        match inner.settings_values.get(key) {
-            Some(value) => value.parse().unwrap_or(default),
-            None => default,
-        }
+        inner
+            .settings_values
+            .get(key)
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(0)
     }
 
     #[must_use]
@@ -304,6 +277,7 @@ impl Settings {
             return true;
         }
         inner.settings_values.insert(key.into(), value.into());
+        inner.changed.insert(key.into());
         inner.dirty = true;
         inner.revision = inner.revision.wrapping_add(1);
         inner.phase = SavePhase::Pending;
@@ -326,11 +300,6 @@ impl Settings {
         self.boolean(key.0)
     }
 
-    #[must_use]
-    pub fn get_bool_or(&self, key: keys::BoolKey, default: bool) -> bool {
-        self.boolean_or(key.0, default)
-    }
-
     /// The voice sensitivity when the noise reduction keeps only speech.
     #[must_use]
     pub fn noise_voice_only(&self) -> Option<u8> {
@@ -339,14 +308,49 @@ impl Settings {
         })
     }
 
+    /// Range of the Maximum Volume preference, in percent.
+    pub const VOLUME_MAX_PERCENT_RANGE: std::ops::RangeInclusive<i32> = 100..=200;
+
+    /// The volume ceiling in percent: the Maximum Volume preference kept within
+    /// [`Self::VOLUME_MAX_PERCENT_RANGE`].
     #[must_use]
-    pub fn get_int(&self, key: keys::IntKey) -> i32 {
-        self.int(key.0)
+    pub fn volume_max_percent(&self) -> i32 {
+        let range = Self::VOLUME_MAX_PERCENT_RANGE;
+        self.get_int(keys::VOLUME_MAX)
+            .clamp(*range.start(), *range.end())
+    }
+
+    /// The audio player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn audio_volume_percent(&self) -> f64 {
+        f64::from(
+            self.get_int(keys::AUDIO_VOLUME)
+                .clamp(0, self.volume_max_percent()),
+        )
+    }
+
+    /// Store the audio player's volume, rounded to a whole percent.
+    pub fn put_audio_volume_percent(&self, percent: f64) -> bool {
+        percent.is_finite() && self.put_int(keys::AUDIO_VOLUME, percent.round() as i32)
+    }
+
+    /// The video player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn video_volume_percent(&self) -> f64 {
+        (self.get_double(keys::VOLUME) * 100.0).clamp(0.0, f64::from(self.volume_max_percent()))
+    }
+
+    /// Store the video player's volume, rounded to a whole percent and kept as
+    /// a fraction of 100%.
+    pub fn put_video_volume_percent(&self, percent: f64) -> bool {
+        self.put_double(keys::VOLUME, percent.round() / 100.0)
     }
 
     #[must_use]
-    pub fn get_int_or(&self, key: keys::IntKey, default: i32) -> i32 {
-        self.int_or(key.0, default)
+    pub fn get_int(&self, key: keys::IntKey) -> i32 {
+        self.int(key.0)
     }
 
     #[must_use]
@@ -449,21 +453,26 @@ impl Settings {
             }
         });
         if let Err(error) = &result {
-            let mut inner = self
-                .inner
-                .write()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            inner.save_queued = false;
-            inner.phase = SavePhase::Failed;
-            inner.save_error = Some(error.to_string());
+            {
+                let mut inner = self
+                    .inner
+                    .write()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                inner.save_queued = false;
+                inner.phase = SavePhase::Failed;
+                inner.save_error = Some(error.to_string());
+            }
+            big_os_kit::background::changed();
         }
         result
     }
 
     /// Worker-only save transaction (atomic, not fsynced: the kernel writes it
     /// back in its own time). Snapshot/commit/finalize separates the disk lock
-    /// from the fast memory lock. The generation check preserves edits made while
-    /// an older generation was on disk.
+    /// from the fast memory lock. Another process (a second window) may have
+    /// saved since this one loaded: the file as found keeps every key this
+    /// process did not change, and this process takes those values in memory.
+    /// A file that does not parse is left untouched.
     pub fn try_flush(&self) -> io::Result<()> {
         let disk_lock = self
             .inner
@@ -474,7 +483,7 @@ impl Settings {
         let _transaction = disk_lock
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let (path, expected, values, revision) = {
+        let (path, values, changed, revision) = {
             let mut inner = self
                 .inner
                 .write()
@@ -492,33 +501,46 @@ impl Settings {
             inner.phase = SavePhase::Saving;
             (
                 inner.path.clone(),
-                inner.disk_bytes.clone(),
                 inner.settings_values.clone(),
+                inner.changed.clone(),
                 inner.revision,
             )
         };
-        let result = (|| {
+        let result = (|| -> io::Result<HashMap<String, String>> {
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent)?;
             }
             let _file_lock = storage::WriteLock::try_acquire(&path)?;
-            if storage::read_regular_limited(&path, LIMIT)? != expected {
-                return Err(io::Error::new(
-                    io::ErrorKind::AlreadyExists,
-                    "settings changed in another process; reopen before saving",
-                ));
+            let mut merged = keys::defaults();
+            if let Some(bytes) = storage::read_regular_limited(&path, LIMIT)? {
+                merged.extend(parse(&bytes)?);
             }
-            let bytes = serialize(&values)?;
-            storage::atomic_write_private(&path, &bytes)?;
-            Ok(bytes)
+            for key in &changed {
+                if let Some(value) = values.get(key) {
+                    merged.insert(key.clone(), value.clone());
+                }
+            }
+            storage::atomic_write_private(&path, &serialize(&merged)?)?;
+            Ok(merged)
         })();
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         match result {
-            Ok(bytes) => {
-                inner.disk_bytes = Some(bytes);
+            Ok(written) => {
+                let Inner {
+                    changed,
+                    settings_values,
+                    ..
+                } = &mut *inner;
+                // A key set again while the file was written stays changed.
+                changed.retain(|key| settings_values.get(key) != written.get(key));
+                for (key, value) in written {
+                    if !changed.contains(&key) {
+                        settings_values.insert(key, value);
+                    }
+                }
                 inner.persisted_revision = revision;
                 inner.dirty = inner.revision != revision;
                 inner.phase = if inner.dirty {
@@ -544,58 +566,44 @@ impl Settings {
         }
     }
 
-    pub fn migrate_audio_appearance(&self) {
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if inner
-            .settings_values
-            .get("audio-appearance-migrated")
-            .is_some_and(|s| s == "true")
-        {
-            return;
-        }
-        let defaults = defaults::defaults();
-        for (audio, video) in [
-            ("audio-ui-color-source", "ui-color-source"),
-            ("audio-ui-bg-color", "ui-bg-color"),
-            ("audio-ui-font-color", "ui-font-color"),
-            ("audio-ui-icon-color", "ui-icon-color"),
-            ("audio-ui-dialog-color", "ui-dialog-color"),
-        ] {
-            // Never overwrite an already personalized audio value. The audio
-            // player has no video to take colors from.
-            if inner.settings_values.get(audio) == defaults.get(audio)
-                && let Some(value) = inner.settings_values.get(video).cloned()
-                && value != "gradient"
-            {
-                inner.settings_values.insert(audio.into(), value);
-            }
-        }
-        inner
-            .settings_values
-            .insert("audio-appearance-migrated".into(), "true".into());
-        inner.dirty = true;
-        inner.revision = inner.revision.wrapping_add(1);
-        inner.phase = SavePhase::Pending;
-        drop(inner);
-        self.flush();
-    }
+    /// Keys [`Self::reset_to_defaults`] leaves as they are: what the person
+    /// collected, where they left off, how they laid out the library, and the
+    /// live levels of the player's own controls, none of them a preference.
+    pub const KEPT_ON_RESTORE: [&'static str; 21] = [
+        keys::VIDEO_LIBRARY_FOLDERS.0,
+        keys::CUSTOM_KEYBINDINGS.0,
+        keys::VOLUME.0,
+        keys::AUDIO_VOLUME.0,
+        keys::PLAYLIST_SHUFFLE.0,
+        keys::PLAYLIST_LAST_FOLDER.0,
+        keys::PLAYLIST_REORDER_HINT_SEEN.0,
+        keys::FILES_LAST_DIR.0,
+        keys::NOISE_STRENGTH.0,
+        keys::NOISE_MODEL.0,
+        keys::NOISE_MONO.0,
+        keys::NOISE_VOICE_ONLY.0,
+        keys::NOISE_VOICE_SENSITIVITY.0,
+        keys::EQ_BANDS.0,
+        keys::EQ_PRESET.0,
+        keys::APPEARANCE_WINDOW_WIDTH.0,
+        keys::APPEARANCE_WINDOW_HEIGHT.0,
+        keys::AUDIO_APPEARANCE_WINDOW_WIDTH.0,
+        keys::AUDIO_APPEARANCE_WINDOW_HEIGHT.0,
+        keys::LIBRARY_GROUPING.0,
+        keys::PLAYLIST_COLUMN_WIDTHS.0,
+    ];
 
+    /// Put every preference back to its default, keeping [`Self::KEPT_ON_RESTORE`].
     pub fn reset_to_defaults(&self) {
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        for (key, value) in defaults::defaults() {
-            if matches!(
-                key.as_str(),
-                "window-width" | "window-height" | "window-maximized"
-            ) {
-                continue;
+        for (key, value) in keys::defaults() {
+            if !Self::KEPT_ON_RESTORE.contains(&key.as_str()) {
+                inner.changed.insert(key.clone());
+                inner.settings_values.insert(key, value);
             }
-            inner.settings_values.insert(key, value);
         }
         inner.dirty = true;
         inner.revision = inner.revision.wrapping_add(1);

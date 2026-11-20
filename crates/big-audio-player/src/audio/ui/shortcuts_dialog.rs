@@ -11,16 +11,14 @@ use big_relm4_components::input::shortcut_dialog::{
 use crate::i18n::i18n;
 use crate::settings::{Settings, keys};
 
-/// Present the keyboard-shortcuts dialog. Rebinds persist to
-/// `CUSTOM_KEYBINDINGS`; `parent` is the transient/capture parent.
+/// Present the keyboard-shortcuts dialog transient to `parent`. Rebinds
+/// persist to `CUSTOM_KEYBINDINGS`.
 pub(crate) fn present_shortcuts(parent: &impl IsA<gtk::Window>, settings: &Settings) {
     use crate::audio::keybindings::{
         SHORTCUTS, display_accel, key_to_accel_string, resolve_accels,
     };
 
     let custom_str = settings.get_string(keys::CUSTOM_KEYBINDINGS);
-    // Vec preserves duplicate actions (single-key + multi-key defs); indexing by
-    // the exact def gives the right accel for each row.
     let resolved = resolve_accels(SHORTCUTS, &custom_str);
 
     let dialog = BigShortcutDialog::new(
@@ -33,9 +31,8 @@ pub(crate) fn present_shortcuts(parent: &impl IsA<gtk::Window>, settings: &Setti
     let s = settings.clone();
     connect_shortcut_dialog_rebinds(
         &dialog,
-        parent,
         &custom_str,
-        crate::shared::shortcut_capture::shortcut_capture_labels(),
+        big_media_runtime::shortcut_capture::shortcut_capture_labels(),
         key_to_accel_string,
         display_accel,
         move |serialized| {

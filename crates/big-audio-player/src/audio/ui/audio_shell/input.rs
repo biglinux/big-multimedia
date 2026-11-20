@@ -1,15 +1,17 @@
 use super::*;
+use big_media_runtime::app::ShellInputSlot;
 
 /// Messages into the shell. Almost all are child-panel `Output`s forwarded by
 /// the Controllers' `forward` maps.
 #[derive(Debug)]
 pub enum AudioShellInput {
-    QueueRestored(Result<(DbHandle, crate::db::queries_advanced::QueueSession), ()>),
+    /// The library database opened and the saved queue was read, or the
+    /// database could not be opened for the reason given.
+    QueueRestored(Result<super::queue_persistence::RestoredQueue, String>),
     RetryQueueSave,
-    /// Tracks whose files were deleted/trashed off the main loop landed; carries
-    /// the DB ids that succeeded so the queue + database are reconciled on the
-    /// main thread (by id, robust to any queue change during the deletes).
-    TracksDeletedFromStorage(Vec<i64>),
+    /// The library id (0 for an external file) and path of each file deleted or
+    /// trashed off the main loop.
+    TracksDeletedFromStorage(Vec<(i64, String)>),
     /// An intent emitted by the library panel.
     Library(LibraryPanelOutput),
     /// An intent emitted by the queue panel.
@@ -47,10 +49,10 @@ pub enum AudioShellInput {
     Podcast(PodcastPanelOutput),
     /// A podcast feed fetched (async) → enter podcast mode, queue episodes, play.
     PodcastFeedResolved {
-        /// Feed title (shown in the queue header).
-        title: String,
-        /// `(audio_url, episode_title)` per episode, in feed order.
-        episodes: Vec<(String, String)>,
+        /// The `podcast_feed_request` it answers.
+        request: u64,
+        /// The feed, or `None` when it could not be fetched or read.
+        feed: Option<PodcastFeed>,
     },
     /// The visible view-stack tab changed → enter/leave podcast mode.
     ViewTabChanged(String),
@@ -71,9 +73,6 @@ pub enum AudioShellInput {
         /// Resolved tracks (paths not in the library are dropped).
         tracks: Vec<Track>,
     },
-    /// A smart/playlist node resolved to its tracks (async DB result) →
-    /// populate the detail view.
-    DetailResolved(Vec<Track>),
     /// A browse-tree node resolved to its tracks (async DB result) → append to
     /// the queue and start playback when idle.
     NodeTracksResolved(Vec<Track>),
@@ -89,6 +88,8 @@ pub enum AudioShellInput {
         generation: u64,
         /// Snapshot built off the main thread.
         data: LibraryTreeSnapshot,
+        /// The library holds tracks, whatever the search and age filters hide.
+        has_items: bool,
     },
     /// A playlist mutation completed (false leaves the current view unchanged).
     PlaylistMutationFinished(bool),
@@ -119,6 +120,10 @@ pub enum AudioShellInput {
         generation: u64,
         paths: Vec<String>,
         failed: bool,
+        /// A playlist among them was cut at its entry cap.
+        truncated: bool,
+        /// Playlist entries left out because the player does not open them.
+        skipped: usize,
     },
     ExternalMetadataResolved(Vec<Track>),
     /// Open the equalizer dialog (main menu).
@@ -132,7 +137,7 @@ pub enum AudioShellInput {
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
     /// A button of the TV strip.
-    Tv(crate::shared::tv_cast::TvCardAction),
+    Tv(big_media_runtime::cast::tv::TvCardAction),
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).
@@ -155,7 +160,8 @@ pub enum AudioShellInput {
     /// A folder was chosen for batch import → parse every playlist file in it.
     ImportPlaylistFolder(PathBuf),
     /// Import finished → `usize` tracks were matched and added.
-    PlaylistImported(Result<usize, String>),
+    /// Tracks saved, and whether a playlist was cut at its entry cap.
+    PlaylistImported(Result<(usize, bool), String>),
     /// A transport command from the smartphone remote (worker thread); reuses
     /// the normal playback handler.
     PlaybackRemote {
@@ -170,6 +176,8 @@ pub enum AudioShellInput {
     TaskbarProgressChanged(bool),
     /// Show or remove the tray icon, as Preferences now says.
     TrayIconChanged(bool),
+    /// The Maximum Volume preference changed: the volume slider follows it.
+    VolumeMaxChanged,
     /// A click on the tray icon or its menu.
     Tray(big_app_kit::tray::TrayCommand),
     /// Arm the sleep timer for `minutes`, then perform `action` on expiry.
@@ -223,26 +231,16 @@ pub enum AudioShellInput {
 }
 
 thread_local! {
-    /// Main-thread handle to the running shell's input, set at init so the
-    /// `AudioApplication` `open` handler can deliver opened files. The inputs
-    /// carry GTK objects (not `Send`), so a thread-local `Sender` is used
+    /// The inputs carry GTK objects (not `Send`), so the slot is thread-local
     /// instead of a `MessageBroker` static.
-    static SHELL_INPUT: std::cell::RefCell<Option<relm4::Sender<AudioShellInput>>> =
-        const { std::cell::RefCell::new(None) };
+    pub(super) static SHELL_INPUT: ShellInputSlot<relm4::Sender<AudioShellInput>> =
+        const { ShellInputSlot::new() };
 }
 
-pub(super) fn set_shell_input(sender: relm4::Sender<AudioShellInput>) {
-    SHELL_INPUT.with(|cell| {
-        *cell.borrow_mut() = Some(sender);
-    });
-}
-
-/// Deliver a message to the running shell from the main thread (used by the
-/// application `open` handler). No-op if the shell is not running yet.
+/// Deliver a message to the open shell from the main thread (used by the
+/// application `open` handler). No-op when no shell is open.
 pub fn send_to_shell(message: AudioShellInput) {
-    SHELL_INPUT.with(|cell| {
-        if let Some(sender) = cell.borrow().as_ref() {
-            let _ = sender.send(message);
-        }
-    });
+    if let Some(sender) = SHELL_INPUT.with(ShellInputSlot::sender) {
+        let _ = sender.send(message);
+    }
 }

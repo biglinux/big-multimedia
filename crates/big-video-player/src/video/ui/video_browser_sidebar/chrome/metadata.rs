@@ -1,3 +1,4 @@
+use big_relm4_components::feedback::tooltip;
 use std::rc::Rc;
 
 use adw::prelude::*;
@@ -59,12 +60,11 @@ pub(crate) fn build_breadcrumb(state: &Rc<BrowserState>, folder: &str) {
     let bar = gtk::Box::builder().spacing(0).build();
     bar.add_css_class("breadcrumb-bar");
 
-    let places = gtk::Button::builder()
-        .icon_name("user-bookmarks-symbolic")
-        .tooltip_text(i18n("Your folders"))
-        .css_classes(["flat", "breadcrumb-btn"])
-        .build();
-    places.update_property(&[gtk::accessible::Property::Label(&i18n("Your folders"))]);
+    let places = tooltip::icon_button(
+        "user-bookmarks-symbolic",
+        &i18n("Your folders"),
+        &["flat", "breadcrumb-btn"],
+    );
     {
         let state = state.clone();
         places.connect_clicked(move |_| state.show_places());
@@ -77,17 +77,22 @@ pub(crate) fn build_breadcrumb(state: &Rc<BrowserState>, folder: &str) {
         sep.add_css_class("dim-label");
         sep.add_css_class("breadcrumb-sep");
         bar.append(&sep);
+        // The folder shown is where the person is, not a way somewhere.
+        if i == last {
+            bar.append(
+                &gtk::Label::builder()
+                    .label(name)
+                    .css_classes(["breadcrumb-current"])
+                    .build(),
+            );
+            continue;
+        }
         let breadcrumb_button = gtk::Button::builder().label(name).build();
         breadcrumb_button.add_css_class("flat");
         breadcrumb_button.add_css_class("breadcrumb-btn");
-        if i == last {
-            breadcrumb_button.set_sensitive(false);
-            breadcrumb_button.add_css_class("accent");
-        } else {
-            let path = path.clone();
-            let state = state.clone();
-            breadcrumb_button.connect_clicked(move |_| state.navigate_to_folder(&path));
-        }
+        let path = path.clone();
+        let state = state.clone();
+        breadcrumb_button.connect_clicked(move |_| state.navigate_to_folder(&path));
         bar.append(&breadcrumb_button);
     }
 

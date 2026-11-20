@@ -20,6 +20,9 @@ use std::sync::Arc;
 use adw::prelude::*;
 use relm4::{Component, ComponentParts, ComponentSender};
 
+use big_media_components::playback::audio_transport::time_label_chars;
+use big_media_components::playback::cut_timeline::CutTimeline;
+use big_media_components::playback::set_play_pause;
 use big_player_ui::cut_timeline::{install_cut_timeline_draw, wire_cut_timeline_interaction};
 
 use crate::i18n::i18n;
@@ -33,12 +36,16 @@ mod tracks;
 mod zones;
 
 use seek_preview::{
-    build_seek_preview, wire_neighbour_preview, wire_seek_hover, wire_thumb_consumer,
+    build_seek_preview, wire_neighbor_preview, wire_seek_hover, wire_thumb_consumer,
 };
 use signals::wire_signals;
+pub(crate) use zones::read_zones;
 use zones::{
     ButtonLayoutWidgets, StartBoxWidgets, build_center_box, build_end_box, build_start_box,
 };
+
+/// Characters each time label keeps at least, the width of "0:00:00".
+const TIME_CHARS: u32 = 7;
 
 /// Shared, interior-mutable handle to the live mpv backend (set by the shell
 /// once the surface realizes; `None` before that). The popover callbacks read
@@ -52,7 +59,7 @@ pub struct VideoControlsBarInit {
     /// Shared mpv handle the popover callbacks read at call time.
     pub mpv: MpvSlot,
     /// While a TV plays this player's session, volume and mute drive it.
-    pub tv: Rc<crate::shared::tv_cast::TvLink>,
+    pub tv: Rc<big_media_runtime::cast::tv::TvLink>,
     /// The trim-bar widget, shown IN PLACE of the transport button row while trim
     /// mode is active (so the cut controls live inside the existing controls, not
     /// a separate bar).
@@ -99,6 +106,8 @@ pub enum VideoControlsBarInput {
     SetMuted(bool),
     /// Whose volume the control moves: the TV's while a TV has the controls.
     SetVolumeOfTv(bool),
+    /// The Maximum Volume preference changed: the sliders' new top (percent).
+    SetMaxVolume(f64),
     /// The PC's own volume (percent) and mute, beside the TV's, while the
     /// player plays along with the TV; `None` hides it.
     ShowPcVolume(Option<(f64, bool)>),
@@ -175,7 +184,7 @@ pub struct VideoControlsBar {
     seek_fraction: Rc<Cell<f64>>,
     /// Dedicated cut timeline (a fully-owned DrawingArea) shown IN PLACE of the
     /// GtkScale during trim mode, so the cut ranges align exactly with the bar.
-    cut_timeline: gtk::DrawingArea,
+    cut_timeline: CutTimeline,
     /// Swaps the GtkScale ↔ the cut timeline in the seek row.
     bar_stack: gtk::Stack,
     /// Revealer for the trim controls, an extra row above the transport (the
@@ -246,8 +255,8 @@ impl Component for VideoControlsBar {
         // transport's position label for the measured cost of a GtkLabel).
         let position_label = gtk::Inscription::builder()
             .text("0:00")
-            .min_chars(7)
-            .nat_chars(7)
+            .min_chars(TIME_CHARS)
+            .nat_chars(TIME_CHARS)
             .xalign(1.0)
             .css_classes(["time-label"])
             .build();
@@ -284,13 +293,9 @@ impl Component for VideoControlsBar {
         let cut_segments: Rc<RefCell<Vec<(u64, f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
         let pending_mark: Rc<RefCell<Option<f64>>> = Rc::new(RefCell::new(None));
         let seek_fraction = Rc::new(Cell::new(0.0_f64));
-        let cut_timeline = gtk::DrawingArea::builder()
-            .hexpand(true)
-            .height_request(20)
-            .build();
-        cut_timeline.update_property(&[gtk::accessible::Property::Label(&i18n("Cut timeline"))]);
+        let cut_timeline = CutTimeline::new(&i18n("Cut timeline"));
         install_cut_timeline_draw(
-            &cut_timeline,
+            cut_timeline.upcast_ref(),
             &cut_segments,
             &pending_mark,
             &seek_fraction,
@@ -321,7 +326,7 @@ impl Component for VideoControlsBar {
 
         let duration_label = gtk::Label::builder()
             .label("0:00")
-            .width_chars(7)
+            .width_chars(TIME_CHARS.cast_signed())
             .xalign(0.0)
             .css_classes(["time-label"])
             .build();
@@ -367,8 +372,8 @@ impl Component for VideoControlsBar {
         center.set_start_widget(Some(&start_box));
 
         let (controls_center, previous_button, play_button, next_button) = build_center_box();
-        wire_neighbour_preview(&previous_button, &init.mpv, -1);
-        wire_neighbour_preview(&next_button, &init.mpv, 1);
+        wire_neighbor_preview(&previous_button, &init.mpv, -1);
+        wire_neighbor_preview(&next_button, &init.mpv, 1);
         center.set_center_widget(Some(&controls_center));
 
         let end_widgets = build_end_box();
@@ -469,20 +474,16 @@ impl Component for VideoControlsBar {
         match message {
             VideoControlsBarInput::SetHasMedia(on) => self.set_has_media(on),
             VideoControlsBarInput::SetPaused(paused) => {
-                let icon = if paused {
-                    "media-playback-start-symbolic"
-                } else {
-                    "media-playback-pause-symbolic"
-                };
-                self.play_button.set_icon_name(icon);
-                // It names what a click does, as the icon shows.
-                let action = if paused { i18n("Play") } else { i18n("Pause") };
-                self.play_button.set_tooltip_text(Some(&action));
-                self.play_button
-                    .update_property(&[gtk::accessible::Property::Label(&action)]);
+                set_play_pause(&self.play_button, paused, &i18n("Play"), &i18n("Pause"));
             }
             VideoControlsBarInput::SetPosition(text) => self.position_label.set_text(Some(&text)),
-            VideoControlsBarInput::SetDuration(text) => self.duration_label.set_label(&text),
+            VideoControlsBarInput::SetDuration(text) => {
+                let chars = time_label_chars(&text).max(TIME_CHARS);
+                self.position_label.set_min_chars(chars);
+                self.position_label.set_nat_chars(chars);
+                self.duration_label.set_width_chars(chars.cast_signed());
+                self.duration_label.set_label(&text);
+            }
             VideoControlsBarInput::SetSeekFraction(value) => {
                 self.seek_fraction.set(value);
                 // Skip moves under half a pixel: each one re-snapshots the bar.
@@ -492,12 +493,15 @@ impl Component for VideoControlsBar {
                     .get()
                     .is_some_and(|at| at.elapsed() < USER_SEEK_HOLD);
                 // Unallocated (hidden) bars draw nothing: keep them current.
-                if user_seeking {
-                    self.cut_timeline.queue_draw();
-                } else if width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5 {
+                let moved = width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5;
+                if moved && !user_seeking {
                     self.suppress_seek.set(true);
                     self.seek_bar.set_value(value);
                     self.suppress_seek.set(false);
+                }
+                if moved || user_seeking {
+                    let duration = self.duration_secs.get();
+                    self.cut_timeline.set_position(value * duration, duration);
                     self.cut_timeline.queue_draw();
                 }
             }
@@ -505,6 +509,8 @@ impl Component for VideoControlsBar {
             VideoControlsBarInput::SetDurationSecs(secs) => {
                 self.duration_secs.set(secs);
                 self.render_chapter_marks();
+                self.cut_timeline
+                    .set_position(self.seek_fraction.get() * secs, secs);
                 self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetCutSegments(segments) => {
@@ -552,6 +558,10 @@ impl Component for VideoControlsBar {
                 self.pc_volume.volume_box.set_visible(pc.is_some());
                 self.volume.mark.set_visible(pc.is_some());
                 self.pc_volume.mark.set_visible(pc.is_some());
+            }
+            VideoControlsBarInput::SetMaxVolume(maximum) => {
+                self.volume.set_maximum(maximum);
+                self.pc_volume.set_maximum(maximum);
             }
             VideoControlsBarInput::SetVolumeOfTv(tv) => {
                 let label = if tv {

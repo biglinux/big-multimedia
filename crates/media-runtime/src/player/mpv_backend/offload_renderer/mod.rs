@@ -4,16 +4,16 @@
 
 mod backend;
 mod gl_fns;
+mod slot_buffers;
 mod stats;
 mod texture_pool;
 
-use super::egl_dmabuf::{self, EglDmaBufFns};
-use crate::player::mpv_backend::fast_render::FastRenderContext;
+use super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns, FenceError};
+use crate::player::mpv_backend::fast_render::{FastRenderContext, current_gl_driver};
 use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
 use std::cell::Cell;
-use std::ffi::CStr;
 use std::rc::Rc;
 pub(super) use texture_pool::CurrentContext;
 use texture_pool::{TextureLease, TexturePool};
@@ -22,6 +22,7 @@ use gl_fns::{
     GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_LINEAR, GL_RGBA, GL_RGBA8,
     GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNSIGNED_BYTE, GlFns,
 };
+use slot_buffers::SlotBuffers;
 use stats::{RenderStatsSurfacePath, render_stats_report_for_interval};
 
 pub use backend::VideoBackend;
@@ -39,7 +40,12 @@ pub struct OffloadRenderer {
     dmabuf_active: Cell<bool>,
     /// True after an unsupported/non-linear modifier; locks the GL fallback.
     dmabuf_rejected: Cell<bool>,
+    /// True after the kernel refused a dma-buf write fence; locks `glFinish`.
+    fence_unsupported: Cell<bool>,
+    /// The first frame whose fence could not be made has been reported.
+    fence_failure_reported: Cell<bool>,
     pool: TexturePool,
+    slots: SlotBuffers,
     fbo: u32,
     frame_count: Cell<u64>,
     skip_count: Cell<u64>,
@@ -49,11 +55,6 @@ pub struct OffloadRenderer {
 impl OffloadRenderer {
     /// `None` when GL context creation fails or GL fns missing.
     pub fn try_new(display: &gdk::Display) -> Option<Self> {
-        if super::is_proprietary_nvidia_session() {
-            info!("Offload disabled before GL setup because the session uses the NVIDIA driver");
-            return None;
-        }
-
         let gl_context = display
             .create_gl_context()
             .map_err(|e| {
@@ -88,13 +89,14 @@ impl OffloadRenderer {
 
         let _current = CurrentContext::enter(&gl_context);
 
-        let diagnostics = query_gl_diagnostics();
-        if renderer_has_nvidia_resize_leak(&diagnostics.renderer) {
+        // SAFETY: `gl_context` was made current above.
+        let diagnostics = unsafe { current_gl_driver() };
+        if is_proprietary_nvidia(&diagnostics.vendor, &diagnostics.renderer) {
             info!(
-                "Offload disabled for GL renderer '{}' because NVIDIA's \
+                "Offload disabled for GL {} / {} because NVIDIA's proprietary \
                  GdkGLTexture/GraphicsOffload path grows GPU memory during \
                  resize; using GtkGLArea fallback",
-                diagnostics.renderer
+                diagnostics.vendor, diagnostics.renderer
             );
             return None;
         }
@@ -135,7 +137,10 @@ impl OffloadRenderer {
             egl,
             dmabuf_active: Cell::new(false),
             dmabuf_rejected: Cell::new(false),
+            fence_unsupported: Cell::new(false),
+            fence_failure_reported: Cell::new(false),
             pool,
+            slots: SlotBuffers::default(),
             fbo,
             frame_count: Cell::new(0),
             skip_count: Cell::new(0),
@@ -169,39 +174,30 @@ impl OffloadRenderer {
     /// the way DMA-BUF does.
     fn prepare_slot(&self, index: usize, texture: u32, width: i32, height: i32) -> bool {
         let changed = self.pool.dimensions(index) != (width, height);
-        // SAFETY: the slot is exclusively leased and GL is current.
-        unsafe {
-            if changed {
-                (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
-                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                (self.gl.tex_image_2d)(
-                    GL_TEXTURE_2D,
-                    0,
-                    GL_RGBA8 as i32,
-                    width,
-                    height,
-                    0,
-                    GL_RGBA,
-                    GL_UNSIGNED_BYTE,
-                    std::ptr::null(),
-                );
-                (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
-            }
-            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
-            (self.gl.framebuffer_texture_2d)(
-                GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
+        // Once GDK refused a dma-buf, frames go out as GL textures, which need
+        // no buffer in the compositor's layout.
+        let in_gbm_buffer = changed
+            && !self.dmabuf_rejected.get()
+            && self.slots.bind(
+                index,
                 texture,
-                0,
+                width,
+                height,
+                &self.picture,
+                self.egl.as_ref(),
+                &self.gl,
             );
-            let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
-            if status != GL_FRAMEBUFFER_COMPLETE {
-                (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
-                error!("Offload FBO incomplete: 0x{status:X}");
-                return false;
-            }
+        if changed {
+            self.specify_texture(texture, width, height, !in_gbm_buffer);
+        }
+        let mut complete = self.attach_to_framebuffer(texture);
+        if !complete && in_gbm_buffer {
+            self.slots.disable(index);
+            self.specify_texture(texture, width, height, true);
+            complete = self.attach_to_framebuffer(texture);
+        }
+        if !complete {
+            return false;
         }
         if changed {
             self.pool.set_dimensions(index, width, height);
@@ -242,17 +238,15 @@ impl OffloadRenderer {
             error!("Offload render failed: {result}");
             return;
         }
-        let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
-            // DMA-BUF explicit-fence negotiation is not implemented, so glFinish
-            // is the only correctness barrier before export.
-            // SAFETY: the context is current.
-            unsafe { (self.gl.finish)() };
-            match self.try_create_dmabuf_texture(lease, width, height) {
-                Ok(texture) => texture,
-                Err(lease) => self.create_gl_texture(lease, width, height),
+        let texture = match self.export_slot(index, tex) {
+            Some(export) => {
+                self.sync_frame(&export);
+                match self.create_dmabuf_texture(export, lease, width, height) {
+                    Ok(texture) => texture,
+                    Err(lease) => self.create_gl_texture(lease, width, height),
+                }
             }
-        } else {
-            self.create_gl_texture(lease, width, height)
+            None => self.create_gl_texture(lease, width, height),
         };
         self.picture.set_paintable(Some(&texture));
 
@@ -282,20 +276,102 @@ impl OffloadRenderer {
         }
     }
 
-    /// Export the slot without releasing its lease until GDK finishes reading.
-    fn try_create_dmabuf_texture(
+    /// Linear filtering, and storage from `glTexImage2D` when `allocate`; a
+    /// texture bound to a GBM buffer already has its storage.
+    fn specify_texture(&self, texture: u32, width: i32, height: i32, allocate: bool) {
+        // SAFETY: the slot is exclusively leased and GL is current.
+        unsafe {
+            (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
+            (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if allocate {
+                (self.gl.tex_image_2d)(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGBA8 as i32,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    std::ptr::null(),
+                );
+            }
+            (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
+        }
+    }
+
+    /// Leaves the framebuffer bound when it is complete.
+    fn attach_to_framebuffer(&self, texture: u32) -> bool {
+        // SAFETY: the slot is exclusively leased and GL is current.
+        unsafe {
+            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
+            (self.gl.framebuffer_texture_2d)(
+                GL_FRAMEBUFFER,
+                GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D,
+                texture,
+                0,
+            );
+            let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
+            if status != GL_FRAMEBUFFER_COMPLETE {
+                (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
+                error!("Offload FBO incomplete: 0x{status:X}");
+                return false;
+            }
+        }
+        true
+    }
+
+    /// `None` once export failed or GDK refused a texture: the GL path takes over.
+    fn export_slot(&self, index: usize, texture: u32) -> Option<DmaBufExport> {
+        if self.dmabuf_rejected.get() {
+            return None;
+        }
+        if let Some(export) = self.slots.export(index) {
+            return Some(export);
+        }
+        let export = egl_dmabuf::export_gl_texture(self.egl.as_ref()?, texture);
+        if export.is_none() {
+            self.dmabuf_rejected.set(true);
+        }
+        export
+    }
+
+    /// Make readers of the exported frame wait for its rendering: through the
+    /// dma-buf's write fence, or by `glFinish` where no fence can be attached.
+    fn sync_frame(&self, export: &DmaBufExport) {
+        if let Some(egl) = self.egl.as_ref()
+            && let Some(fence) = egl.native_fence.as_ref()
+            && !self.fence_unsupported.get()
+        {
+            match egl_dmabuf::attach_write_fence(egl, fence, self.gl.flush, export) {
+                Ok(()) => return,
+                Err(FenceError::Unsupported(error)) => {
+                    warn!("DMA-BUF write fence refused ({error}); waiting with glFinish");
+                    self.fence_unsupported.set(true);
+                }
+                Err(FenceError::Failed) => {
+                    if !self.fence_failure_reported.replace(true) {
+                        warn!(
+                            "DMA-BUF write fence failed; this frame and any other that fails wait with glFinish"
+                        );
+                    }
+                }
+            }
+        }
+        // SAFETY: the context is current.
+        unsafe { (self.gl.finish)() };
+    }
+
+    /// Wrap the export without releasing its lease until GDK finishes reading.
+    fn create_dmabuf_texture(
         &self,
+        export: DmaBufExport,
         lease: TextureLease,
         width: i32,
         height: i32,
     ) -> std::result::Result<gdk::Texture, TextureLease> {
-        let Some(egl) = self.egl.as_ref() else {
-            return Err(lease);
-        };
-        let Some(export) = egl_dmabuf::export_gl_texture(egl, lease.id()) else {
-            self.dmabuf_rejected.set(true);
-            return Err(lease);
-        };
         let Some(display) = gdk::prelude::DrawContextExt::display(&self.gl_context) else {
             self.dmabuf_rejected.set(true);
             return Err(lease);
@@ -309,7 +385,7 @@ impl OffloadRenderer {
                 .set_display(&display)
                 .set_width(width as u32)
                 .set_height(height as u32)
-                .set_fourcc(export.fourcc)
+                .set_fourcc(opaque_fourcc(export.fourcc))
                 .set_modifier(export.modifier)
                 .set_n_planes(1)
                 .set_fd(0, export.fd)
@@ -403,60 +479,25 @@ impl OffloadRenderer {
     }
 }
 
-struct GlDiagnostics {
-    version: String,
-    renderer: String,
-}
+const DRM_FORMAT_ABGR8888: u32 = u32::from_le_bytes(*b"AB24");
+const DRM_FORMAT_XBGR8888: u32 = u32::from_le_bytes(*b"XB24");
+const DRM_FORMAT_ARGB8888: u32 = u32::from_le_bytes(*b"AR24");
+const DRM_FORMAT_XRGB8888: u32 = u32::from_le_bytes(*b"XR24");
 
-fn query_gl_diagnostics() -> GlDiagnostics {
-    type GlGetStringFn = unsafe extern "C" fn(u32) -> *const std::ffi::c_char;
-    const GL_VERSION_ENUM: u32 = 0x1F02;
-    const GL_RENDERER: u32 = 0x1F01;
-
-    // SAFETY: dlsym RTLD_DEFAULT queries the process global symbol table.
-    let get_string: Option<GlGetStringFn> = unsafe {
-        let ptr = libc::dlsym(libc::RTLD_DEFAULT, c"glGetString".as_ptr());
-        if ptr.is_null() {
-            None
-        } else {
-            Some(std::mem::transmute::<*mut std::ffi::c_void, GlGetStringFn>(
-                ptr,
-            ))
-        }
-    };
-
-    let Some(get_string) = get_string else {
-        return GlDiagnostics {
-            version: "<unavailable>".to_owned(),
-            renderer: "<unavailable>".to_owned(),
-        };
-    };
-
-    GlDiagnostics {
-        version: gl_string(get_string, GL_VERSION_ENUM),
-        renderer: gl_string(get_string, GL_RENDERER),
+/// The same layout with the alpha byte declared unused. mpv renders the frame
+/// opaque, and GTK refuses to offload straight alpha the compositor cannot blend.
+fn opaque_fourcc(fourcc: u32) -> u32 {
+    match fourcc {
+        DRM_FORMAT_ABGR8888 => DRM_FORMAT_XBGR8888,
+        DRM_FORMAT_ARGB8888 => DRM_FORMAT_XRGB8888,
+        other => other,
     }
 }
 
-fn gl_string(
-    get_string: unsafe extern "C" fn(u32) -> *const std::ffi::c_char,
-    name: u32,
-) -> String {
-    // SAFETY: caller has a current GL context; glGetString returns a static
-    // nul-terminated string or null when unavailable.
-    let ptr = unsafe { get_string(name) };
-    if ptr.is_null() {
-        return "<null>".to_owned();
-    }
-    // SAFETY: non-null pointer from GL for this context.
-    unsafe { CStr::from_ptr(ptr) }
-        .to_str()
-        .unwrap_or("<invalid>")
-        .to_owned()
-}
-
-fn renderer_has_nvidia_resize_leak(renderer: &str) -> bool {
-    renderer.to_ascii_lowercase().contains("nvidia")
+/// Whether GL runs on NVIDIA's proprietary driver, directly or under zink, from
+/// the context's `GL_VENDOR` and `GL_RENDERER`. An NVIDIA GPU on Mesa (NVK) is not.
+fn is_proprietary_nvidia(vendor: &str, renderer: &str) -> bool {
+    vendor.starts_with("NVIDIA") || renderer.contains("(NVIDIA_PROPRIETARY)")
 }
 
 impl Drop for OffloadRenderer {
@@ -473,24 +514,60 @@ impl Drop for OffloadRenderer {
 
 #[cfg(test)]
 mod tests {
+    /// Expected codes are the `fourcc_code` values of `drm_fourcc.h`.
     #[test]
-    fn nvidia_renderer_is_rejected_for_offload() {
-        assert!(super::renderer_has_nvidia_resize_leak(
-            "NVIDIA GeForce RTX 3060/PCIe/SSE2"
-        ));
-        assert!(super::renderer_has_nvidia_resize_leak(
-            "NVIDIA Corporation Ada Lovelace"
-        ));
+    fn alpha_formats_become_opaque() {
+        for (exported, declared) in [
+            (0x3432_4241, 0x3432_4258), // ABGR8888 -> XBGR8888
+            (0x3432_5241, 0x3432_5258), // ARGB8888 -> XRGB8888
+            (0x3432_4258, 0x3432_4258), // XBGR8888
+            (0x3432_5258, 0x3432_5258), // XRGB8888
+            (0x3231_564E, 0x3231_564E), // NV12
+            (0, 0),
+        ] {
+            assert_eq!(
+                super::opaque_fourcc(exported),
+                declared,
+                "exported 0x{exported:08X}"
+            );
+        }
     }
 
+    /// Strings from `eglinfo -B` and the player's log on each driver; zink
+    /// names its Vulkan driver by `VkDriverId`.
     #[test]
-    fn non_nvidia_renderers_keep_offload_eligible() {
-        assert!(!super::renderer_has_nvidia_resize_leak(
-            "AMD Radeon Graphics (RADV REMBRANDT)"
-        ));
-        assert!(!super::renderer_has_nvidia_resize_leak(
-            "Mesa Intel(R) UHD Graphics"
-        ));
-        assert!(!super::renderer_has_nvidia_resize_leak("NVK on GSP"));
+    fn proprietary_nvidia_from_gl_strings() {
+        for (vendor, renderer, proprietary) in [
+            (
+                "NVIDIA Corporation",
+                "NVIDIA GeForce GTX 1660 Ti/PCIe/SSE2",
+                true,
+            ),
+            (
+                "Mesa",
+                "zink Vulkan 1.4(NVIDIA GeForce GTX 1660 Ti (NVIDIA_PROPRIETARY))",
+                true,
+            ),
+            (
+                "Mesa",
+                "zink Vulkan 1.4(NVIDIA GeForce GTX 1660 Ti (MESA_NVK))",
+                false,
+            ),
+            ("Intel", "Mesa Intel(R) HD Graphics 630 (KBL GT2)", false),
+            ("Intel", "Mesa Intel(R) Graphics (ARL)", false),
+            (
+                "AMD",
+                "AMD Radeon Graphics (radeonsi, renoir, ACO, DRM 3.61)",
+                false,
+            ),
+            ("Mesa", "llvmpipe (LLVM 23.1.4, 256 bits)", false),
+            ("", "", false),
+        ] {
+            assert_eq!(
+                super::is_proprietary_nvidia(vendor, renderer),
+                proprietary,
+                "{vendor} / {renderer}"
+            );
+        }
     }
 }

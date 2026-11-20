@@ -1,0 +1,10 @@
+id: file-uri-owner
+language: rust
+severity: error
+message: Turn a file URI into a path with big_os_kit::url::file_uri_path
+note: crates/foundation/big-os-kit/src/url.rs decodes the path and refuses a file URI that names another host.
+rule:
+  pattern: $VALUE.strip_prefix($PREFIX)
+constraints:
+  PREFIX:
+    regex: '^"(?i)file:'

@@ -6,8 +6,8 @@
 //! `.idle-bg` gradient in `style.css` is the fallback when no wallpaper resolves
 //! (no desktop integration, or ffmpeg missing).
 //!
-//! Detection + blur run off the GTK main loop (a worker thread); the result is
-//! delivered back over an async channel and applied on the main thread.
+//! Detection + blur run off the GTK main loop; the result is applied on the
+//! main thread.
 
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
@@ -15,16 +15,14 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use gtk::glib;
+use big_media_runtime::media_probe::LOCAL_INPUT_PROTOCOLS;
+use big_relm4_components::task::spawn_blocking_result;
 
 use super::osd::IdleBackground;
+use crate::media::thumbnail::publish_converted;
 
-/// Image extensions accepted as wallpapers (lower-case match). Mirrors
-/// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl`, since BigShell's default
-/// wallpapers are HEIC) plus the extra raster types ffmpeg can also blur.
-const IMAGE_EXTS: &[&str] = &[
-    "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
-];
+/// Image extensions accepted as wallpapers.
+const IMAGE_EXTS: &[&str] = big_media_components::media::files::IMAGE_EXTENSIONS;
 
 /// System wallpaper pool BigShell scans (mirrors `big_shell_core::paths`).
 const SYSTEM_WALLPAPER_DIR: &str = "/usr/share/wallpapers";
@@ -35,35 +33,14 @@ const WALLPAPER_SCAN_DEPTH: usize = 4;
 /// the cached blurred image as the idle background once it is ready. No-op on
 /// any failure: the static gradient fallback stays in place.
 pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
-    let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
-    // Worker: detection + ffmpeg blur are blocking (disk read + a subprocess),
-    // so they must not run on the GTK main loop. Only `sender` (Send) crosses
-    // the thread boundary; the `Rc<IdleBackground>` stays on the main thread.
-    let spawned = std::thread::Builder::new()
-        .name("idle-wallpaper".into())
-        .spawn(move || {
-            if let Some(path) = resolve_blurred_wallpaper() {
-                let _ = sender.send_blocking(path);
-            }
-        });
-    if spawned.is_err() {
-        return;
-    }
-    // Weak: the ffmpeg blur can outlive a quick open→close. A strong
-    // `Rc<IdleBackground>` captured across the `recv().await` would pin the
-    // shell's `video_bg` box and the `gl_area` GL surface (and stale-write a
-    // display-wide CSS provider) for the whole blur after the shell is torn
-    // down. Upgrade-or-return leaves the live path byte-for-byte unchanged.
+    // Weak: the ffmpeg blur can outlive a quick open→close, and a strong
+    // reference would pin the shell's `video_bg` box and `gl_area` until it ends.
     let idle_bg = Rc::downgrade(&idle_bg);
-    glib::spawn_future_local(async move {
-        if let Ok(path) = receiver.recv().await {
-            let Some(idle_bg) = idle_bg.upgrade() else {
-                return;
-            };
-            if let Some(display) = gtk::gdk::Display::default() {
-                idle_bg.set_blurred_wallpaper(&path, &display);
-            }
-        }
+    spawn_blocking_result(resolve_blurred_wallpaper, move |path| {
+        let (Some(path), Some(idle_bg)) = (path, idle_bg.upgrade()) else {
+            return;
+        };
+        idle_bg.set_blurred_wallpaper(&path);
     });
 }
 
@@ -95,7 +72,9 @@ fn detect_wallpaper() -> Option<PathBuf> {
 /// `shell.json` is absent (not a BigShell session) so the Plasma/GNOME
 /// detectors still run there.
 fn detect_bigshell_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("big-shell").join("shell.json");
+    let config = big_os_kit::xdg_dirs::config_dir()?
+        .join("big-shell")
+        .join("shell.json");
     // shell.json absent → not a BigShell session → let the other detectors run.
     let text = std::fs::read_to_string(&config).ok()?;
 
@@ -160,7 +139,8 @@ fn collect_images_recursive(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 /// (KConfig INI): the first `Image=` under a `[…][Wallpaper][org.kde.image][General]`
 /// group that resolves to an existing image file.
 fn detect_plasma_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("plasma-org.kde.plasma.desktop-appletsrc");
+    let config =
+        big_os_kit::xdg_dirs::config_dir()?.join("plasma-org.kde.plasma.desktop-appletsrc");
     let text = std::fs::read_to_string(&config).ok()?;
 
     let mut in_wallpaper_image = false;
@@ -187,8 +167,7 @@ fn detect_plasma_wallpaper() -> Option<PathBuf> {
 /// `file://` URI / path, or a KPackage wallpaper directory whose actual images
 /// live under `contents/images/`.
 fn resolve_plasma_image(value: &str) -> Option<PathBuf> {
-    let raw = value.strip_prefix("file://").unwrap_or(value);
-    let path = PathBuf::from(percent_decode(raw));
+    let path = big_os_kit::url::local_path(value)?;
     if path.is_file() {
         return Some(path);
     }
@@ -216,9 +195,7 @@ fn detect_gnome_wallpaper() -> Option<PathBuf> {
         return None;
     }
     let value = output.stdout_lossy();
-    let value = value.trim().trim_matches(['\'', '"']);
-    let raw = value.strip_prefix("file://").unwrap_or(value);
-    let path = PathBuf::from(percent_decode(raw));
+    let path = big_os_kit::url::local_path(value.trim().trim_matches(['\'', '"']))?;
     path.is_file().then_some(path)
 }
 
@@ -245,25 +222,21 @@ fn is_image_path(path: &Path) -> bool {
 /// cache miss. The cache key folds in the source path and mtime so a changed
 /// wallpaper (re)blurs. `None` if ffmpeg is unavailable or fails.
 fn ensure_blurred(source: &Path) -> Option<PathBuf> {
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
 
-    let mtime = std::fs::metadata(source)
-        .and_then(|m| m.modified())
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map_or(0, |d| d.as_secs());
+    let mtime = big_os_kit::storage::modified_secs(source).unwrap_or(0);
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     source.hash(&mut hasher);
     mtime.hash(&mut hasher);
     // A prefix apart from the `wallpaper-blur-` files, which are swept below.
-    let name = format!("wallpaper-colours-{:016x}.png", hasher.finish());
+    let name = format!("wallpaper-colors-{:016x}.png", hasher.finish());
     if let Ok(entries) = std::fs::read_dir(&cache_dir) {
         for entry in entries.flatten() {
             let old = entry.file_name();
             let old = old.to_string_lossy();
             if old.starts_with("wallpaper-blur-")
-                || (old.starts_with("wallpaper-colours-") && *old != name)
+                || (old.starts_with("wallpaper-colors-") && *old != name)
             {
                 let _ = std::fs::remove_file(entry.path());
             }
@@ -286,7 +259,7 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
     if !Path::new(video).is_absolute() {
         return None;
     }
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     video.hash(&mut hasher);
@@ -300,27 +273,28 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
         }
     }
     let dest = cache_dir.join(name);
-    produced(
-        BigSubprocessSpec::builder()
-            .program("ffmpeg")
-            .arg("-y")
-            .arg("-ss")
-            .arg(format!("{:.1}", seconds.max(0.0)))
-            .arg("-i")
-            .arg(video)
-            .args([
-                "-vf",
-                "scale=960:-2:flags=bilinear,gblur=sigma=8,eq=saturation=0.85",
-                "-frames:v",
-                "1",
-            ])
-            .arg(&dest)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .build(),
-        &dest,
-    )
-    .then_some(dest)
+    publish_converted(&dest, |partial| backdrop_spec(video, seconds, partial)).then_some(dest)
+}
+
+fn backdrop_spec(video: &str, seconds: f64, dest: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .arg("-y")
+        .arg("-ss")
+        .arg(format!("{:.1}", seconds.max(0.0)))
+        .args(LOCAL_INPUT_PROTOCOLS)
+        .arg("-i")
+        .arg(video)
+        .args([
+            "-vf",
+            "scale=960:-2:flags=bilinear,gblur=sigma=8,eq=saturation=0.85",
+            "-frames:v",
+            "1",
+        ])
+        .arg(dest)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
 }
 
 /// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails
@@ -363,31 +337,33 @@ fn rasterize_magick(source: &Path, dest: &Path) -> bool {
     })
 }
 
-/// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
-/// array, no shell.
+/// Run the ffmpeg blur on `source` → `dest`; `true` once a non-empty result is
+/// published. Argv array, no shell.
 fn run_blur(source: &Path, dest: &Path) -> bool {
-    produced(
-        BigSubprocessSpec::builder()
-            .program("ffmpeg")
-            .arg("-y")
-            .arg("-i")
-            .arg(source)
-            .args([
-                "-vf",
-                // The wallpaper's colours, not its shapes: averaged down to 4x2
-                // and spread back out, so a logo in its middle (BigLinux's own)
-                // is not left as a blurred square behind the welcome screen.
-                // Then a slight darken + desaturate for the text over it.
-                "scale=4:2:flags=area,scale=1280:720:flags=bicubic,gblur=sigma=90,eq=brightness=-0.18:saturation=0.9",
-                "-frames:v",
-                "1",
-            ])
-            .arg(dest)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .build(),
-        dest,
-    )
+    publish_converted(dest, |partial| blur_spec(source, partial))
+}
+
+fn blur_spec(source: &Path, dest: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .arg("-y")
+        .args(LOCAL_INPUT_PROTOCOLS)
+        .arg("-i")
+        .arg(source)
+        .args([
+            "-vf",
+            // The wallpaper's colors, not its shapes: averaged down to 4x2
+            // and spread back out, so a logo in its middle (BigLinux's own)
+            // is not left as a blurred square behind the welcome screen.
+            // Then a slight darken + desaturate for the text over it.
+            "scale=4:2:flags=area,scale=1280:720:flags=bicubic,gblur=sigma=90,eq=brightness=-0.18:saturation=0.9",
+            "-frames:v",
+            "1",
+        ])
+        .arg(dest)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
 }
 
 /// Rasterize an SVG `source` to PNG `dest` via `rsvg-convert`; `true` on success.
@@ -418,65 +394,26 @@ fn is_svg(path: &Path) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
-/// `$XDG_CONFIG_HOME` or `~/.config`.
-fn config_home() -> PathBuf {
-    xdg_dir("XDG_CONFIG_HOME", ".config")
-}
-
-/// `$XDG_CACHE_HOME` or `~/.cache`.
-fn cache_home() -> PathBuf {
-    xdg_dir("XDG_CACHE_HOME", ".cache")
-}
-
-/// Resolve an XDG base dir from its env var, falling back to `~/<default>`.
-fn xdg_dir(env: &str, default: &str) -> PathBuf {
-    std::env::var_os(env)
-        .filter(|value| !value.is_empty())
-        .map_or_else(
-            || {
-                let home =
-                    std::env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from);
-                home.join(default)
-            },
-            PathBuf::from,
-        )
-}
-
-/// Minimal percent-decoding for wallpaper URIs (`gsettings` / `file://` values
-/// percent-encode spaces and the like). Leaves malformed escapes untouched.
-fn percent_decode(input: &str) -> String {
-    let bytes = input.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
-            let hi = (bytes[i + 1] as char).to_digit(16);
-            let lo = (bytes[i + 2] as char).to_digit(16);
-            if let (Some(hi), Some(lo)) = (hi, lo) {
-                out.push((hi * 16 + lo) as u8);
-                i += 3;
-                continue;
-            }
-        }
-        out.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn percent_decode_handles_spaces_and_passthrough() {
-        assert_eq!(
-            percent_decode("/home/u/My%20Wallpaper.png"),
-            "/home/u/My Wallpaper.png"
-        );
-        assert_eq!(percent_decode("/plain/path.jpg"), "/plain/path.jpg");
-        // Malformed escape is left as-is, not dropped.
-        assert_eq!(percent_decode("/a%2/b"), "/a%2/b");
+    fn backdrop_inputs_open_only_files() {
+        let input = "/videos/concat:a|b.mp4";
+        let dest = Path::new("/cache/out.jpg");
+        for spec in [
+            backdrop_spec(input, 1.0, dest),
+            blur_spec(Path::new(input), dest),
+        ] {
+            let argv = spec.try_resolved().unwrap().argv;
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert_eq!(
+                argv[input_at - 3..input_at],
+                ["-protocol_whitelist", "file,pipe", "-i"],
+                "{argv:?}"
+            );
+        }
     }
 
     #[test]
@@ -485,14 +422,5 @@ mod tests {
         assert!(is_image_path(Path::new("/x/b.png")));
         assert!(!is_image_path(Path::new("/x/c.txt")));
         assert!(!is_image_path(Path::new("/x/noext")));
-    }
-
-    #[test]
-    fn xdg_dir_prefers_env_then_home_default() {
-        // Empty env value is ignored in favour of the HOME-based default.
-        // Env mutation in tests is racy, so only check that the fallback joins
-        // the default segment.
-        let dir = xdg_dir("BIG_VIDEO_PLAYER_NONEXISTENT_ENV", ".cache");
-        assert!(dir.ends_with(".cache"));
     }
 }

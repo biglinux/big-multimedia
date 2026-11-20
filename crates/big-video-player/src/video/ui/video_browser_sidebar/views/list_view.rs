@@ -5,7 +5,7 @@ use gtk::{gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, set_accent};
+use super::rows::{attach_context_menu, attach_context_menu_keys, set_accent, show_selected};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 
 /// ListView factory: icon + name + a metadata caption line per row.
@@ -109,8 +109,9 @@ pub(crate) fn build_list_view(
                     label.remove_css_class("accent");
                     meta.set_visible(false);
                     row.remove_css_class("playlist-current");
+                    show_selected(&row, false, false);
                     row.set_widget_name(&format!("folder:{}", entry.path));
-                    row.update_property(&[gtk::accessible::Property::Label(&entry.display_name)]);
+                    item.set_accessible_label(&entry.display_name);
                 }
                 EntryKind::Video => {
                     let is_current = entry.index as i64 == state.pos.get();
@@ -135,13 +136,9 @@ pub(crate) fn build_list_view(
                     } else {
                         row.remove_css_class("playlist-current");
                     }
-                    if selected {
-                        row.add_css_class("selected");
-                    } else {
-                        row.remove_css_class("selected");
-                    }
+                    show_selected(&row, selecting, selected);
                     label.set_label(&entry.display_name);
-                    row.update_property(&[gtk::accessible::Property::Label(&entry.display_name)]);
+                    item.set_accessible_label(&entry.display_name);
                     meta.set_visible(true);
                     meta.set_label("");
 
@@ -166,6 +163,7 @@ pub(crate) fn build_list_view(
     });
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    attach_context_menu_keys(state, &list);
     list.set_single_click_activate(true);
     list.add_css_class("navigation-sidebar");
     list.connect_activate({

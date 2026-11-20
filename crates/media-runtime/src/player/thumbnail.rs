@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use big_media_data::media_probe::input_protocols;
 use log::debug;
 
 pub const THUMB_WIDTH: i32 = 240;
@@ -15,6 +16,20 @@ const THUMB_STRIDE: usize = THUMB_WIDTH as usize * 3; // RGB24
 pub struct ThumbnailResult {
     request: ThumbnailRequest,
     pub rgb_data: Arc<[u8]>,
+}
+
+impl ThumbnailResult {
+    /// The frame as a texture, in the pixel layout the generator decodes.
+    #[must_use]
+    pub fn into_texture(self) -> gtk::gdk::MemoryTexture {
+        gtk::gdk::MemoryTexture::new(
+            THUMB_WIDTH,
+            THUMB_HEIGHT,
+            gtk::gdk::MemoryFormat::R8g8b8,
+            &gtk::glib::Bytes::from_owned(self.rgb_data),
+            THUMB_STRIDE,
+        )
+    }
 }
 
 /// One pending hover request; decoded pixels are shared by the cache and GTK.
@@ -177,10 +192,8 @@ fn run_worker(
     }
 }
 
-fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<Vec<u8>> {
-    debug!("Generating thumbnail at {time:.3}s");
-
-    let spec = BigSubprocessSpec::builder()
+fn preview_frame_spec(file: &str, time: f64) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
         .program("ffmpeg")
         .args([
             // The keyframe at or before `time`, decoded alone on one thread:
@@ -193,6 +206,9 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
             "1",
             "-ss",
             &format!("{time:.3}"),
+        ])
+        .args(input_protocols(file))
+        .args([
             "-i",
             file,
             "-frames:v",
@@ -213,10 +229,15 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
         .stdout(BigSubprocessOutputMode::Capture)
         .stderr(BigSubprocessOutputMode::Null)
         .timeout(Duration::from_secs(5))
-        .build();
+        .build()
+}
+
+fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<Vec<u8>> {
     // run() drains stdout while waiting, so a frame larger than the pipe
     // buffer cannot deadlock it.
-    let output = spec.run_cancellable(cancelled).ok()?;
+    let output = preview_frame_spec(file, time)
+        .run_cancellable(cancelled)
+        .ok()?;
     let expected_size = THUMB_STRIDE * THUMB_HEIGHT as usize;
 
     if output.status.success() && output.stdout.len() == expected_size {
@@ -247,6 +268,22 @@ mod tests {
                 "thumbnail worker produced no result"
             );
             std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[test]
+    fn preview_input_keeps_its_protocols() {
+        for (input, protocols) in [
+            ("/videos/concat:a|b.mp4", "file,pipe"),
+            ("https://h/live.m3u8", input_protocols("https://h")[1]),
+        ] {
+            let argv = preview_frame_spec(input, 1.0).try_resolved().unwrap().argv;
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert_eq!(
+                argv[input_at - 3..input_at],
+                ["-protocol_whitelist", protocols, "-i"],
+                "{argv:?}"
+            );
         }
     }
 

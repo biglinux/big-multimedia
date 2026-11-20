@@ -11,6 +11,7 @@
 //! Push-model: subscription CRUD, podcast search (network) and feed-title
 //! fetches are internal; selecting a feed emits `PodcastPanelOutput::LoadFeed`.
 
+use big_relm4_components::feedback::tooltip;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -22,14 +23,10 @@ use relm4::{Component, ComponentParts, ComponentSender};
 use crate::media_list::{MediaListView, MediaRow, RowImage};
 use big_media_data::i18n::i18n;
 use big_media_data::library::podcast::{
-    PodcastSearchResult, cache_feed_title, fetch_feed, load_subscriptions, load_title_cache,
-    save_subscriptions, search_podcasts,
+    PodcastSearchResult, Subscriptions, cache_feed_title, fetch_feed, load_subscriptions,
+    load_title_cache, search_podcasts,
 };
-use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
-    preferences::BigPreferencesGroupSpec,
-};
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 /// Artwork pixel size for a podcast row.
 const ICON_PX: i32 = 40;
@@ -45,8 +42,8 @@ pub enum PodcastPanelInput {
     RefreshFeeds,
     /// Disk load finished: subscriptions + cached titles.
     FeedsLoaded {
-        /// Subscribed feed URLs.
-        subs: Vec<String>,
+        /// Subscribed feed URLs, or why they could not be read.
+        subscriptions: Result<Subscriptions, String>,
         /// Cached feed-url → title map.
         titles: HashMap<String, String>,
     },
@@ -90,7 +87,8 @@ pub struct PodcastPanel {
     scroll: gtk::ScrolledWindow,
     search_spinner: gtk::Spinner,
     status: adw::StatusPage,
-    subs: Vec<String>,
+    /// `None` until the first read finishes; edits are refused until it succeeds.
+    subscriptions: Option<Result<Subscriptions, String>>,
     titles: HashMap<String, String>,
     search_results: Vec<PodcastSearchResult>,
     /// Subscribed URLs, shared into the row-suffix builder so the search
@@ -139,12 +137,8 @@ impl Component for PodcastPanel {
             }
         });
 
-        let add_button = gtk::Button::builder()
-            .icon_name("list-add-symbolic")
-            .css_classes(["flat"])
-            .build();
-        add_button.set_tooltip_text(Some(&i18n("Add RSS feed")));
-        add_button.update_property(&[gtk::accessible::Property::Label(&i18n("Add RSS feed"))]);
+        let add_button =
+            tooltip::icon_button("list-add-symbolic", &i18n("Add RSS feed"), &["flat"]);
         let s = sender.clone();
         add_button.connect_clicked(move |_| s.input(PodcastPanelInput::AddFeedDialog));
 
@@ -204,7 +198,7 @@ impl Component for PodcastPanel {
                 scroll,
                 search_spinner,
                 status,
-                subs: Vec::new(),
+                subscriptions: None,
                 titles: HashMap::new(),
                 search_results: Vec::new(),
                 subscribed,
@@ -222,22 +216,40 @@ impl Component for PodcastPanel {
                 // Disk read off the GTK thread.
                 let s = sender.clone();
                 glib::spawn_future_local(async move {
-                    let loaded = gio::spawn_blocking(|| (load_subscriptions(), load_title_cache()))
-                        .await
-                        .unwrap_or_default();
+                    let (subscriptions, titles) =
+                        match gio::spawn_blocking(|| (load_subscriptions(), load_title_cache()))
+                            .await
+                        {
+                            Ok((subscriptions, titles)) => {
+                                (subscriptions.map_err(|error| error.to_string()), titles)
+                            }
+                            Err(_) => (
+                                Err("subscription reader stopped".to_owned()),
+                                HashMap::new(),
+                            ),
+                        };
                     s.input(PodcastPanelInput::FeedsLoaded {
-                        subs: loaded.0,
-                        titles: loaded.1,
+                        subscriptions,
+                        titles,
                     });
                 });
             }
-            PodcastPanelInput::FeedsLoaded { subs, titles } => {
-                self.subs = subs;
+            PodcastPanelInput::FeedsLoaded {
+                subscriptions,
+                titles,
+            } => {
+                if let Err(error) = &subscriptions {
+                    log::warn!("Podcast subscriptions could not be read: {error}");
+                    self.status
+                        .set_title(&i18n("Podcast Subscriptions Unavailable"));
+                    self.status.set_description(Some(&unreadable_notice(error)));
+                    let _ = sender.output(PodcastPanelOutput::Notify(unreadable_notice(error)));
+                }
+                self.subscriptions = Some(subscriptions);
                 self.titles = titles;
-                self.pending_title_fetches
-                    .retain(|url| self.subs.contains(url));
-                self.failed_title_fetches
-                    .retain(|url| self.subs.contains(url));
+                let subs = subscribed_urls(self.subscriptions.as_ref());
+                self.pending_title_fetches.retain(|url| subs.contains(url));
+                self.failed_title_fetches.retain(|url| subs.contains(url));
                 self.sync_subscribed();
                 self.rebuild_list();
                 self.resolve_missing_titles(&sender);
@@ -259,7 +271,7 @@ impl Component for PodcastPanel {
                 self.search_spinner.set_spinning(false);
                 self.search_spinner.set_visible(false);
                 let _ = sender.output(PodcastPanelOutput::Notify(i18n(
-                    "Connection error — try again",
+                    "Connection error; try again",
                 )));
             }
             PodcastPanelInput::ClearSearch => {
@@ -269,28 +281,34 @@ impl Component for PodcastPanel {
                 self.rebuild_list();
             }
             PodcastPanelInput::Subscribe(url) => {
-                if self.subs.contains(&url) {
+                let Some(subscriptions) = self.editable_subscriptions(&sender) else {
+                    return;
+                };
+                if subscriptions.urls.contains(&url) {
                     let _ = sender.output(PodcastPanelOutput::Notify(i18n("Already subscribed")));
-                } else {
-                    self.failed_title_fetches.remove(&url);
-                    self.subs.push(url);
-                    self.persist_subscriptions();
-                    self.sync_subscribed();
-                    self.rebuild_list();
-                    self.resolve_missing_titles(&sender);
+                    return;
                 }
+                subscriptions.urls.push(url.clone());
+                persist_subscriptions(subscriptions, &sender);
+                self.failed_title_fetches.remove(&url);
+                self.sync_subscribed();
+                self.rebuild_list();
+                self.resolve_missing_titles(&sender);
             }
             PodcastPanelInput::Unsubscribe(url) => {
-                self.subs.retain(|u| u != &url);
+                let Some(subscriptions) = self.editable_subscriptions(&sender) else {
+                    return;
+                };
+                subscriptions.urls.retain(|u| u != &url);
+                persist_subscriptions(subscriptions, &sender);
                 self.pending_title_fetches.remove(&url);
                 self.failed_title_fetches.remove(&url);
-                self.persist_subscriptions();
                 self.sync_subscribed();
                 self.rebuild_list();
             }
             PodcastPanelInput::FeedTitleResolved { url, title } => {
                 self.pending_title_fetches.remove(&url);
-                if !is_subscribed_url(&self.subs, &url) {
+                if !is_subscribed_url(self.subs(), &url) {
                     self.rebuild_list();
                     return;
                 }
@@ -308,21 +326,28 @@ impl Component for PodcastPanel {
 }
 
 impl PodcastPanel {
+    fn subs(&self) -> &[String] {
+        subscribed_urls(self.subscriptions.as_ref())
+    }
+
+    /// The loaded list, or `None` after telling the person why it cannot change.
+    fn editable_subscriptions(
+        &mut self,
+        sender: &ComponentSender<Self>,
+    ) -> Option<&mut Subscriptions> {
+        let notice = match &mut self.subscriptions {
+            Some(Ok(subscriptions)) => return Some(subscriptions),
+            Some(Err(error)) => unreadable_notice(error),
+            None => i18n("Podcast subscriptions are still loading"),
+        };
+        let _ = sender.output(PodcastPanelOutput::Notify(notice));
+        None
+    }
+
     fn sync_subscribed(&self) {
         let mut set = self.subscribed.borrow_mut();
         set.clear();
-        set.extend(self.subs.iter().cloned());
-    }
-
-    /// Persist the current subscription list off the GTK thread.
-    fn persist_subscriptions(&self) {
-        let subs = self.subs.clone();
-        glib::spawn_future_local(async move {
-            let saved = gio::spawn_blocking(move || save_subscriptions(&subs)).await;
-            if let Ok(Err(error)) = saved {
-                log::warn!("Failed to save podcast subscriptions: {error}");
-            }
-        });
+        set.extend(self.subs().iter().cloned());
     }
 
     /// Start an async podcast search, toggling the spinner.
@@ -349,9 +374,9 @@ impl PodcastPanel {
     fn rebuild_list(&self) {
         let mut rows: Vec<MediaRow> = Vec::new();
 
-        if !self.subs.is_empty() {
+        if !self.subs().is_empty() {
             rows.push(MediaRow::header(i18n("Subscriptions")));
-            for url in &self.subs {
+            for url in self.subs() {
                 let title = self.titles.get(url).cloned();
                 let has_title = title.is_some();
                 rows.push(MediaRow {
@@ -393,7 +418,7 @@ impl PodcastPanel {
     /// re-renders. Bounded by the number of uncached subs (the user's own list).
     fn resolve_missing_titles(&mut self, sender: &ComponentSender<Self>) {
         let missing = title_fetch_candidates(
-            &self.subs,
+            self.subs(),
             &self.titles,
             &self.pending_title_fetches,
             &self.failed_title_fetches,
@@ -415,6 +440,28 @@ impl PodcastPanel {
             });
         }
     }
+}
+
+/// Admit a save of the edited list; saves run one at a time and the latest wins.
+fn persist_subscriptions(subscriptions: &Subscriptions, sender: &ComponentSender<PodcastPanel>) {
+    if let Err(error) = subscriptions.save() {
+        log::warn!("Podcast subscriptions not saved: {error}");
+        let _ = sender.output(PodcastPanelOutput::Notify(i18n(
+            "Podcast subscriptions could not be saved",
+        )));
+    }
+}
+
+fn subscribed_urls(subscriptions: Option<&Result<Subscriptions, String>>) -> &[String] {
+    match subscriptions {
+        Some(Ok(subscriptions)) => &subscriptions.urls,
+        Some(Err(_)) | None => &[],
+    }
+}
+
+fn unreadable_notice(error: &str) -> String {
+    i18n("Podcast subscriptions could not be read, so changes are not saved: {}")
+        .replace("{}", error)
 }
 
 fn subscription_title_subtitle(has_title: bool, has_failed_title_fetch: bool) -> Option<String> {
@@ -483,12 +530,12 @@ fn row_suffix_builder(
     let subscribed = subscribed.clone();
     move |row| match row.tag {
         TAG_SUB => {
-            let remove = gtk::Button::builder()
-                .icon_name("user-trash-symbolic")
-                .valign(gtk::Align::Center)
-                .css_classes(["flat", "error"])
-                .build();
-            remove.set_tooltip_text(Some(&i18n("Unsubscribe")));
+            let remove = tooltip::icon_button(
+                "user-trash-symbolic",
+                &i18n("Unsubscribe"),
+                &["flat", "error"],
+            );
+            remove.set_valign(gtk::Align::Center);
             remove.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Unsubscribe from podcast",
             ))]);
@@ -499,17 +546,14 @@ fn row_suffix_builder(
         }
         TAG_SEARCH => {
             let already = subscribed.borrow().contains(&row.id);
-            let sub = gtk::Button::builder()
-                .icon_name(if already {
-                    "object-select-symbolic"
-                } else {
-                    "list-add-symbolic"
-                })
-                .valign(gtk::Align::Center)
-                .sensitive(!already)
-                .css_classes(["flat"])
-                .build();
-            sub.set_tooltip_text(Some(&i18n("Subscribe")));
+            let icon = if already {
+                "object-select-symbolic"
+            } else {
+                "list-add-symbolic"
+            };
+            let sub = tooltip::icon_button(icon, &i18n("Subscribe"), &["flat"]);
+            sub.set_valign(gtk::Align::Center);
+            sub.set_sensitive(!already);
             sub.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Subscribe to podcast",
             ))]);
@@ -550,88 +594,30 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
         return;
     };
 
-    let dialog = adw::Dialog::builder()
-        .title(i18n("Add RSS Feed"))
-        .content_width(440)
-        .content_height(260)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n("Paste the podcast RSS feed URL below."));
-
-    let group = BigPreferencesGroupSpec::new(i18n("Feed")).build();
-    let feed_url_row = adw::EntryRow::builder()
-        .title(i18n("RSS feed URL"))
-        .show_apply_button(true)
-        .build();
-    feed_url_row.update_property(&[gtk::accessible::Property::Label(&i18n("RSS feed URL"))]);
-    group.add(&feed_url_row);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Subscribe")));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button_weak = footer.accept_button().downgrade();
-    feed_url_row.connect_changed(move |row| {
-        let Some(accept_button) = accept_button_weak.upgrade() else {
-            return;
-        };
-        accept_button.set_sensitive(accepted_podcast_feed_url(&row.text()).is_some());
-    });
-
-    let accept_button_weak = footer.accept_button().downgrade();
-    feed_url_row.connect_apply(move |row| {
-        let Some(accept_button) = accept_button_weak.upgrade() else {
-            return;
-        };
-        if accepted_podcast_feed_url(&row.text()).is_some() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
+    let spec = BigNamePromptSpec {
+        title: i18n("Add RSS Feed"),
+        description: Some(i18n("Paste the podcast RSS feed URL below.")),
+        entry_title: i18n("RSS feed URL"),
+        prefill: String::new(),
+        accept_label: i18n("Subscribe"),
+        content_width: 440,
+        content_height: 260,
+    };
     let s = sender.clone();
-    let dialog_weak = dialog.downgrade();
-    let feed_url_row_for_accept = feed_url_row.clone();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(url) = accepted_podcast_feed_url(&feed_url_row_for_accept.text()) else {
-            return;
-        };
-        s.input(PodcastPanelInput::Subscribe(url));
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    dialog.connect_map(move |_| {
-        let feed_url_row = feed_url_row.downgrade();
-        gtk::glib::idle_add_local_once(move || {
-            if let Some(feed_url_row) = feed_url_row.upgrade() {
-                feed_url_row.grab_focus();
-            }
-        });
-    });
-    dialog.present(Some(&window));
+    prompt_name(
+        Some(window.upcast_ref()),
+        &spec,
+        accepted_podcast_feed_url,
+        move |url| {
+            s.input(PodcastPanelInput::Subscribe(url));
+            true
+        },
+    );
 }
 
 fn accepted_podcast_feed_url(url: &str) -> Option<String> {
     let url = url.trim();
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return None;
-    }
-    let (_, target) = url.split_once("://")?;
-    if target.trim().is_empty() {
-        return None;
-    }
-    Some(url.to_owned())
+    big_os_kit::url::is_http_url(url).then(|| url.to_owned())
 }
 
 #[cfg(test)]

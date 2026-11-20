@@ -5,14 +5,13 @@
 use adw::prelude::*;
 use std::sync::Arc;
 
-use big_player_ui::audio_preferences::{
-    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
-};
+use big_player_ui::audio_preferences::create_player_audio_page as create_audio_page;
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioEffects, MpvBackend};
+use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
-use crate::shared::preference_rows::add_combo_row;
+use big_player_ui::preference_rows::add_combo_row;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 
 /// What the shell does when a desktop-integration switch changes, so the
 /// choice applies without a restart.
@@ -33,8 +32,6 @@ pub(super) fn create_music_page(
         .icon_name("emblem-music-symbolic")
         .build();
 
-    page.add(&super::account_security::group());
-
     let leveling_group = adw::PreferencesGroup::builder()
         .title(i18n("Volume Leveling"))
         .description(i18n(
@@ -48,8 +45,8 @@ pub(super) fn create_music_page(
         &i18n("Level By"),
         "",
         &[&i18n("Off"), &i18n("Per Song"), &i18n("Per Album")],
-        &["no", "track", "album"],
-        "replaygain",
+        &MpvBackend::REPLAYGAIN_MODES,
+        keys::REPLAYGAIN,
         settings,
         move |v| {
             if let Some(ref mpv) = m {
@@ -58,7 +55,7 @@ pub(super) fn create_music_page(
         },
     );
 
-    let rg_preamp_row = adw::SpinRow::builder()
+    let rg_preamp_row = accessible_spin_row()
         .title(i18n("Leveling Boost"))
         .subtitle(i18n(
             "In decibels; positive values play louder, negative softer",
@@ -133,14 +130,11 @@ pub(super) fn create_music_page(
     }
     playback_group.add(&resume_row);
 
-    // Do not expose CROSSFADE_SECS until a two-track overlap engine consumes
-    // it. Existing saved values are kept for a future migration.
-
     // Taskbar progress (KDE Plasma / Unity → Unity launcher protocol).
     let taskbar_row = adw::SwitchRow::builder()
         .title(i18n("Progress on the Taskbar"))
         .subtitle(i18n("Shows how far the song has played on the player icon"))
-        .active(settings.get_bool_or(keys::TASKBAR_PROGRESS, true))
+        .active(settings.get_bool(keys::TASKBAR_PROGRESS))
         .build();
     {
         let s = settings.clone();
@@ -158,7 +152,7 @@ pub(super) fn create_music_page(
         .subtitle(i18n(
             "A one-color icon that follows the panel theme, with playback controls",
         ))
-        .active(settings.get_bool_or(keys::TRAY_ICON, false))
+        .active(settings.get_bool(keys::TRAY_ICON))
         .build();
     {
         let s = settings.clone();
@@ -176,47 +170,14 @@ pub(super) fn create_music_page(
     page
 }
 
-fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
-    let mpv = mpv.cloned()?;
-    Some(PlayerAudioPreferenceActions::new(
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_channels(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_pitch_correction(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_volume_max(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_preferred_audio_lang(value)
-        },
-        move |effects| apply_player_audio_effects(&mpv, effects),
-    ))
-}
-
-fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
-    mpv.apply_audio_effects(&AudioEffects {
-        normalize: effects.normalize,
-        nr_strength: effects.nr_strength,
-        nr_model: effects.nr_model,
-        nr_mono: effects.nr_mono,
-        nr_voice_only: effects.nr_voice_only,
-        eq_bands: &effects.eq_bands,
-    });
-}
-
-/// `toggles` fire when a desktop-integration switch changes, so the shell
-/// applies it without a restart.
+/// `toggles` and `volume_max_changed` fire when their preference changes, so
+/// the shell applies it without a restart.
 pub fn show_audio_preferences(
     parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     toggles: DesktopToggles,
+    volume_max_changed: impl Fn() + 'static,
 ) {
     let dialog = adw::PreferencesDialog::builder()
         .title(i18n("Preferences"))
@@ -226,7 +187,14 @@ pub fn show_audio_preferences(
         .build();
     let pages = [
         create_music_page(settings, mpv, toggles),
-        create_audio_page(settings, audio_preference_actions(mpv)),
+        create_audio_page(
+            settings,
+            big_media_runtime::audio_effects::audio_preference_actions(
+                settings,
+                mpv,
+                volume_max_changed,
+            ),
+        ),
     ];
     for page in &pages {
         crate::settings::attach_save_status_banner(page, settings);

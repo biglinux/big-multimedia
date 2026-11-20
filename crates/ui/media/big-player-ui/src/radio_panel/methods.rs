@@ -10,7 +10,7 @@ use relm4::ComponentSender;
 use crate::favicon_cache::fetch_favicon_bytes;
 use crate::media_list::{MediaRow, RowImage};
 use big_media_data::db::models::RadioStation;
-use big_media_data::i18n::i18n;
+use big_media_data::i18n::{country_name, i18n};
 use big_media_data::radio::api::{
     api_servers_from_raw, detect_country_code, fetch_stations_by_country, fetch_stations_by_tag,
     fetch_top_stations, search_radio_browser_api, settings_servers_raw,
@@ -167,13 +167,13 @@ fn station_row(station: &RadioStation) -> MediaRow {
 
 /// Build an explore-result [`MediaRow`].
 fn explore_row(name: &str, url: &str, country: &str, tags: &str, favicon: &str) -> MediaRow {
-    let subtitle = if !country.is_empty() && !tags.is_empty() {
-        format!("{country} · {tags}")
-    } else if country.is_empty() {
-        tags.to_string()
-    } else {
-        country.to_string()
-    };
+    let country = country_name(country);
+    let tags = tags_label(tags);
+    let subtitle = [country.as_str(), tags.as_str()]
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" · ");
     MediaRow {
         id: url.to_string(),
         title: name.to_string(),
@@ -184,6 +184,16 @@ fn explore_row(name: &str, url: &str, country: &str, tags: &str, favicon: &str) 
         group: String::new(),
         tag: TAG_EXPLORE,
     }
+}
+
+/// The first three of Radio Browser's comma-separated tags, as a list to read.
+fn tags_label(tags: &str) -> String {
+    tags.split(',')
+        .map(str::trim)
+        .filter(|tag| !tag.is_empty())
+        .take(3)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// A favicon image (remote, with initials fallback) or a plain initials avatar.
@@ -200,5 +210,24 @@ fn station_image(favicon: &str, name: &str) -> RowImage {
             size: ICON_PX,
             fetch: std::sync::Arc::new(fetch_favicon_bytes),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tags_label;
+
+    #[test]
+    fn tags_read_as_a_short_list() {
+        assert_eq!(
+            tags_label("adult,classic hits,flashback"),
+            "adult, classic hits, flashback"
+        );
+        assert_eq!(tags_label("news, ,talk,"), "news, talk");
+        assert_eq!(
+            tags_label("chr,pop-rock,youth,dance"),
+            "chr, pop-rock, youth"
+        );
+        assert_eq!(tags_label(""), "");
     }
 }

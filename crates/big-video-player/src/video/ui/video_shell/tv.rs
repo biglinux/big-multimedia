@@ -5,14 +5,15 @@
 use super::playback::seek_fraction;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::{TvCardAction, TvMedia, saved_height};
+use crate::video::ui::iptv::fetcher::ChannelUrls;
+use big_media_runtime::cast::tv::{TvCardAction, TvMedia, saved_height};
 
 impl VideoShell {
     pub(super) fn on_tv_card(&mut self, action: TvCardAction) {
         match action {
             TvCardAction::Stop => {
                 self.tv_pill.popdown();
-                self.tv.control("stop", 0.0);
+                self.tv.stop();
             }
             TvCardAction::ToggleRelease if self.tv.released() => self.attach_tv(),
             TvCardAction::ToggleRelease => self.release_tv(),
@@ -237,7 +238,20 @@ impl VideoShell {
             .position(|path| *path == source)
         {
             Some(index) => mpv.playlist_play_index(i64::try_from(index).unwrap_or(0)),
-            None => super::send_to_shell(VideoShellInput::OpenFiles(vec![source])),
+            // The TV holds the played URL: a channel keeps out of the queue
+            // the credentials its stored form leaves out.
+            None => {
+                if let Some(target) = self.stored_urls.unlisted(&source) {
+                    let urls = ChannelUrls {
+                        played: source,
+                        stored: None,
+                    };
+                    self.play_stream(urls, "", target);
+                } else {
+                    let entry = self.stored_urls.stored_url(&source).to_owned();
+                    super::send_to_shell(VideoShellInput::OpenFiles(vec![entry]));
+                }
+            }
         }
     }
 
@@ -347,7 +361,9 @@ impl VideoShell {
         let controls = self.controls.sender();
         let _ = controls.send(VideoControlsBarInput::SetVolumeOfTv(false));
         let position = mpv.get_position();
-        let _ = controls.send(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+        let _ = controls.send(VideoControlsBarInput::SetPaused(
+            mpv.is_paused() || self.ended,
+        ));
         let _ = controls.send(VideoControlsBarInput::SetPosition(playback_time(position)));
         let _ = controls.send(VideoControlsBarInput::SetDuration(playback_time(
             self.duration_secs,

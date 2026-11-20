@@ -7,6 +7,7 @@
 //! resize the lyrics/playlist split. Manual `impl Component` idiom.
 
 use adw::prelude::*;
+use big_relm4_components::feedback::tooltip;
 use gtk::pango;
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -92,10 +93,13 @@ impl Component for LyricsPanel {
             .transition_duration(200)
             .vexpand(true)
             .build();
-        content_stack.add_named(&lyrics_scroll, Some("lyrics"));
-        content_stack.add_named(&build_loading_box(), Some("loading"));
-        content_stack.add_named(&build_empty_box(), Some("empty"));
-        content_stack.set_visible_child_name("empty");
+        content_stack.add_named(&lyrics_scroll, Some(LyricsState::Lyrics.child_name()));
+        content_stack.add_named(
+            &build_loading_box(),
+            Some(LyricsState::Loading.child_name()),
+        );
+        content_stack.add_named(&build_empty_box(), Some(LyricsState::Empty.child_name()));
+        content_stack.set_visible_child_name(LyricsState::Empty.child_name());
         root.append(&content_stack);
 
         ComponentParts {
@@ -148,21 +152,23 @@ fn build_header(sender: &ComponentSender<LyricsPanel>) -> gtk::Box {
     header_label.add_css_class("lyrics-header-label");
     header.append(&header_label);
 
-    let expand_button = gtk::ToggleButton::builder()
-        .icon_name("view-fullscreen-symbolic")
-        .css_classes(["flat", "circular"])
-        .build();
-    expand_button.set_tooltip_text(Some(&i18n("Show only lyrics")));
+    let expand_button = tooltip::icon_toggle_button(
+        "view-fullscreen-symbolic",
+        &i18n("Show only lyrics"),
+        false,
+        &["flat", "circular"],
+    );
     let s = sender.clone();
     expand_button.connect_toggled(move |button| {
         let active = button.is_active();
-        if active {
-            button.set_icon_name("view-restore-symbolic");
-            button.set_tooltip_text(Some(&i18n("Show playlist")));
+        let (icon, label) = if active {
+            ("view-restore-symbolic", i18n("Show playlist"))
         } else {
-            button.set_icon_name("view-fullscreen-symbolic");
-            button.set_tooltip_text(Some(&i18n("Show only lyrics")));
-        }
+            ("view-fullscreen-symbolic", i18n("Show only lyrics"))
+        };
+        button.set_icon_name(icon);
+        button.set_tooltip_text(Some(&label));
+        button.update_property(&[gtk::accessible::Property::Label(&label)]);
         let _ = s.output(LyricsPanelOutput::ExpandToggled(active));
     });
     header.append(&expand_button);
@@ -244,16 +250,4 @@ fn build_empty_box() -> gtk::Box {
         .build();
     empty_box.append(&empty_label);
     empty_box
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn state_maps_to_stack_child_names() {
-        assert_eq!(LyricsState::Lyrics.child_name(), "lyrics");
-        assert_eq!(LyricsState::Loading.child_name(), "loading");
-        assert_eq!(LyricsState::Empty.child_name(), "empty");
-    }
 }

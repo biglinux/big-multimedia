@@ -1,0 +1,13 @@
+id: subtitle-delay-owner
+language: rust
+severity: error
+message: Read and set the subtitle delay with MpvBackend::sub_delay and set_sub_delay
+note: >-
+  crates/media-runtime/src/player/mpv_backend/properties_subtitles.rs holds the
+  delay within SUB_DELAY_LIMIT_SECONDS, the range every control offers.
+rule:
+  kind: string_literal
+  regex: '^"sub-delay"$'
+ignores:
+  - crates/media-runtime/src/player/mpv_backend/properties_subtitles.rs
+  - crates/media-runtime/src/player/mpv_backend/backend/tests.rs

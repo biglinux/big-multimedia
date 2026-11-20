@@ -1,11 +1,13 @@
 //! Thumbnail extraction (ffmpeg) with Freedesktop file-manager cache reuse.
 
 use std::collections::hash_map::DefaultHasher;
+use std::ffi::OsString;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use big_media_data::media_probe::input_protocols;
 use gtk::glib;
 
 use big_relm4_components::display::texture::{RgbaImage, pixbuf_to_rgba, rgba_to_texture};
@@ -25,13 +27,7 @@ fn thumbnail_cache_dir(cache_root: &Path) -> Option<PathBuf> {
 
 /// `path + mtime` so renames or edits invalidate the cached thumb.
 fn thumb_hash(path: &str) -> String {
-    let mtime = std::fs::metadata(path)
-        .and_then(|m| m.modified())
-        .map_or(0, |t| {
-            t.duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-        });
+    let mtime = big_os_kit::storage::modified_secs(path).unwrap_or(0);
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
     mtime.hash(&mut hasher);
@@ -58,40 +54,121 @@ fn find_freedesktop_thumbnail(cache_root: &Path, video_path: &str) -> Option<Pat
     None
 }
 
-/// 30 % into the video, as `-ss` text; the cached duration saves an ffprobe.
-fn seek_position(video_path: &str) -> String {
+fn duration_probe_spec(video_path: &str) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .args(input_protocols(video_path))
+        .args([
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            // A file name starting with `-` must not read as a flag.
+            "--",
+            video_path,
+        ])
+        .build()
+}
+
+/// One frame of `video_path` at `seek_secs`, scaled to a card, into `output`.
+fn card_frame_spec(video_path: &str, seek_secs: f64, output: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args(["-ss", &format!("{seek_secs:.2}")])
+        .args(input_protocols(video_path))
+        .args([
+            "-i",
+            video_path,
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
+            "-vf",
+            // Even box: 4:2:0 output rounds an odd pad height below the scaled
+            // frame and the filter fails. Square pixels for anamorphic sources.
+            "scale=240:136:force_original_aspect_ratio=decrease:force_divisible_by=2:reset_sar=1,\
+             pad=240:136:(ow-iw)/2:(oh-ih)/2",
+            "-y",
+            "--",
+        ])
+        .arg(output)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+}
+
+/// Renders one frame of `video_path` at `seek_secs`, fitted into a 240x136 card,
+/// into `target` through [`publish_converted`]. Blocking; returns whether
+/// `target` was written. A network stream is never opened: an IPTV panel counts
+/// each card against the account.
+pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> bool {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return false;
+    }
+    publish_converted(target, |partial| {
+        card_frame_spec(video_path, seek_secs, partial)
+    })
+}
+
+/// Runs the converter built for a staging file beside `target`, whose extension
+/// it keeps, and renames that file over `target` only after a clean exit with a
+/// non-empty file, so a killed or failed run never leaves a file that an
+/// `exists()` cache check would serve. Blocking; returns whether `target` was written.
+pub fn publish_converted(
+    target: &Path,
+    converter: impl FnOnce(&Path) -> BigSubprocessSpec,
+) -> bool {
+    let (Some(directory), Some(extension)) = (target.parent(), target.extension()) else {
+        return false;
+    };
+    big_os_kit::storage::remove_stale_staging(directory);
+    let mut partial_name = OsString::from(format!(
+        "{}{}.",
+        big_os_kit::storage::staging_prefix(),
+        PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    partial_name.push(extension);
+    let partial = directory.join(partial_name);
+    let rendered = converter(&partial)
+        .run()
+        .is_ok_and(|output| output.status.success());
+    publish_frame(rendered, &partial, target)
+}
+
+fn publish_frame(rendered: bool, partial: &Path, target: &Path) -> bool {
+    let whole = rendered && partial.metadata().is_ok_and(|m| m.len() > 0);
+    if whole && std::fs::rename(partial, target).is_ok() {
+        return true;
+    }
+    let _ = std::fs::remove_file(partial);
+    false
+}
+
+/// 30 % into the video; the cached duration saves an ffprobe.
+fn seek_position(video_path: &str) -> f64 {
     let cached = meta_cache()
         .lock()
         .ok()
         .and_then(|c| c.get(video_path).and_then(|e| e.meta.duration_secs));
     let duration = cached.or_else(|| {
-        let output = BigSubprocessSpec::builder()
-            .program("ffprobe")
-            .args([
-                "-v",
-                "quiet",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "csv=p=0",
-                // A file name starting with `-` must not read as a flag.
-                "--",
-                video_path,
-            ])
-            .build()
-            .run()
-            .ok()?;
+        let output = duration_probe_spec(video_path).run().ok()?;
         String::from_utf8_lossy(&output.stdout)
             .trim()
             .parse::<f64>()
             .ok()
     });
-    duration.map_or_else(|| "10".into(), |dur| format!("{:.1}", dur * 0.3))
+    duration.map_or(10.0, |dur| dur * 0.3)
 }
 
 /// Synchronous; semaphore-gated to cap concurrent ffmpeg children. `None`
-/// without a private cache directory.
+/// without a private cache directory, and for a network stream, which
+/// [`render_card_frame`] does not open.
 fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return None;
+    }
     let cache_root = big_os_kit::xdg_dirs::cache_dir()?;
     let cache = thumbnail_cache_dir(&cache_root)?;
     let hash = thumb_hash(video_path);
@@ -107,52 +184,9 @@ fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
 
     acquire_slot(&ACTIVE_THUMBS, MAX_THUMBS);
 
-    let seek_pos = seek_position(video_path);
-
-    // ffmpeg writes beside the final name and the rename publishes it whole:
-    // a killed or concurrent run never leaves a truncated PNG that `exists()`
-    // would serve from then on.
-    let partial = cache.join(format!(
-        ".{hash}.{}.{}.png",
-        std::process::id(),
-        PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
-    ));
-    let status = BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .args([
-            "-ss",
-            seek_pos.as_str(),
-            "-i",
-            video_path,
-            "-frames:v",
-            "1",
-            "-update",
-            "1",
-            "-vf",
-            // reset_sar: PNG has no pixel aspect, so anamorphic frames need
-            // square pixels.
-            "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
-             pad=240:135:(ow-iw)/2:(oh-ih)/2",
-            "-y",
-            "--",
-        ])
-        .arg(&partial)
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-        .run()
-        .ok();
-
+    let published = render_card_frame(video_path, seek_position(video_path), &thumb_path);
     release_slot(&ACTIVE_THUMBS);
-
-    let published = status.is_some_and(|s| s.status.success())
-        && std::fs::rename(&partial, &thumb_path).is_ok();
-    if published {
-        Some(thumb_path)
-    } else {
-        let _ = std::fs::remove_file(&partial);
-        None
-    }
+    published.then_some(thumb_path)
 }
 
 const MAX_TEXTURE_CACHE: usize = 96;
@@ -221,6 +255,75 @@ pub fn thumbnail_texture(thumb_path: PathBuf, image: RgbaImage) -> gtk::gdk::Tex
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_videos_open_only_files() {
+        let input = "/videos/concat:a|b.mp4";
+        for spec in [
+            duration_probe_spec(input),
+            card_frame_spec(input, 1.0, Path::new("/cache/.x.png")),
+        ] {
+            let argv = spec.try_resolved().unwrap().argv;
+            let whitelist_at = argv
+                .windows(2)
+                .position(|pair| pair == ["-protocol_whitelist", "file,pipe"])
+                .unwrap_or(usize::MAX);
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert!(whitelist_at < input_at, "{argv:?}");
+        }
+    }
+
+    /// A run that failed or timed out may have written part of the image; only
+    /// a clean exit with bytes publishes it.
+    #[test]
+    fn frame_published_only_when_whole() {
+        let dir = tempfile::tempdir().unwrap();
+        let (partial, frame) = (dir.path().join("partial.jpg"), dir.path().join("0.jpg"));
+        std::fs::write(&partial, b"truncated").unwrap();
+        assert!(!publish_frame(false, &partial, &frame));
+        assert!(!frame.exists() && !partial.exists());
+        std::fs::write(&partial, b"").unwrap();
+        assert!(!publish_frame(true, &partial, &frame));
+        assert!(!frame.exists() && !partial.exists());
+        std::fs::write(&partial, b"whole").unwrap();
+        assert!(publish_frame(true, &partial, &frame));
+        assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
+    }
+
+    /// The converters stand in for an ffmpeg run that writes part of its output
+    /// and fails, and for one that exits cleanly without writing.
+    #[test]
+    fn failed_or_empty_conversion_leaves_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("wallpaper.png");
+        for script in ["printf part > \"$1\"; exit 1", ": > \"$1\""] {
+            assert!(!publish_converted(&target, |partial| {
+                BigSubprocessSpec::builder()
+                    .program("sh")
+                    .args(["-c", script, "sh"])
+                    .arg(partial)
+                    .build()
+            }));
+            assert_eq!(
+                std::fs::read_dir(dir.path()).unwrap().count(),
+                0,
+                "{script}"
+            );
+        }
+    }
+
+    #[test]
+    fn cards_never_open_streams() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}/live/1.ts", listener.local_addr().unwrap());
+        let dir = tempfile::tempdir().unwrap();
+        assert!(crate::media::playlist::probe_metadata_cached(&url).is_none());
+        assert!(get_or_generate_thumbnail(&url).is_none());
+        assert!(!render_card_frame(&url, 1.0, &dir.path().join("0.jpg")));
+        let connection = listener.accept().map(|_| ()).map_err(|error| error.kind());
+        assert_eq!(connection, Err(std::io::ErrorKind::WouldBlock));
+    }
 
     #[test]
     fn thumb_hash_is_stable() {

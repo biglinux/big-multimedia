@@ -1,0 +1,26 @@
+player	player	catalog
+track	pjesma	catalog
+library	biblioteka	catalog
+queue	red čekanja	catalog
+playlist	popis za reprodukciju	catalog
+station	postaja	catalog
+episode	epizoda	catalog
+podcast subscriptions	pretplate na podcaste	catalog Pretplate
+screenshot	snimka zaslona	catalog
+provider	pružatelj	catalog
+keyring	skup ključeva	gnome-keyring, libsecret
+unlock	otključaj	gtk40, gnome-keyring
+Preferences	Postavke	catalog
+Advanced	Napredno	catalog
+Audio Output	Izlaz zvuka	catalog
+Video Output	Video izlaz	catalog
+mpv Options	mpv opcije	catalog
+equalizer	equalizer	catalog
+sidebar	bočna traka	catalog
+top bar, bottom bar	gornja traka, donja traka	catalog Traka kontrola
+Paused	Pauzirano	gtk40
+retry	Pokušaj ponovno	catalog pokušajte ponovno
+scan (library)	skeniranje	catalog
+playback engine	pogon za reprodukciju	new term
+entry (playlist)	stavka	catalog
+web remote	web daljinski upravljač	catalog

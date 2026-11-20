@@ -3,7 +3,7 @@
 
 use super::*;
 use big_app_kit::mpris::{
-    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+    CommandCallback, LoopStatus, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
 };
 use std::sync::{Mutex, PoisonError};
 
@@ -13,7 +13,7 @@ pub(super) fn build_mpris_service(
     sender: &ComponentSender<VideoShell>,
     state: &Arc<Mutex<PlayerState>>,
     settings: &Settings,
-) -> Option<Mpris> {
+) -> Mpris {
     let (command_tx, command_rx) = relm4::channel::<MprisCommand>();
     let input = sender.input_sender().clone();
     glib::spawn_future_local(async move {
@@ -31,17 +31,21 @@ pub(super) fn build_mpris_service(
         let mut snapshot = state.lock().unwrap_or_else(PoisonError::into_inner).clone();
         // The settings are the source of truth: every path that changes repeat
         // or shuffle (boot, Preferences, playlist menu, MPRIS) applies them to mpv.
-        let status = match settings.get_string(keys::LOOP_MODE).as_str() {
-            "file" => "Track",
-            "playlist" => "Playlist",
-            _ => "None",
+        snapshot.loop_status = match settings.get_string(keys::LOOP_MODE).as_str() {
+            "file" => LoopStatus::Track,
+            "playlist" => LoopStatus::Playlist,
+            _ => LoopStatus::None,
         };
-        status.clone_into(&mut snapshot.loop_status);
         snapshot.shuffle = settings.get_bool(keys::PLAYLIST_SHUFFLE);
         snapshot
     });
-    // `new` is the video identity (BigVideoPlayer bus name, no taskbar progress).
-    Mpris::new(command_cb, state_cb)
+    Mpris::new(
+        "org.mpris.MediaPlayer2.BigVideoPlayer",
+        crate::config::video::APP_ID,
+        command_cb,
+        state_cb,
+        false,
+    )
 }
 
 fn finite(value: f64) -> f64 {
@@ -55,9 +59,7 @@ fn finite(value: f64) -> f64 {
 impl VideoShell {
     /// Mirror one mpv event into the MPRIS snapshot.
     pub(super) fn mirror_mpris(&mut self, event: &PlayerEvent) {
-        let Some(mpris) = &self.mpris else {
-            return;
-        };
+        let mpris = &self.mpris;
         let mpv = self.mpv.borrow().clone();
         let mut state = self
             .mpris_state
@@ -82,7 +84,7 @@ impl VideoShell {
                         PlaybackStatus::Playing
                     };
                     state.can_seek = mpv.is_seekable();
-                    (state.can_prev, state.can_next) = self.playlist_neighbours(&mpv);
+                    (state.can_prev, state.can_next) = self.playlist_neighbors(&mpv);
                     state.volume_pct = finite(mpv.get_volume());
                     state.rate = mpv.get_speed();
                 }
@@ -97,7 +99,7 @@ impl VideoShell {
                 // The folder around an opened file, and any queue change,
                 // lands after its `FileLoaded`.
                 if let Some(mpv) = mpv {
-                    (state.can_prev, state.can_next) = self.playlist_neighbours(&mpv);
+                    (state.can_prev, state.can_next) = self.playlist_neighbors(&mpv);
                 }
             }
             PlayerEvent::DurationChanged(duration) => state.duration_secs = finite(*duration),
@@ -112,7 +114,7 @@ impl VideoShell {
             PlayerEvent::RateChanged(rate) => state.rate = *rate,
             PlayerEvent::Seeked(position) => {
                 state.position_secs = finite(*position);
-                mpris.emit_seeked((state.position_secs * 1_000_000.0).round() as i64);
+                mpris.emit_seeked(state.position_secs);
             }
             // Between playlist entries the next `FileLoaded` restores the track.
             // Past the last entry (or after Stop) mpv sits idle with nothing to
@@ -131,7 +133,7 @@ impl VideoShell {
     /// Act on a command from the bus, revalidated against the current snapshot.
     /// Whether the playlist has an entry before and after the playing one;
     /// repeat-playlist wraps past the last entry.
-    fn playlist_neighbours(&self, mpv: &MpvBackend) -> (bool, bool) {
+    fn playlist_neighbors(&self, mpv: &MpvBackend) -> (bool, bool) {
         let (index, count) = (mpv.get_playlist_pos(), mpv.get_playlist_count());
         let wraps = count > 1 && self.settings.get_string(keys::LOOP_MODE) == "playlist";
         (index > 0, wraps || (index >= 0 && index + 1 < count))
@@ -161,21 +163,17 @@ impl VideoShell {
                     window.close();
                 }
             }
-            MprisCommand::OpenUri(uri) => {
-                let path = gio::File::for_uri(&uri)
-                    .path()
-                    .and_then(|path| path.to_str().map(str::to_owned))
-                    .unwrap_or(uri);
-                sender.input(VideoShellInput::OpenFiles(vec![path]));
+            MprisCommand::OpenUri(target) => {
+                sender.input(VideoShellInput::OpenFiles(vec![target]));
             }
             command => {
                 let Some(mpv) = self.mpv.borrow().clone() else {
                     return;
                 };
                 match command {
-                    MprisCommand::Play => mpv.play(),
+                    MprisCommand::Play => super::playback::play(&mpv, &self.settings),
                     MprisCommand::Pause => mpv.pause(),
-                    MprisCommand::PlayPause => mpv.toggle_pause(),
+                    MprisCommand::PlayPause => super::playback::toggle_play(&mpv, &self.settings),
                     MprisCommand::Stop => mpv.stop(),
                     MprisCommand::Next if state.can_next => mpv.playlist_next(),
                     MprisCommand::Previous if state.can_prev => mpv.playlist_prev(),
@@ -201,21 +199,16 @@ impl VideoShell {
                             mpv.seek_absolute(target);
                         }
                     }
-                    MprisCommand::SetVolume(volume) if volume.is_finite() => {
-                        let volume_max =
-                            f64::from(self.settings.get_int(keys::VOLUME_MAX)).max(100.0);
+                    MprisCommand::SetVolume(volume) => {
+                        let volume_max = f64::from(self.settings.volume_max_percent());
                         mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                     }
-                    MprisCommand::SetRate(rate)
-                        if rate.is_finite() && (0.25..=4.0).contains(&rate) =>
-                    {
-                        mpv.set_speed(rate);
-                    }
+                    MprisCommand::SetRate(rate) => mpv.set_speed(rate),
                     MprisCommand::SetLoopStatus(status) => {
-                        let mode = match status.as_str() {
-                            "Track" => "file",
-                            "Playlist" => "playlist",
-                            _ => "no",
+                        let mode = match status {
+                            LoopStatus::Track => "file",
+                            LoopStatus::Playlist => "playlist",
+                            LoopStatus::None => "no",
                         };
                         let _ = self.settings.put_string(keys::LOOP_MODE, mode);
                         mpv.set_loop_mode(mode);

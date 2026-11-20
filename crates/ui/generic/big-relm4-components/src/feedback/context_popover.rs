@@ -3,11 +3,10 @@
 
 //! Plain context popover with flat action rows.
 
+use crate::feedback::tooltip;
 use relm4::gtk;
 use relm4::gtk::gdk;
 use relm4::gtk::prelude::*;
-
-use crate::text::escape_markup_text;
 
 /// Right-click / long-press popover that hosts a vertical stack of
 /// flat action buttons. Cheap to build, self-unparenting on close.
@@ -53,9 +52,11 @@ impl BigContextPopover {
         F: Fn() + 'static,
     {
         let label = label.as_ref();
-        let row_label_markup = escape_markup_text(label);
         let row_label = gtk::Label::builder()
-            .label(format!("<span weight=\"normal\">{row_label_markup}</span>"))
+            .label(format!(
+                "<span weight=\"normal\">{}</span>",
+                gtk::glib::markup_escape_text(label)
+            ))
             .ellipsize(gtk::pango::EllipsizeMode::End)
             .halign(gtk::Align::Start)
             .hexpand(true)
@@ -106,12 +107,7 @@ impl BigContextPopover {
         row.append(&name);
         let on_choice = std::rc::Rc::new(on_choice);
         for (index, (icon, accessible)) in choices.iter().enumerate() {
-            let button = gtk::Button::builder()
-                .icon_name(*icon)
-                .tooltip_text(accessible.as_str())
-                .build();
-            button.add_css_class("flat");
-            button.update_property(&[gtk::accessible::Property::Label(accessible)]);
+            let button = tooltip::icon_button(icon, accessible, &["image-button", "flat"]);
             let popover = self.popover.downgrade();
             let on_choice = std::rc::Rc::clone(&on_choice);
             button.connect_clicked(move |_| {
@@ -140,4 +136,30 @@ impl BigContextPopover {
         big_gtk_kit::popover::auto_unparent_on_close(&self.popover);
         self.popover.popup();
     }
+}
+
+/// Open a row's context menu from the keyboard: on Menu or Shift+F10 inside
+/// `list` (a `GtkListView` or `GtkGridView`), `open` gets the focused row's
+/// child and returns whether it opened a menu for it.
+pub fn open_context_menu_on_keys(
+    list: &impl IsA<gtk::Widget>,
+    open: impl Fn(&gtk::Widget) -> bool + 'static,
+) {
+    let action = gtk::CallbackAction::new(move |list, _| {
+        let opened = list
+            .focus_child()
+            .and_then(|cell| cell.first_child())
+            .is_some_and(|row| open(&row));
+        if opened {
+            gtk::glib::Propagation::Stop
+        } else {
+            gtk::glib::Propagation::Proceed
+        }
+    });
+    let keys = gtk::ShortcutController::new();
+    keys.add_shortcut(gtk::Shortcut::new(
+        gtk::ShortcutTrigger::parse_string("Menu|<Shift>F10"),
+        Some(action),
+    ));
+    list.add_controller(keys);
 }

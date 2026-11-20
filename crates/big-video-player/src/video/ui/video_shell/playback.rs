@@ -1,5 +1,12 @@
 use super::*;
+use crate::video::ui::iptv::fetch_error_text;
+use crate::video::ui::iptv::fetcher::ChannelUrls;
 use big_media_components::surface::toggle_surface_fullscreened;
+use big_media_runtime::player::mpv_backend::TargetSource;
+
+mod opened_list;
+pub(crate) use opened_list::{OpenedList, is_remote_uri};
+use opened_list::{resolve_open_files, with_played_channels};
 
 impl VideoShell {
     /// Reflect an mpv event in the transport display + now-playing title.
@@ -18,6 +25,17 @@ impl VideoShell {
                     if let Some(frac) = seek_fraction(pos, self.duration_secs) {
                         self.controls
                             .emit(VideoControlsBarInput::SetSeekFraction(frac));
+                    }
+                }
+                // Seeking back from the end plays on without a pause change.
+                if self.ended && !tv {
+                    let mpv = self.mpv.borrow().clone();
+                    if let Some(mpv) = mpv.filter(|mpv| !mpv.eof_reached()) {
+                        self.ended = false;
+                        self.playing = !mpv.is_paused();
+                        self.sync_screen_inhibit(root);
+                        self.controls
+                            .emit(VideoControlsBarInput::SetPaused(mpv.is_paused()));
                     }
                 }
                 self.feed_trim_playhead(pos);
@@ -45,10 +63,11 @@ impl VideoShell {
                 self.playing = !paused;
                 self.sync_screen_inhibit(root);
                 if !tv {
-                    self.controls.emit(VideoControlsBarInput::SetPaused(paused));
+                    self.controls
+                        .emit(VideoControlsBarInput::SetPaused(paused || self.ended));
                 }
-                // Old "keep shown while paused": reveal the OSD when paused, and
-                // re-arm the auto-hide when resuming.
+                // The controls stay shown while paused; resuming re-arms the
+                // auto-hide.
                 self.osd.is_paused.set(paused);
                 if paused {
                     self.osd.show();
@@ -63,10 +82,14 @@ impl VideoShell {
                 // make mpv quit at startup.
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
                     mpv.set_idle(&self.settings.get_string(keys::IDLE_MODE));
-                    self.video_transform.reset_source_colours(mpv);
+                    self.video_transform.reset_source_colors(mpv);
                     // `EndFile` cleared `playing`, but mpv keeps playing into
                     // the next file without a pause change to report it.
                     self.playing = !mpv.is_paused();
+                    if std::mem::take(&mut self.ended) && !tv {
+                        self.controls
+                            .emit(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+                    }
                     // A live stream never reports a duration: without this the
                     // previous file's length stayed, and seeks used it.
                     let duration = mpv.get_duration();
@@ -117,14 +140,13 @@ impl VideoShell {
                 // First frame: drop the idle gradient and restore the gl surface
                 // (video stays invisible otherwise), then
                 // let the OSD auto-hide.
-                if let Some(display) = gtk::gdk::Display::default() {
-                    self.idle_bg.hide(&display);
-                }
+                self.idle_bg.hide();
                 self.osd.is_welcome_visible.set(false);
                 self.osd.show_and_schedule_hide();
                 self.refresh_now_playing(root);
                 // Resize the window to the video's aspect (no letterbox bars).
                 self.aspect_snap.snap_on_load();
+                self.subtitle_lift.apply();
                 self.tv_follow_loaded();
                 self.tv_catch_up_loaded();
             }
@@ -143,6 +165,10 @@ impl VideoShell {
             }
             PlayerEvent::VolumeChanged(volume) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
+                let settings = self.settings.clone();
+                self.volume_save.run(move || {
+                    settings.put_video_volume_percent(volume);
+                });
             }
             PlayerEvent::MuteChanged(muted) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetMuted(muted));
@@ -159,13 +185,15 @@ impl VideoShell {
                         durability_confirmed,
                     );
                 }
-                crate::player::mpv_backend::ScreenshotResult::Failed => {
-                    self.notify(&i18n("Screenshot failed"));
+                crate::player::mpv_backend::ScreenshotResult::Failed(error) => {
+                    self.notify(
+                        &crate::video::ui::menu_dialogs::screenshot_not_saved_message(&error),
+                    );
                 }
                 crate::player::mpv_backend::ScreenshotResult::Cancelled => {}
             },
             PlayerEvent::ScreenshotTimedOut { .. } => {
-                self.notify(&i18n("Screenshot timed out; cancellation requested"));
+                self.notify(&i18n("The screenshot took too long and was not saved"));
             }
             // mpv quit on its own (idle mode "close player" at the end of the
             // playlist): close the window instead of leaving a dead player.
@@ -174,18 +202,32 @@ impl VideoShell {
                     root.close();
                 }
             }
-            // Reason 4 = error (unsupported/corrupt/unreadable source). Other
-            // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
-            // playback; surface only the error so the user gets feedback
-            // instead of a silent blank screen.
+            // Only an error gets a notice, so the user gets feedback instead
+            // of a silent blank screen; every other reason is a normal end.
             PlayerEvent::EndFile(reason) => {
                 self.playing = false;
                 self.sync_screen_inhibit(root);
-                if reason == 4 {
-                    self.notify(&i18n(
-                        "Could not play this file — it may be unsupported or corrupt.",
-                    ));
-                    self.reveal_pending_welcome();
+                // Held on the last frame, mpv is not paused, yet Play is what
+                // the button offers.
+                self.ended = self
+                    .mpv
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|mpv| mpv.eof_reached());
+                if self.ended && !tv {
+                    self.controls.emit(VideoControlsBarInput::SetPaused(true));
+                }
+                match reason {
+                    EndReason::Error => {
+                        self.notify(&i18n(
+                            "Could not play this file: it may be unsupported or corrupt.",
+                        ));
+                        self.reveal_pending_welcome();
+                    }
+                    EndReason::AudioOutputFailed => {
+                        self.notify(&EndReason::audio_output_failed_notice());
+                    }
+                    _ => {}
                 }
             }
             _ => {}
@@ -195,7 +237,7 @@ impl VideoShell {
     /// Hold or release the screen-awake inhibitor for the "Keep the Screen On"
     /// preference: during playback, always, or never.
     pub(super) fn sync_screen_inhibit(&mut self, root: Option<&adw::ApplicationWindow>) {
-        let wanted = match self.settings.string("stop-screensaver").as_str() {
+        let wanted = match self.settings.get_string(keys::STOP_SCREENSAVER).as_str() {
             "always" => true,
             "no" => false,
             _ => self.playing,
@@ -234,7 +276,9 @@ impl VideoShell {
         if let (Some(root), Some(title)) = (root, mpv.get_media_title().filter(|t| !t.is_empty())) {
             root.set_title(Some(&title));
         }
-        let current = mpv.get_current_file();
+        let current = mpv
+            .get_current_file()
+            .map(|path| self.stored_urls.stored_url(&path).to_owned());
         drop(mpv_ref);
         self.playlist
             .emit(VideoBrowserSidebarInput::SetCurrentFile(current));
@@ -264,18 +308,18 @@ impl VideoShell {
             self.settings.get_string(keys::PLAYLIST_SORT),
             self.settings.get_bool(keys::PLAYLIST_SORT_DESC),
         );
+        let providers = self.iptv.model().providers();
         gtk::glib::spawn_future_local(async move {
-            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths, &sort))
-                .await
-                .ok()
-                .flatten();
+            let resolved = gtk::gio::spawn_blocking(move || {
+                resolve_open_files(paths, &sort).map(|list| with_played_channels(list, &providers))
+            })
+            .await
+            .ok()
+            .flatten();
             // Nothing playable still answers, so a launch that skipped the
             // welcome screen can bring it back.
-            let (entries, start, folder) = resolved.unwrap_or_default();
             sender.input(VideoShellInput::PlaylistResolved {
-                entries,
-                start,
-                folder,
+                list: resolved.unwrap_or_default(),
                 generation,
             });
         });
@@ -283,20 +327,32 @@ impl VideoShell {
 
     /// Apply a resolved open request on the main thread: load the playlist into
     /// mpv and push the listing to the sidebar.
-    pub(super) fn apply_open(
-        &mut self,
-        entries: Vec<String>,
-        start: usize,
-        folder: Option<String>,
-    ) {
-        if entries.is_empty() {
+    pub(super) fn apply_open(&mut self, list: OpenedList) {
+        if let Some(error) = &list.channel_error {
+            self.notify(&fetch_error_text(error));
             self.reveal_pending_welcome();
             return;
         }
-        self.load_playlist(&entries, start);
+        if let Some(notice) = crate::media::iptv::left_out_notice(list.truncated, list.skipped) {
+            self.notify(&notice);
+        }
+        if list.entries.is_empty() || self.report_missing_engine() {
+            self.reveal_pending_welcome();
+            return;
+        }
+        for (stored, played) in list.channels {
+            self.stored_urls.insert(stored, played);
+        }
+        // A played channel URL comes back from the TV.
+        let entries: Vec<String> = list
+            .entries
+            .iter()
+            .map(|entry| self.stored_urls.stored_url(entry).to_owned())
+            .collect();
+        self.load_playlist(&entries, list.start, list.source);
         self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
             paths: entries,
-            folder,
+            folder: list.folder,
         });
     }
 
@@ -306,27 +362,33 @@ impl VideoShell {
     /// again; mpv indices always come from mpv's live order, which shuffle
     /// changes. Pushes the new queue to the sidebar; an external open also
     /// sends the folder listing.
-    fn load_playlist(&mut self, entries: &[String], start: usize) {
+    fn load_playlist(&mut self, entries: &[String], start: usize, source: TargetSource) {
         // mpv starts its video output only with a render context in place.
         if let Some(start_video) = self.video_start.take() {
             start_video();
         }
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
+            self.report_missing_engine();
             return;
         };
         let Some(chosen) = entries.get(start).or(entries.first()) else {
             return;
         };
         let start = start.min(entries.len() - 1);
+        let played: Vec<String> = entries
+            .iter()
+            .map(|entry| self.stored_urls.played_url(entry).to_owned())
+            .collect();
+        let chosen = self.stored_urls.played_url(chosen);
         // The chosen file plays first and the rest of the folder goes around
         // it. mpv reads the lists on a thread of its own, so a jump by index
         // queued after them could run before they are in and leave the first
         // file playing; an insert at 0 and an append land right whenever
         // they run.
-        mpv.load_file(chosen);
-        mpv.load_files_at(&entries[..start], Some(0));
-        mpv.load_files_append(&entries[start + 1..]);
+        mpv.load_file(chosen, source);
+        mpv.load_files_at(&played[..start], source, Some(0));
+        mpv.load_files_append(&played[start + 1..], source);
         mpv.play();
         drop(mpv_ref);
         self.playlist_paths = entries.to_vec();
@@ -335,7 +397,7 @@ impl VideoShell {
         self.shuffle_on_load = self
             .settings
             .get_bool(keys::PLAYLIST_SHUFFLE)
-            .then(|| (entries[start.min(entries.len() - 1)].clone(), entries.len()));
+            .then(|| (chosen.to_owned(), entries.len()));
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
@@ -343,11 +405,8 @@ impl VideoShell {
 
     /// Seek to `secs`: on the TV while it has the controls, else locally.
     pub(super) fn seek_to(&self, secs: f64) {
-        if let Some(state) = self.tv.attached() {
-            if state.can_seek {
-                self.tv
-                    .control("seek-to", secs.clamp(0.0, state.duration.max(0.0)));
-            }
+        if self.tv.attached().is_some() {
+            self.tv.seek_to(secs);
         } else if let Some(mpv) = self.mpv.borrow().as_ref() {
             mpv.seek_absolute(secs);
         }
@@ -391,9 +450,7 @@ impl VideoShell {
             return;
         };
         welcome.set_visible(true);
-        if let Some(display) = gtk::gdk::Display::default() {
-            self.idle_bg.show(&display);
-        }
+        self.idle_bg.show();
         self.controls
             .emit(VideoControlsBarInput::SetHasMedia(false));
         self.osd.is_welcome_visible.set(true);
@@ -411,16 +468,20 @@ impl VideoShell {
                 // Same list already loaded → jump in place; else reload mpv.
                 if is_same_playlist(&paths, &self.playlist_paths) {
                     if let Some(mpv) = self.mpv.borrow().as_ref()
-                        && let Some(index) = paths
-                            .get(start)
-                            .and_then(|path| playlist_index_of(&mpv.get_playlist_paths(), path))
+                        && let Some(index) = paths.get(start).and_then(|path| {
+                            playlist_index_of(
+                                &mpv.get_playlist_paths(),
+                                self.stored_urls.played_url(path),
+                            )
+                        })
                     {
                         mpv.playlist_play_index(index as i64);
                     }
                 } else {
-                    self.load_playlist(&paths, start);
+                    self.load_playlist(&paths, start, TargetSource::Person);
                 }
             }
+            VideoBrowserSidebarOutput::OpenPlaylist(path) => self.open_files(&[path], sender),
             VideoBrowserSidebarOutput::Enqueue(paths) => self.enqueue_paths(&paths),
             VideoBrowserSidebarOutput::PlayNext { path, now } => self.play_next(path, now),
             VideoBrowserSidebarOutput::MoveEntry { path, to } => self.move_entry(&path, to),
@@ -454,6 +515,15 @@ impl VideoShell {
         self.notice.show(message);
     }
 
+    /// Say again why nothing can play when mpv failed to start; true then.
+    pub(crate) fn report_missing_engine(&self) -> bool {
+        let Some(failure) = &self.engine_failure else {
+            return false;
+        };
+        self.notify(failure);
+        true
+    }
+
     /// Queue the chosen files in the video converter (an already-running
     /// instance enqueues them).
     fn send_to_converter(&self, paths: &[String]) {
@@ -466,8 +536,7 @@ impl VideoShell {
     }
 
     /// Move files to the trash, drop the trashed ones from the queue, refresh
-    /// the browser, and offer an Undo that restores them. The `gio trash`
-    /// calls run off the main thread (they spawn a subprocess per file).
+    /// the browser, and offer an Undo that restores them, all off the main thread.
     fn trash_files(&mut self, paths: Vec<String>, sender: &ComponentSender<VideoShell>) {
         let notice = self.notice.clone();
         let pl_sender = self.playlist.sender().clone();
@@ -477,7 +546,7 @@ impl VideoShell {
                 use big_media_runtime::media::playlist;
                 paths
                     .into_iter()
-                    .filter(|p| playlist::trash_file(p).is_ok())
+                    .filter(|p| playlist::trash_file(std::path::Path::new(p)).is_ok())
                     .collect::<Vec<String>>()
             },
             move |trashed: Vec<String>| {
@@ -494,17 +563,38 @@ impl VideoShell {
                 )
                 .replace("{}", &trashed.len().to_string());
                 let restore_sender = pl_sender.clone();
+                let restore_notice = notice.clone();
                 notice.show_action(&title, &i18n("Undo"), move || {
                     let to_restore = trashed;
                     big_media_components::player_chrome::spawn_blocking_result(
                         move || {
                             use big_media_runtime::media::playlist;
+                            let mut failed = 0_u64;
                             for path in &to_restore {
-                                let _ = playlist::restore_from_trash(path);
+                                if let Err(error) =
+                                    playlist::restore_from_trash(std::path::Path::new(path))
+                                {
+                                    log::warn!(
+                                        "restoring {} from the trash failed: {error}",
+                                        crate::video::redaction::redact_path(path)
+                                    );
+                                    failed += 1;
+                                }
                             }
+                            failed
                         },
-                        move |()| {
+                        move |failed| {
                             let _ = restore_sender.send(VideoBrowserSidebarInput::RefreshFolder);
+                            if failed > 0 {
+                                restore_notice.show(
+                                    &ni18n(
+                                        "{} file could not be restored. Restore it from the trash.",
+                                        "{} files could not be restored. Restore them from the trash.",
+                                        failed,
+                                    )
+                                    .replace("{}", &failed.to_string()),
+                                );
+                            }
                         },
                     );
                 });
@@ -530,13 +620,17 @@ impl VideoShell {
             return;
         }
         if self.playlist_paths.is_empty() {
-            self.load_playlist(paths, 0);
+            self.load_playlist(paths, 0, TargetSource::Person);
             return;
         }
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
-        mpv.load_files_append(paths);
+        let played: Vec<String> = paths
+            .iter()
+            .map(|path| self.stored_urls.played_url(path).to_owned())
+            .collect();
+        mpv.load_files_append(&played, TargetSource::Person);
         self.playlist_paths.extend_from_slice(paths);
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
@@ -556,13 +650,13 @@ impl VideoShell {
             return;
         };
         let order = mpv.get_playlist_paths();
-        let Some(mpv_from) = playlist_index_of(&order, path) else {
+        let Some(mpv_from) = playlist_index_of(&order, self.stored_urls.played_url(path)) else {
             return;
         };
         let before = self
             .playlist_paths
             .get(to + 1)
-            .and_then(|next| playlist_index_of(&order, next))
+            .and_then(|next| playlist_index_of(&order, self.stored_urls.played_url(next)))
             .unwrap_or(order.len());
         mpv.playlist_move(mpv_from as i64, before as i64);
     }
@@ -582,17 +676,18 @@ impl VideoShell {
     /// The rest of the list stays as it was.
     fn play_next(&mut self, path: String, now: bool) {
         if self.playlist_paths.is_empty() {
-            self.load_playlist(std::slice::from_ref(&path), 0);
+            self.load_playlist(std::slice::from_ref(&path), 0, TargetSource::Person);
         } else {
             let Some(mpv) = self.mpv.borrow().clone() else {
                 return;
             };
             let order = mpv.get_playlist_paths();
             let current = mpv.get_playlist_pos().max(0);
-            let from = if let Some(index) = playlist_index_of(&order, &path) {
+            let played = self.stored_urls.played_url(&path);
+            let from = if let Some(index) = playlist_index_of(&order, played) {
                 index as i64
             } else {
-                mpv.load_file_append(&path);
+                mpv.load_file_append(played, TargetSource::Person);
                 order.len() as i64
             };
             // mpv inserts before `to`: that is right after the playing one.
@@ -610,7 +705,12 @@ impl VideoShell {
                 let playing = order.get(current as usize).cloned();
                 self.playlist_paths.retain(|entry| *entry != path);
                 let at = playing
-                    .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
+                    .and_then(|playing| {
+                        playlist_index_of(
+                            &self.playlist_paths,
+                            self.stored_urls.stored_url(&playing),
+                        )
+                    })
                     .map_or(self.playlist_paths.len(), |index| index + 1);
                 self.playlist_paths.insert(at, path);
             }
@@ -663,7 +763,8 @@ impl VideoShell {
     fn remove_playlist_entry(&mut self, path: &str) {
         if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
             if let Some(mpv) = self.mpv.borrow().as_ref()
-                && let Some(index) = playlist_index_of(&mpv.get_playlist_paths(), path)
+                && let Some(index) =
+                    playlist_index_of(&mpv.get_playlist_paths(), self.stored_urls.played_url(path))
             {
                 mpv.playlist_remove(index as i64);
             }
@@ -675,34 +776,48 @@ impl VideoShell {
     /// existing playback path (replaces the playlist with the single stream).
     pub(super) fn on_iptv(&mut self, out: VideoIptvBrowserOutput) {
         match out {
-            VideoIptvBrowserOutput::PlayChannel { url, title } => self.play_stream(url, &title),
+            VideoIptvBrowserOutput::PlayChannel {
+                urls,
+                title,
+                origin,
+            } => self.play_stream(urls, &title, TargetSource::List(origin)),
         }
     }
 
     /// Play one stream under its own name: an IPTV channel. It replaces the
     /// playlist, like opening a URL, and nothing on disk is resolved for it.
-    fn play_stream(&mut self, url: String, title: &str) {
+    /// The playlist, which Save writes to a file, lists the stored URL; a
+    /// channel without one stays out of it.
+    pub(super) fn play_stream(&mut self, urls: ChannelUrls, title: &str, source: TargetSource) {
         // A folder scan still running must not replace the channel.
         self.open_generation += 1;
         if let Some(start_video) = self.video_start.take() {
             start_video();
         }
         let Some(mpv) = self.mpv.borrow().clone() else {
+            self.report_missing_engine();
             return;
         };
         if title.is_empty() {
-            mpv.load_file(&url);
+            mpv.load_file(&urls.played, source);
         } else {
-            mpv.load_file_titled(&url, title);
+            mpv.load_file_titled(&urls.played, source, title);
         }
         mpv.play();
         self.shuffle_on_load = None;
-        self.playlist_paths = vec![url.clone()];
+        self.playlist_paths.clear();
+        match urls.stored {
+            Some(stored) => {
+                self.playlist_paths.push(stored.clone());
+                self.stored_urls.insert(stored, urls.played);
+            }
+            None => self.stored_urls.insert_unlisted(urls.played, source),
+        }
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
         self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
-            paths: vec![url],
+            paths: self.playlist_paths.clone(),
             folder: None,
         });
     }
@@ -721,7 +836,7 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::GotoTimeClicked = out {
             if let Some(root) = root {
-                Self::show_goto_time_dialog(root);
+                self.show_goto_time_dialog(root);
             }
             return;
         }
@@ -731,16 +846,9 @@ impl VideoShell {
         }
         if let Some(state) = self.tv.attached() {
             match out {
-                VideoControlsBarOutput::TogglePlay => {
-                    self.tv
-                        .control(if state.paused { "play" } else { "pause" }, 0.0);
-                }
+                VideoControlsBarOutput::TogglePlay => self.tv.toggle_pause(),
                 VideoControlsBarOutput::SeekChanged(frac) => {
-                    if state.can_seek
-                        && let Some(target) = seek_target_secs(frac, state.duration)
-                    {
-                        self.tv.control("seek-to", target);
-                    }
+                    self.tv.seek_to(frac * state.duration);
                 }
                 VideoControlsBarOutput::Next => {
                     self.tv_skip(true, state.receiver_id);
@@ -757,7 +865,7 @@ impl VideoShell {
             return;
         };
         match out {
-            VideoControlsBarOutput::TogglePlay => mpv.toggle_pause(),
+            VideoControlsBarOutput::TogglePlay => toggle_play(mpv, &self.settings),
             VideoControlsBarOutput::Next => mpv.playlist_next(),
             VideoControlsBarOutput::Previous => mpv.playlist_prev(),
             VideoControlsBarOutput::SeekChanged(frac) => {
@@ -773,74 +881,33 @@ impl VideoShell {
     }
 }
 
-/// Resolve an open request to `(entries, start, folder)` off the main thread.
-/// Pure + `Send` (captures only `String`s); the blocking folder scan / playlist
-/// parse run here. Returns `None` when nothing playable was found.
-fn resolve_open_files(
-    paths: Vec<String>,
-    (sort_key, sort_desc): &(String, bool),
-) -> Option<(Vec<String>, usize, Option<String>)> {
-    use big_media_runtime::media::playlist;
-
-    if paths.is_empty() {
-        return None;
+/// Play or pause; held at the end of a file, Play starts over.
+pub(super) fn toggle_play(mpv: &MpvBackend, settings: &Settings) {
+    if mpv.eof_reached() {
+        play_from_end(mpv, settings);
+    } else {
+        mpv.toggle_pause();
     }
-
-    // A playlist file on disk; an HLS stream ends in .m3u8 too, and it is
-    // played, not read as a file: every IPTV channel was one.
-    if paths.len() == 1 && !is_remote_uri(&paths[0]) && playlist::is_playlist_file(&paths[0]) {
-        let parsed = playlist::parse_playlist_file(&paths[0]);
-        if parsed.is_empty() {
-            return None;
-        }
-        return Some((parsed, 0, None));
-    }
-
-    if paths.len() == 1 && !is_remote_uri(&paths[0]) {
-        // Single local file → scan its folder, start at this file, and show that
-        // folder as the sidebar's browse context.
-        return match std::path::Path::new(&paths[0]).parent() {
-            Some(parent) => {
-                let mut folder = playlist::scan_folder_flat(parent);
-                playlist::sort_paths(&mut folder, sort_key, *sort_desc);
-                // A file the scan does not list (an extension it lacks) plays
-                // alone: starting at 0 played the folder's first video instead.
-                match folder.iter().position(|p| p == &paths[0]) {
-                    Some(pos) => Some((folder, pos, Some(parent.to_string_lossy().into_owned()))),
-                    None => Some((vec![paths[0].clone()], 0, None)),
-                }
-            }
-            None => Some((vec![paths[0].clone()], 0, None)),
-        };
-    }
-
-    if paths.len() == 1 {
-        // Single remote URI / stream → just that entry.
-        return Some((vec![paths[0].clone()], 0, None));
-    }
-
-    let media: Vec<String> = paths
-        .iter()
-        .filter(|p| playlist::is_media_file(p))
-        .cloned()
-        .collect();
-    if media.is_empty() {
-        return None;
-    }
-    Some((media, 0, None))
 }
 
-/// Streams and discs: what mpv opens by URL, never a path on disk. Schemes
-/// are case-insensitive; IPTV lists use the UDP, RTP, SRT and MMS ones too.
-pub(crate) fn is_remote_uri(s: &str) -> bool {
-    const SCHEMES: [&str; 12] = [
-        "http", "https", "rtsp", "rtsps", "rtmp", "rtmps", "udp", "rtp", "srt", "mms", "dvd", "bd",
-    ];
-    s.trim().split_once("://").is_some_and(|(scheme, _)| {
-        SCHEMES
-            .iter()
-            .any(|known| scheme.eq_ignore_ascii_case(known))
-    })
+pub(super) fn play(mpv: &MpvBackend, settings: &Settings) {
+    if mpv.eof_reached() {
+        play_from_end(mpv, settings);
+    } else {
+        mpv.play();
+    }
+}
+
+/// Play once mpv holds the end of a file: the next file when the player stops
+/// after each one and there is a next, else this file from its start.
+fn play_from_end(mpv: &MpvBackend, settings: &Settings) {
+    let has_next = mpv.get_playlist_pos() + 1 < mpv.get_playlist_count();
+    if has_next && settings.get_string(keys::KEEP_OPEN) == "always" {
+        mpv.playlist_next();
+    } else {
+        mpv.seek_absolute(0.0);
+    }
+    mpv.play();
 }
 
 /// Seek-bar fraction for `pos` within a clip of `duration` seconds, clamped to
@@ -872,210 +939,4 @@ fn playlist_index_of(paths: &[String], target: &str) -> Option<usize> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{is_remote_uri, seek_fraction};
-
-    #[test]
-    fn seek_fraction_none_without_known_duration() {
-        assert_eq!(seek_fraction(5.0, 0.0), None);
-        assert_eq!(seek_fraction(5.0, -1.0), None);
-    }
-
-    #[test]
-    fn seek_fraction_maps_and_clamps() {
-        assert_eq!(seek_fraction(0.0, 100.0), Some(0.0));
-        assert_eq!(seek_fraction(50.0, 100.0), Some(0.5));
-        assert_eq!(seek_fraction(100.0, 100.0), Some(1.0));
-        // Position past the end clamps to 1.0; before start clamps to 0.0.
-        assert_eq!(seek_fraction(150.0, 100.0), Some(1.0));
-        assert_eq!(seek_fraction(-10.0, 100.0), Some(0.0));
-    }
-
-    #[test]
-    fn remote_uri_detects_streaming_and_disc_schemes() {
-        for uri in [
-            "http://h/v.mp4",
-            "https://h/v.mp4",
-            "rtsp://h/s",
-            "rtmp://h/s",
-            "dvd://1",
-            "bd://2",
-            "  https://trimmed ",
-        ] {
-            assert!(is_remote_uri(uri), "{uri} should be remote");
-        }
-    }
-
-    #[test]
-    fn remote_uri_rejects_local_paths() {
-        for path in ["/home/u/v.mkv", "file:///v.mp4", "video.mp4", "ftp://h/x"] {
-            assert!(!is_remote_uri(path), "{path} should be local");
-        }
-    }
-}
-
-#[cfg(test)]
-mod resolve_open_files_tests {
-    use super::resolve_open_files;
-    #[cfg(not(miri))]
-    use std::fs;
-    #[cfg(not(miri))]
-    use std::path::Path;
-
-    #[cfg(not(miri))]
-    fn touch(dir: &Path, name: &str) -> String {
-        let path = dir.join(name);
-        fs::write(&path, b"x").unwrap();
-        path.to_string_lossy().into_owned()
-    }
-
-    fn resolve_by_name(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
-        resolve_open_files(paths, &("name".to_string(), false))
-    }
-
-    #[test]
-    fn empty_input_resolves_to_nothing() {
-        assert_eq!(resolve_by_name(vec![]), None);
-    }
-
-    #[test]
-    fn remote_uri_passes_through() {
-        // Not a playlist, not local → the bare entry, no browse context.
-        assert_eq!(
-            resolve_by_name(vec!["rtsp://host/stream".to_string()]),
-            Some((vec!["rtsp://host/stream".to_string()], 0, None))
-        );
-    }
-
-    #[test]
-    fn an_hls_stream_plays_instead_of_being_read_as_a_playlist() {
-        for url in [
-            "http://host/live/u/p/560.m3u8",
-            "HTTPS://host/list.m3u",
-            "udp://@239.0.0.1:1234",
-        ] {
-            assert_eq!(
-                resolve_by_name(vec![url.to_string()]),
-                Some((vec![url.to_string()], 0, None)),
-                "{url}"
-            );
-        }
-    }
-
-    #[test]
-    fn multiple_inputs_keep_media_order() {
-        let out = resolve_by_name(vec![
-            "/x/B.mp4".to_string(),
-            "/x/a.mkv".to_string(),
-            "/x/notes.txt".to_string(),
-        ]);
-        assert_eq!(
-            out,
-            Some((
-                vec!["/x/B.mp4".to_string(), "/x/a.mkv".to_string()],
-                0,
-                None
-            ))
-        );
-    }
-
-    #[test]
-    fn multiple_non_media_inputs_resolve_to_nothing() {
-        assert_eq!(
-            resolve_by_name(vec!["/x/a.txt".to_string(), "/x/b.doc".to_string()]),
-            None
-        );
-    }
-
-    #[cfg(not(miri))]
-    #[test]
-    fn local_file_queues_its_folder() {
-        let dir = tempfile::tempdir().unwrap();
-        touch(dir.path(), "a.mp4");
-        let opened = touch(dir.path(), "b.mp4");
-        touch(dir.path(), "c.mp4");
-        let (folder, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
-        assert_eq!(folder.len(), 3, "all siblings scanned: {folder:?}");
-        // Position must index the opened file specifically (sorted a,b,c → 1).
-        assert_eq!(pos, 1);
-        assert_eq!(folder[pos], opened);
-        assert_eq!(
-            context.as_deref(),
-            Some(dir.path().to_string_lossy().as_ref())
-        );
-    }
-
-    #[cfg(not(miri))]
-    #[test]
-    fn unlisted_file_plays_alone() {
-        let dir = tempfile::tempdir().unwrap();
-        touch(dir.path(), "a.mp4");
-        // "Open With" offers every type the desktop entry claims; one whose
-        // extension the scan lacks must not start the folder's first video.
-        let opened = touch(dir.path(), "b.unknownvideo");
-        let (entries, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
-        assert_eq!((entries, pos, context), (vec![opened], 0, None));
-    }
-
-    #[cfg(not(miri))]
-    #[test]
-    fn single_playlist_returns_its_entries_without_context() {
-        let dir = tempfile::tempdir().unwrap();
-        let a = touch(dir.path(), "a.mp4");
-        let b = touch(dir.path(), "b.mp4");
-        let playlist = dir.path().join("list.m3u8");
-        fs::write(&playlist, format!("#EXTM3U\n{a}\n{b}\n")).unwrap();
-        let (entries, pos, context) =
-            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]).unwrap();
-        assert_eq!(entries.len(), 2, "both playlist entries kept: {entries:?}");
-        assert_eq!(pos, 0);
-        assert_eq!(context, None);
-    }
-
-    #[cfg(not(miri))]
-    #[test]
-    fn single_empty_playlist_resolves_to_nothing() {
-        let dir = tempfile::tempdir().unwrap();
-        let playlist = dir.path().join("empty.m3u8");
-        fs::write(&playlist, "#EXTM3U\n").unwrap();
-        assert_eq!(
-            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]),
-            None
-        );
-    }
-}
-
-#[cfg(test)]
-mod dispatch_logic_tests {
-    use super::{is_same_playlist, playlist_index_of, seek_target_secs};
-
-    #[test]
-    fn seek_target_none_until_duration_known() {
-        assert_eq!(seek_target_secs(0.5, 0.0), None);
-        assert_eq!(seek_target_secs(0.5, -1.0), None);
-    }
-
-    #[test]
-    fn seek_target_scales_fraction_by_duration() {
-        assert_eq!(seek_target_secs(0.0, 200.0), Some(0.0));
-        assert_eq!(seek_target_secs(0.25, 200.0), Some(50.0));
-        assert_eq!(seek_target_secs(1.0, 200.0), Some(200.0));
-    }
-
-    #[test]
-    fn same_playlist_compares_full_lists() {
-        let a = vec!["x".to_string(), "y".to_string()];
-        assert!(is_same_playlist(&a, &a.clone()));
-        assert!(!is_same_playlist(&a, &["x".to_string()]));
-        assert!(!is_same_playlist(&a, &["y".to_string(), "x".to_string()]));
-    }
-
-    #[test]
-    fn playlist_index_locates_only_exact_matches() {
-        let paths = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        assert_eq!(playlist_index_of(&paths, "a"), Some(0));
-        assert_eq!(playlist_index_of(&paths, "c"), Some(2));
-        assert_eq!(playlist_index_of(&paths, "z"), None);
-        assert_eq!(playlist_index_of(&[], "a"), None);
-    }
-}
+mod tests;

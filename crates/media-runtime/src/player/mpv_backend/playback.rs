@@ -6,16 +6,12 @@ use std::sync::atomic::Ordering;
 use log::error;
 
 use super::MpvBackend;
-use super::types::AudioCacheProfile;
+use super::types::{AudioCacheProfile, TargetSource};
 
 /// Fallback audio policy only. Panels with known intent override this heuristic.
 #[must_use]
-pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
-    let scheme = big_os_kit::url::uri_scheme(target)?;
-    if !["http", "https", "rtsp", "rtmp", "mms"]
-        .iter()
-        .any(|s| scheme.eq_ignore_ascii_case(s))
-    {
+pub(super) fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
+    if !big_os_kit::url::is_stream_uri(target) {
         return None;
     }
     let path = big_os_kit::url::uri_path(target);
@@ -36,6 +32,21 @@ pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
             AudioCacheProfile::Radio
         },
     )
+}
+
+/// Whether mpv may open `target` named by `source`; a refusal is logged.
+fn admits(source: TargetSource, target: &str) -> bool {
+    let TargetSource::List(origin) = source else {
+        return true;
+    };
+    let admitted = big_os_kit::url::is_list_target(target, origin);
+    if !admitted {
+        log::warn!(
+            "Refused a list entry: {}",
+            big_os_kit::url::MediaLogTarget(target)
+        );
+    }
+    admitted
 }
 
 impl MpvBackend {
@@ -63,37 +74,57 @@ impl MpvBackend {
         }
     }
     /// Per-file pause is supplied before load, never Play immediately followed by Pause.
-    pub fn load_audio_paused(&self, path: &str, profile: AudioCacheProfile, paused: bool) {
+    pub fn load_audio_paused(
+        &self,
+        path: &str,
+        source: TargetSource,
+        profile: AudioCacheProfile,
+        paused: bool,
+    ) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
-        self.loading.store(true, Ordering::Relaxed);
         // Resume stays with the global resume-playback preference: mpv reads
         // the watch-later file before per-file options, so none can veto it.
-        let options = if paused { "pause=yes" } else { "pause=no" };
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
-            self.loading.store(false, Ordering::Relaxed);
-            log::warn!("Could not enqueue media load: {error}");
-        }
+        self.load_replacing(path, Some(if paused { "pause=yes" } else { "pause=no" }));
     }
 
-    pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile) {
+    pub fn load_file_with_audio_profile(
+        &self,
+        path: &str,
+        source: TargetSource,
+        profile: AudioCacheProfile,
+    ) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
-        self.load_inner(path);
+        self.load_replacing(path, None);
     }
 
-    pub fn load_file(&self, path: &str) {
+    pub fn load_file(&self, path: &str, source: TargetSource) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
         }
-        self.load_inner(path);
+        self.load_replacing(path, None);
     }
 
-    fn load_inner(&self, path: &str) {
+    /// Queue `path` in place of the playlist, with mpv's per-file `options`.
+    fn load_replacing(&self, path: &str, options: Option<&str>) {
         self.loading.store(true, Ordering::Relaxed);
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace"]) {
+        let queued = match options {
+            Some(options) => self.queue_command("loadfile", &[path, "replace", "-1", options]),
+            None => self.queue_command("loadfile", &[path, "replace"]),
+        };
+        if let Err(error) = queued {
             self.loading.store(false, Ordering::Relaxed);
             error!(
                 "Failed to load {}: {error}",
@@ -105,21 +136,20 @@ impl MpvBackend {
     /// Load `path` in place of the playlist, shown as `title` (an IPTV
     /// channel's name, where the URL ends in `560.m3u8`). Per-file option:
     /// the next file has its own title again.
-    pub fn load_file_titled(&self, path: &str, title: &str) {
-        self.loading.store(true, Ordering::Relaxed);
+    pub fn load_file_titled(&self, path: &str, source: TargetSource, title: &str) {
+        if !admits(source, path) {
+            return;
+        }
         // `%N%` takes the next N bytes as they are: a comma or `=` in the
         // name stays in it.
         let options = format!("force-media-title=%{}%{title}", title.len());
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", &options]) {
-            self.loading.store(false, Ordering::Relaxed);
-            error!(
-                "Failed to load {}: {error}",
-                big_os_kit::url::MediaLogTarget(path)
-            );
-        }
+        self.load_replacing(path, Some(&options));
     }
 
-    pub fn load_file_append(&self, path: &str) {
+    pub fn load_file_append(&self, path: &str, source: TargetSource) {
+        if !admits(source, path) {
+            return;
+        }
         if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
             error!(
                 "Failed to append {}: {e}",
@@ -130,8 +160,8 @@ impl MpvBackend {
 
     /// Append `paths` in order, after whatever the playlist holds when mpv
     /// gets to them.
-    pub fn load_files_append(&self, paths: &[String]) {
-        self.load_files_at(paths, None);
+    pub fn load_files_append(&self, paths: &[String], source: TargetSource) {
+        self.load_files_at(paths, source, None);
     }
 
     /// Insert `paths` in order at playlist `index`, or append them with
@@ -144,10 +174,15 @@ impl MpvBackend {
     /// mpv runs `loadlist` on a thread of its own, so commands queued after
     /// it may run before the entries are in: callers must not address the
     /// new entries by index right away. Where they land does not depend on
-    /// that timing. The parser splits lines and strips leading blanks and a
-    /// line-final CR, so a list holding such a path goes one `loadfile` at a
-    /// time, which mpv runs in order.
-    pub fn load_files_at(&self, paths: &[String], index: Option<usize>) {
+    /// that timing. The parser splits lines and strips blanks at both ends,
+    /// so a list holding such a path goes one `loadfile` at a time, which mpv
+    /// runs in order.
+    pub fn load_files_at(&self, paths: &[String], source: TargetSource, index: Option<usize>) {
+        let paths: Vec<String> = paths
+            .iter()
+            .filter(|path| admits(source, path))
+            .cloned()
+            .collect();
         if paths.is_empty() {
             return;
         }
@@ -212,15 +247,20 @@ impl MpvBackend {
         &self,
         target: &std::path::Path,
         alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    ) -> std::io::Result<u64> {
-        let stage = big_os_kit::storage::StagedFile::new(target)?;
+    ) -> Result<u64, super::ScreenshotRequestError> {
+        use super::ScreenshotRequestError;
+        let stage =
+            big_os_kit::storage::StagedFile::new(target).map_err(ScreenshotRequestError::Folder)?;
         let command = CString::new("screenshot-to-file").expect("literal");
-        let path = CString::new(
-            stage
-                .path()
-                .to_str()
-                .ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?,
-        )?;
+        let path = stage
+            .path()
+            .to_str()
+            .and_then(|path| CString::new(path).ok())
+            .ok_or_else(|| {
+                ScreenshotRequestError::Folder(std::io::Error::other(
+                    "the folder name is not valid UTF-8",
+                ))
+            })?;
         let mode = CString::new("video").expect("literal");
         let mut args = [
             command.as_ptr(),
@@ -237,9 +277,9 @@ impl MpvBackend {
             unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
         if status < 0 {
             self.screenshots.rejected(id);
-            Err(std::io::Error::other(format!(
-                "screenshot command rejected: {status}"
-            )))
+            Err(ScreenshotRequestError::Rejected(
+                super::MpvError::Raw(status).to_string(),
+            ))
         } else {
             Ok(id)
         }
@@ -367,13 +407,13 @@ impl MpvBackend {
 
     pub fn set_stream_record(&self, path: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("stream-record", path.to_string());
+            m.set_property_logged("stream-record", path.to_string());
         });
     }
 
     pub fn set_chapter(&self, idx: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("chapter", idx);
+            m.set_property_logged("chapter", idx);
         });
     }
 
@@ -386,7 +426,7 @@ impl MpvBackend {
             "dvd-device"
         };
         self.with_mpv(|m| {
-            let _ = m.set_property(property, device.to_string());
+            m.set_property_logged(property, device.to_string());
         });
     }
 
@@ -408,7 +448,9 @@ impl MpvBackend {
 
 /// Whether mpv's plaintext playlist parser reads `path` back unchanged.
 fn fits_plaintext_playlist(path: &str) -> bool {
-    !(path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace))
+    !(path.contains('\n')
+        || path.starts_with(char::is_whitespace)
+        || path.ends_with(char::is_whitespace))
 }
 
 #[cfg(test)]
@@ -421,6 +463,9 @@ mod tests {
         assert!(!fits_plaintext_playlist("/videos/a\nb.mkv"));
         assert!(!fits_plaintext_playlist("/videos/a.mkv\r"));
         assert!(!fits_plaintext_playlist(" leading.mkv"));
+        assert!(!fits_plaintext_playlist("/videos/trailing.mkv "));
+        assert!(!fits_plaintext_playlist("/videos/tab.mkv\t"));
+        assert!(fits_plaintext_playlist("/videos/#hash.mkv"));
     }
 
     #[test]

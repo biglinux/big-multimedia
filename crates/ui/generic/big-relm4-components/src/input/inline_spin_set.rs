@@ -7,6 +7,7 @@ use adw::prelude::*;
 use relm4::gtk;
 
 use super::preference_cards::BigSpinRange;
+use super::spin_row::accessible_spin_button;
 
 const DEFAULT_SPACING: i32 = 10;
 const DEFAULT_SPIN_FIELD_SPACING: i32 = 4;
@@ -165,21 +166,13 @@ fn spin_field_row(spin_field: &BigInlineSpinFieldSpec) -> gtk::Box {
 }
 
 fn spin_field_button(spin_field: &BigInlineSpinFieldSpec) -> gtk::SpinButton {
-    let adjustment = gtk::Adjustment::new(
+    let spin = accessible_spin_button(
+        &spin_field.label,
+        spin_field.range,
         spin_field.value,
-        spin_field.range.min,
-        spin_field.range.max,
-        spin_field.range.step,
-        spin_field.range.page_step,
-        0.0,
+        spin_field.digits,
+        spin_field.width_chars,
     );
-    let spin = gtk::SpinButton::builder()
-        .adjustment(&adjustment)
-        .digits(spin_field.digits)
-        .numeric(true)
-        .width_chars(spin_field.width_chars)
-        .build();
-    spin.update_property(&[gtk::accessible::Property::Label(&spin_field.label)]);
     spin.set_tooltip_text(Some(&spin_field.label));
     spin
 }

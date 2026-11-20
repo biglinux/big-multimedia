@@ -5,7 +5,8 @@ use gtk::{gdk, gio, glib};
 
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::set_accent;
+use super::rows::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
+use crate::i18n::i18n;
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -55,6 +56,7 @@ pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gt
     });
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    attach_context_menu_keys(state, &list);
     list.set_single_click_activate(true);
     // Alt+Up / Alt+Down move the focused row one place. Capture phase: the
     // list's own row keeps plain arrow keys, and took these too.
@@ -205,14 +207,12 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     text.append(&detail);
     row.append(&text);
 
-    let remove = gtk::Button::builder()
-        .icon_name("window-close-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["flat", "circular", "queue-remove"])
-        .build();
-    remove.update_property(&[gtk::accessible::Property::Label(&crate::i18n::i18n(
-        "Remove from playlist",
-    ))]);
+    let remove = big_relm4_components::feedback::tooltip::icon_button(
+        "window-close-symbolic",
+        &crate::i18n::i18n("Remove from playlist"),
+        &["flat", "circular", "queue-remove"],
+    );
+    remove.set_valign(gtk::Align::Center);
     remove.connect_clicked({
         let state = state.clone();
         let row_weak = row.downgrade();
@@ -227,12 +227,13 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     });
     row.append(&remove);
     wire_reorder(state, &row);
+    attach_context_menu(state, &row);
     row
 }
 
-/// The row's queue position, from its `q:{index}` widget name.
+/// The row's queue position, from its widget name.
 fn queue_index_of(row: &gtk::Box) -> Option<usize> {
-    row.widget_name().strip_prefix("q:")?.parse().ok()
+    row_index(&row.widget_name())
 }
 
 /// Drag the row onto another to put it there: above that row when dropped
@@ -276,11 +277,9 @@ fn wire_reorder(state: &Rc<BrowserState>, row: &gtk::Box) {
     row.add_controller(drop);
 }
 
-/// Resolve a queue row's path from its `q:{index}` widget name.
+/// Resolve a queue row's path from its widget name.
 fn queue_path_of(state: &Rc<BrowserState>, row: &gtk::Box) -> Option<String> {
-    let name = row.widget_name();
-    let idx = name.strip_prefix("q:")?.parse::<usize>().ok()?;
-    state.item_at(idx)
+    state.item_at(queue_index_of(row)?)
 }
 
 fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generation: u64) {
@@ -291,6 +290,7 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     if entry.kind != EntryKind::Video {
         return;
     }
+    queue_cell.set_accessible_label(&entry.display_name);
     let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
         return;
     };
@@ -310,9 +310,11 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     let is_current = entry.index as i64 == state.pos.get();
     if is_current {
         pos.set_label("▶");
+        pos.update_property(&[gtk::accessible::Property::Label(&i18n("Playing"))]);
         row.add_css_class("playlist-current");
     } else {
         pos.set_label(&(entry.index + 1).to_string());
+        pos.reset_property(gtk::AccessibleProperty::Label);
         row.remove_css_class("playlist-current");
     }
     set_accent(&pos, is_current);
@@ -387,7 +389,7 @@ impl QueueRow {
 fn resume_seconds(path: &str) -> Option<f64> {
     let name =
         glib::compute_checksum_for_string(glib::ChecksumType::Md5, path)?.to_ascii_uppercase();
-    let file = glib::user_data_dir()
+    let file = big_os_kit::xdg_dirs::data_dir()?
         .join(crate::config::video::WATCH_LATER_RELATIVE)
         .join(name);
     std::fs::read_to_string(file)

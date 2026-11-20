@@ -7,17 +7,20 @@
 //! list is re-read from it whenever the controls appear or a dialog closes.
 
 use super::*;
-use crate::video::ui::media_adjust::{CropMargins, source_colour_names};
+use crate::video::ui::media_adjust::{CropMargins, source_color_names};
 
-/// `vf` labels the chips track elsewhere (flip, source colours).
-const OWNED_VF_LABELS: [&str; 2] = ["big-flip", "source-colours"];
+/// `vf` labels the chips track elsewhere (flip, source colors).
+const OWNED_VF_LABELS: [&str; 2] = [
+    MpvBackend::FLIP_VF_LABEL,
+    MpvBackend::SOURCE_COLORS_VF_LABEL,
+];
 const FLAT_EQ: &str = "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0";
 
 /// One change from normal, holding the value it replaced so undoing the
 /// reset can put it back.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Adjustment {
-    SourceColours(usize),
+    SourceColors(usize),
     /// Contrast, brightness, gamma, saturation, hue.
     Picture([i64; 5]),
     Zoom {
@@ -60,9 +63,9 @@ pub(super) fn detect(
     transform: &media_adjust::VideoTransformState,
 ) -> Vec<Adjustment> {
     let mut found = Vec::new();
-    let colours = transform.source_colours_index();
-    if colours != 0 {
-        found.push(Adjustment::SourceColours(colours));
+    let colors = transform.source_colors_index();
+    if colors != 0 {
+        found.push(Adjustment::SourceColors(colors));
     }
     let picture = [
         mpv.get_contrast(),
@@ -88,7 +91,7 @@ pub(super) fn detect(
             vertical: transform.vflip(),
         });
     }
-    let crop = mpv.get_property_string("video-crop");
+    let crop = mpv.video_crop();
     if !crop.is_empty() && crop != "0x0+0+0" {
         found.push(Adjustment::Crop {
             margins: transform.crop_margins(),
@@ -99,16 +102,16 @@ pub(super) fn detect(
     if changed(speed - 1.0) {
         found.push(Adjustment::Speed(speed));
     }
-    let audio_delay = mpv.get_property_f64("audio-delay");
+    let audio_delay = mpv.audio_delay();
     if changed(audio_delay) {
         found.push(Adjustment::AudioDelay(audio_delay));
     }
-    let subtitle_delay = mpv.get_property_f64("sub-delay");
+    let subtitle_delay = mpv.sub_delay();
     if changed(subtitle_delay) {
         found.push(Adjustment::SubtitleDelay(subtitle_delay));
     }
     let bands = settings.get_string(keys::EQ_BANDS);
-    if crate::shared::audio_effects::parse_eq_bands(&bands)
+    if big_media_runtime::audio_effects::parse_eq_bands(&bands)
         .iter()
         .any(|gain| changed(*gain))
     {
@@ -117,9 +120,10 @@ pub(super) fn detect(
             preset: settings.get_string(keys::EQ_PRESET),
         });
     }
-    let effects: Vec<String> = vf_entries(&mpv.get_vf())
+    let effects: Vec<String> = crate::video::ui::filters::vf_entries(&mpv.get_vf())
         .into_iter()
         .filter(|entry| vf_label(entry).is_some_and(|label| !OWNED_VF_LABELS.contains(&label)))
+        .map(str::to_owned)
         .collect();
     if !effects.is_empty() {
         found.push(Adjustment::VideoEffects(effects));
@@ -129,40 +133,6 @@ pub(super) fn detect(
         found.push(Adjustment::ImageEnhancement(enhancements));
     }
     found
-}
-
-/// Split mpv's `vf` list at its top-level commas. mpv quotes a value holding
-/// commas as `%LEN%text`, so those bytes are skipped whole.
-fn vf_entries(vf: &str) -> Vec<String> {
-    let bytes = vf.as_bytes();
-    let mut entries = Vec::new();
-    let (mut start, mut i) = (0, 0);
-    while i < bytes.len() {
-        match bytes[i] {
-            b'%' => {
-                let digits = bytes[i + 1..]
-                    .iter()
-                    .take_while(|b| b.is_ascii_digit())
-                    .count();
-                let close = i + 1 + digits;
-                if digits > 0 && bytes.get(close) == Some(&b'%') {
-                    let len: usize = vf[i + 1..close].parse().unwrap_or(0);
-                    i = (close + 1 + len).min(bytes.len());
-                    continue;
-                }
-            }
-            b',' => {
-                entries.push(vf[start..i].to_owned());
-                start = i + 1;
-            }
-            _ => {}
-        }
-        i += 1;
-    }
-    if start < bytes.len() {
-        entries.push(vf[start..].to_owned());
-    }
-    entries
 }
 
 fn vf_label(entry: &str) -> Option<&str> {
@@ -184,13 +154,25 @@ fn seconds(value: f64) -> String {
     format!("{:.1}", value.abs())
 }
 
+/// The one change by name, or how many there are; `None` when nothing changed.
+pub(super) fn changes_summary(changes: &[&Adjustment]) -> Option<String> {
+    match changes {
+        [] => None,
+        [only] => Some(only.label()),
+        many => Some(
+            ni18n("{n} change", "{n} changes", many.len() as u64)
+                .replace("{n}", &many.len().to_string()),
+        ),
+    }
+}
+
 impl Adjustment {
     /// What the chip says, in words for people who never opened the dialog.
     pub(super) fn label(&self) -> String {
         match self {
-            Self::SourceColours(index) => i18n("Video colour: {name}").replace(
+            Self::SourceColors(index) => i18n("Video color: {name}").replace(
                 "{name}",
-                source_colour_names().get(*index).map_or("", String::as_str),
+                source_color_names().get(*index).map_or("", String::as_str),
             ),
             Self::Picture(_) => i18n("Picture adjusted"),
             Self::Zoom { zoom, .. } if changed(*zoom) => i18n("Zoom {percent}%")
@@ -216,9 +198,9 @@ impl Adjustment {
             }
             Self::Equalizer { bands, .. } => i18n("Type of sound: {name}").replace(
                 "{name}",
-                &crate::shared::audio_effects::equalizer_preset_matching(bands)
+                &big_media_runtime::audio_effects::equalizer_preset_matching(bands)
                     .and_then(|index| {
-                        crate::shared::audio_effects::equalizer_preset_names()
+                        big_media_runtime::audio_effects::equalizer_preset_names()
                             .get(index)
                             .copied()
                     })
@@ -240,7 +222,7 @@ impl Adjustment {
     /// The `win.*` action that opens the section this chip belongs to.
     pub(super) fn section_action(&self) -> Option<&'static str> {
         match self {
-            Self::SourceColours(_) => Some("win.show-hdr"),
+            Self::SourceColors(_) => Some("win.show-hdr"),
             Self::Picture(_) => Some("win.show-image-adjust"),
             Self::Zoom { .. } | Self::Rotation(_) | Self::Flip { .. } | Self::Crop { .. } => {
                 Some("win.show-framing")
@@ -263,8 +245,8 @@ impl Adjustment {
         transform: &media_adjust::VideoTransformState,
     ) {
         match self {
-            Self::SourceColours(index) => {
-                transform.select_source_colours(mpv, if normal { 0 } else { *index });
+            Self::SourceColors(index) => {
+                transform.select_source_colors(mpv, if normal { 0 } else { *index });
             }
             Self::Picture(values) => {
                 let [contrast, brightness, gamma, saturation, hue] =
@@ -298,7 +280,7 @@ impl Adjustment {
             Self::Equalizer { bands, preset } => {
                 let _ = settings.put_string(keys::EQ_BANDS, if normal { FLAT_EQ } else { bands });
                 let _ = settings.put_string(keys::EQ_PRESET, if normal { "flat" } else { preset });
-                crate::shared::audio_effects::apply_voice_change(settings, mpv);
+                big_media_runtime::audio_effects::apply_voice_change(settings, mpv);
             }
             Self::VideoEffects(entries) => {
                 for entry in entries {
@@ -312,14 +294,12 @@ impl Adjustment {
                 }
             }
             Self::ImageEnhancement(choices) => {
-                let keys = [
-                    keys::BUILTIN_UPSCALER,
-                    keys::NEURAL_UPSCALER,
-                    keys::ANIME4K_PRESET,
-                ];
-                for (key, choice) in keys.into_iter().zip(choices) {
-                    let _ = settings.put_string(key, if normal { "" } else { choice });
-                }
+                let restored = if normal {
+                    [""; 3]
+                } else {
+                    choices.each_ref().map(String::as_str)
+                };
+                crate::video::ui::filters::put_enhancements(settings, restored);
                 crate::video::ui::filters::apply_saved_enhancements(mpv, settings);
             }
             Self::SleepTimer(_) => {}
@@ -334,22 +314,18 @@ impl VideoShell {
             return;
         };
         let mut found = detect(&mpv, &self.settings, &self.video_transform);
-        if self.sleep_timer_is_armed() {
-            found.push(Adjustment::SleepTimer(self.sleep_timer_remaining_secs()));
+        if self.sleep_timer.is_armed() {
+            found.push(Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         }
         let names: Vec<String> = found.iter().map(Adjustment::label).collect();
-        let text = match names.as_slice() {
-            [only] => only.clone(),
-            many => ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-        };
+        let text = changes_summary(&found.iter().collect::<Vec<_>>()).unwrap_or_default();
         let tooltip = format!("{}\n{}", names.join("\n"), i18n("Click to see or undo"));
         self.adjustments_pill.set_label(&format!("● {text}"));
         self.adjustments_pill.set_tooltip_text(Some(&tooltip));
         self.adjustments_pill
             .update_property(&[gtk::accessible::Property::Label(&tooltip)]);
         self.adjustments_pill.set_visible(!found.is_empty());
-        if self.video_transform.source_colours_index() != 0 {
+        if self.video_transform.source_colors_index() != 0 {
             self.hdr_hint.set_visible(false);
         }
         self.adjustments = found;
@@ -391,50 +367,52 @@ impl VideoShell {
     }
 
     /// HDR that does not say so plays grey and washed out, and nothing on
-    /// screen tells why: 10-bit 4K frames with no colour description are
+    /// screen tells why: 10-bit 4K frames with no color description are
     /// that case. Offer the fix in a header pill; apply it only on request.
     pub(super) fn suggest_hdr(&self, path: &str) {
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
+        let decoded = mpv.decoder_params();
         let undescribed_hdr = mpv.get_current_file().as_deref() == Some(path)
-            && self.video_transform.source_colours_index() == 0
+            && self.video_transform.source_colors_index() == 0
             // GPU decoding names the surface ("cuda") and puts the depth here.
-            && ["pixelformat", "hw-pixelformat"].iter().any(|name| {
-                let format = mpv.get_property_string(&format!("video-dec-params/{name}"));
+            && [&decoded.pixel_format, &decoded.hw_pixel_format].iter().any(|format| {
                 ["p10", "p12", "p010", "p016"]
                     .iter()
                     .any(|depth| format.contains(depth))
             })
-            && mpv.get_property_string("video-dec-params/gamma") == "auto"
-            && mpv.get_property_string("video-dec-params/primaries") == "auto"
-            && mpv.get_property_f64("video-dec-params/w") >= 3840.0;
+            && decoded.gamma == "auto"
+            && decoded.primaries == "auto"
+            && decoded.width >= 3840.0;
         self.hdr_hint.set_visible(undescribed_hdr);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::vf_label;
+    use crate::video::ui::filters::vf_entries;
 
     #[test]
-    fn vf_entries_keep_quoted_commas() {
+    fn labeled_entries_keep_quoted_commas() {
         let vf = "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1,@big-flip:lavfi=graph=hflip,\
-                  @source-colours:format=gamma=pq:primaries=%7%bt.2020";
+                  @source-colors:format=gamma=pq:primaries=%7%bt.2020";
+        let entries = vf_entries(vf);
         assert_eq!(
-            vf_entries(vf),
+            entries,
             [
                 "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1",
                 "@big-flip:lavfi=graph=hflip",
-                "@source-colours:format=gamma=pq:primaries=%7%bt.2020",
+                "@source-colors:format=gamma=pq:primaries=%7%bt.2020",
             ]
         );
-        assert_eq!(vf_label("@big-flip:lavfi=graph=hflip"), Some("big-flip"));
+        let labels: Vec<_> = entries.iter().map(|entry| vf_label(entry)).collect();
+        assert_eq!(
+            labels,
+            [Some("denoise"), Some("big-flip"), Some("source-colors")]
+        );
         assert_eq!(vf_label("format=gamma=pq"), None);
-    }
-
-    #[test]
-    fn vf_entries_of_empty_list_is_empty() {
         assert!(vf_entries("").is_empty());
     }
 }

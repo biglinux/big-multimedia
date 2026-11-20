@@ -14,12 +14,11 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use big_relm4_components::display::texture::{pixbuf_to_rgba, rgba_to_texture};
 use gtk::{gdk, gdk_pixbuf, gio, glib};
 
 use super::BrowserState;
-use crate::media::playlist;
+use crate::media::{playlist, thumbnail};
 
 /// Number of frames sampled across a clip.
 const SCRUB_FRAME_COUNT: usize = 8;
@@ -165,7 +164,7 @@ fn frame_index_for_x(pointer_x: f64, width: f64, frame_count: usize) -> Option<u
 
 /// Cache directory for scrub frames (`~/.cache/big-video-player/scrub`).
 fn cache_root() -> Option<PathBuf> {
-    let cache_directory = glib::user_cache_dir().join("big-video-player/scrub");
+    let cache_directory = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player/scrub");
     std::fs::create_dir_all(&cache_directory).ok()?;
     Some(cache_directory)
 }
@@ -175,11 +174,8 @@ fn cache_root() -> Option<PathBuf> {
 fn clip_key(path: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
-    if let Ok(metadata) = std::fs::metadata(path)
-        && let Ok(modified_time) = metadata.modified()
-        && let Ok(modified_since_epoch) = modified_time.duration_since(std::time::UNIX_EPOCH)
-    {
-        modified_since_epoch.as_secs().hash(&mut hasher);
+    if let Some(modified) = big_os_kit::storage::modified_secs(path) {
+        modified.hash(&mut hasher);
     }
     hasher.finish()
 }
@@ -201,46 +197,11 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
     for frame_index in 0..SCRUB_FRAME_COUNT {
         let frame = clip_directory.join(format!("{frame_index}.jpg"));
-        // ffmpeg writes to a side name that is renamed into place only when
-        // complete, so a killed run can't leave a broken frame cached forever.
-        if !frame.metadata().is_ok_and(|m| m.len() > 0) {
-            let time = sample_time_secs(frame_index, duration);
-            let partial = clip_directory.join(format!("{frame_index}.part.jpg"));
-            let Some(output_path) = partial.to_str() else {
-                continue;
-            };
-            let _ = BigSubprocessSpec::builder()
-                .program("ffmpeg")
-                .args([
-                    "-ss",
-                    &format!("{time:.2}"),
-                    "-i",
-                    path,
-                    "-frames:v",
-                    "1",
-                    "-update",
-                    "1",
-                    "-vf",
-                    // Even box: 4:2:0 output rounds an odd pad height down
-                    // below the scaled frame and the filter fails. Square
-                    // pixels for anamorphic sources.
-                    "scale=240:136:force_original_aspect_ratio=decrease:force_divisible_by=2:reset_sar=1,\
-                     pad=240:136:(ow-iw)/2:(oh-ih)/2",
-                    "-y",
-                    "--",
-                    output_path,
-                ])
-                .stdout(BigSubprocessOutputMode::Null)
-                .stderr(BigSubprocessOutputMode::Null)
-                .build()
-                .run();
-            if partial.metadata().is_ok_and(|m| m.len() > 0) {
-                let _ = std::fs::rename(&partial, &frame);
-            } else {
-                let _ = std::fs::remove_file(&partial);
-            }
-        }
-        if frame.exists() {
+        // A cut-off write leaves an empty frame: render it again.
+        let rendered = std::fs::metadata(&frame).is_ok_and(|meta| meta.is_file() && meta.len() > 0);
+        if rendered
+            || thumbnail::render_card_frame(path, sample_time_secs(frame_index, duration), &frame)
+        {
             frames.push(frame);
         }
     }

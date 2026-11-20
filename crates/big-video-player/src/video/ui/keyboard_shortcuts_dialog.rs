@@ -36,9 +36,8 @@ pub fn show_video_keyboard_shortcuts_dialog(parent: &impl IsA<gtk::Window>, sett
     let settings = settings.clone();
     connect_shortcut_dialog_rebinds(
         &dialog,
-        dialog.window(),
         &custom,
-        crate::shared::shortcut_capture::shortcut_capture_labels(),
+        big_media_runtime::shortcut_capture::shortcut_capture_labels(),
         key_to_accel_string,
         display_accel,
         move |serialized| {

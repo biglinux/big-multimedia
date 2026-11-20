@@ -1,0 +1,29 @@
+source	translation	source of the choice
+track (music)	lag, pl. lög	catalog: All Tracks, tracks imported
+track (stream)	rás	catalog: Track
+playlist	spilunarlisti	catalog: Playlist
+queue	biðröð	catalog: Queue
+library	safn	catalog: Library
+station	stöð	catalog: My Stations
+episode	þáttur, pl. þættir	catalog: No episodes found
+podcast	hlaðvarp	catalog: Podcasts
+podcast subscriptions	hlaðvarpsáskriftir	catalog: Podcasts, Subscriptions
+screenshot	skjámynd	catalog: Screenshot
+recording	upptaka	catalog: Recording saved
+provider	veita	catalog: IPTV Provider
+password	lykilorð	catalog: Password; gnome-keyring
+keyring	lyklakippa	gnome-keyring
+playback engine	spilunarvél	new
+Preferences	Kjörstillingar	catalog
+Advanced	Ítarlegt	catalog
+mpv Options	mpv-valkostir	catalog
+Video Output	Myndúttak	catalog
+Audio Output	Hljóðúttak	catalog
+sidebar	hliðarstika	catalog: Toggle playlist sidebar
+lyrics	textar	catalog: Lyrics
+web remote	vefstýring	catalog: Web Remote
+scan	skönnun	catalog: Cancel scan
+Paused	Í hléi	new; Pause is Hlé in catalog
+Return (key)	Enter	gtk40 keyboard label
+Left / Right (keys)	Vinstri / Hægri	gtk40 keyboard label; catalog Alt+Upp style
+quotation marks	„ “	catalog: „Sýsla…“

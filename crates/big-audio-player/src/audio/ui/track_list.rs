@@ -1,32 +1,29 @@
-//! The track lists of the queue and the library: one drawn `ItemView` each.
+//! The queue's track list: one drawn `ItemView`.
 //!
 //! A `GtkColumnView` of 5 000 tracks kept 2 903 widgets alive and cost
-//! +10 MiB; the drawn view keeps 44 and +1.6 MiB. Both lists show the same
-//! columns, so the columns, their words, their order and what a press on a
-//! heading means live here; the panels say only what differs (the first
-//! column, the button at the end of a row, how the playing track is known).
+//! +10 MiB; the drawn view keeps 44 and +1.6 MiB. The columns, their words,
+//! their order and what a press on a heading means live here; the panel says
+//! how the playing track is known and what a drag or a drop carries.
 
 use std::cell::{Cell, RefCell};
 use std::cmp::Ordering;
 use std::rc::Rc;
 
 use adw::prelude::*;
+use big_app_kit::mpris::PlaybackStatus;
 use big_item_view::{
-    Column as ViewColumn, ColumnHeader, ColumnShows, Geometry, IconSource, ItemContent,
-    ItemPresenter, ItemView,
+    Column as ViewColumn, ColumnHeader, ColumnShows, Geometry, ItemContent, ItemPresenter, ItemView,
 };
 use gtk::{gdk, gio, glib};
 
 use crate::db::models::Track;
 use crate::i18n::i18n;
 
-/// A column either list can show. The order is each column's id.
+/// A column the queue can show. The order is each column's id.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Column {
     /// The row's place in the queue.
     Position,
-    /// The track number from the tags.
-    TrackNumber,
     Title,
     Artist,
     Album,
@@ -41,9 +38,8 @@ pub(super) enum Column {
 }
 
 impl Column {
-    pub(super) const ALL: [Self; 12] = [
+    pub(super) const ALL: [Self; 11] = [
         Self::Position,
-        Self::TrackNumber,
         Self::Title,
         Self::Artist,
         Self::Album,
@@ -67,10 +63,26 @@ impl Column {
         Self::ALL.get(id as usize).copied()
     }
 
-    /// The heading; also the column's name in the saved widths.
+    /// The column's name in the saved widths, the same in every language.
+    fn key(self) -> &'static str {
+        match self {
+            Self::Position => "position",
+            Self::Title => "title",
+            Self::Artist => "artist",
+            Self::Album => "album",
+            Self::Duration => "duration",
+            Self::Genre => "genre",
+            Self::Year => "year",
+            Self::Bitrate => "bitrate",
+            Self::Format => "format",
+            Self::Rating => "rating",
+            Self::Action => "action",
+        }
+    }
+
     pub(super) fn title(self) -> String {
         match self {
-            Self::Position | Self::TrackNumber => "#".to_owned(),
+            Self::Position => "#".to_owned(),
             Self::Title => i18n("Title"),
             Self::Artist => i18n("Artist"),
             Self::Album => i18n("Album"),
@@ -86,7 +98,7 @@ impl Column {
 
     fn default_width(self) -> i32 {
         match self {
-            Self::Position | Self::TrackNumber => 44,
+            Self::Position => 44,
             Self::Title => 200,
             Self::Artist | Self::Album => 150,
             Self::Duration => 84,
@@ -100,7 +112,7 @@ impl Column {
 
     fn xalign(self) -> f32 {
         match self {
-            Self::Position | Self::TrackNumber | Self::Duration | Self::Year | Self::Bitrate => 1.0,
+            Self::Position | Self::Duration | Self::Year | Self::Bitrate => 1.0,
             Self::Action => 0.5,
             _ => 0.0,
         }
@@ -115,14 +127,12 @@ impl Column {
     pub(super) fn cell(self, track: &Track, position: u32) -> String {
         match self {
             Self::Position => (position + 1).to_string(),
-            Self::TrackNumber => track
-                .track_number
-                .map(|n| n.to_string())
-                .unwrap_or_default(),
             Self::Title => track.display_title().to_owned(),
             Self::Artist => track.display_artist().to_owned(),
             Self::Album => track.display_album().to_owned(),
-            Self::Duration if track.duration_secs > 0.0 => track.duration_display(),
+            Self::Duration if track.duration_secs > 0.0 => {
+                big_media_components::time::playback_time(track.duration_secs)
+            }
             Self::Genre => track.genre.clone().unwrap_or_default(),
             Self::Year => track.year.map(|year| year.to_string()).unwrap_or_default(),
             Self::Bitrate => track
@@ -140,10 +150,6 @@ impl Column {
     pub(super) fn compare(self, a: &Track, b: &Track) -> Ordering {
         let text = |key: fn(&Track) -> &str| key(a).to_lowercase().cmp(&key(b).to_lowercase());
         match self {
-            Self::TrackNumber => a
-                .track_number
-                .unwrap_or(0)
-                .cmp(&b.track_number.unwrap_or(0)),
             Self::Title => text(Track::display_title),
             Self::Artist => text(Track::display_artist),
             Self::Album => text(Track::display_album),
@@ -158,73 +164,33 @@ impl Column {
     }
 }
 
-/// The columns of one list: which, in what order, how wide, sorted by which.
+/// The queue's columns: which, in what order, how wide, sorted by which.
 #[derive(Clone, Debug)]
 pub(super) struct Columns {
     order: Vec<Column>,
     hidden: Vec<Column>,
     widths: Vec<i32>,
     sort: Option<(Column, gtk::SortType)>,
-    /// The symbolic icon of the [`Column::Action`] button.
-    action_icon: &'static str,
-    /// The picture's size in the title column; 0 for none.
-    art: i32,
 }
 
 impl Columns {
     /// The queue: its place, title, artist, duration and a remove button.
     pub(super) fn queue() -> Self {
-        Self::new(
-            Column::Position,
-            &[
-                Column::Album,
-                Column::Genre,
-                Column::Year,
-                Column::Bitrate,
-                Column::Format,
-                Column::Rating,
-            ],
-            "edit-delete-symbolic",
-            0,
-        )
-    }
-
-    /// The library: cover, title, artist, duration and an add button.
-    pub(super) fn library() -> Self {
-        Self::new(
-            Column::TrackNumber,
-            &[
-                Column::TrackNumber,
-                Column::Album,
-                Column::Genre,
-                Column::Year,
-                Column::Bitrate,
-                Column::Format,
-                Column::Rating,
-            ],
-            "list-add-symbolic",
-            28,
-        )
-    }
-
-    fn new(first: Column, hidden: &[Column], action_icon: &'static str, art: i32) -> Self {
-        let order = std::iter::once(first)
-            .chain(
-                Column::ALL
-                    .into_iter()
-                    .filter(|column| !matches!(column, Column::Position | Column::TrackNumber)),
-            )
-            .collect();
         Self {
-            order,
-            hidden: hidden.to_vec(),
+            order: Column::ALL.to_vec(),
+            hidden: vec![
+                Column::Album,
+                Column::Genre,
+                Column::Year,
+                Column::Bitrate,
+                Column::Format,
+                Column::Rating,
+            ],
             widths: Column::ALL
                 .iter()
                 .map(|column| column.default_width())
                 .collect(),
             sort: None,
-            action_icon,
-            art,
         }
     }
 
@@ -291,17 +257,12 @@ impl Columns {
         self.sort
     }
 
-    /// Saved widths, `title=width,…` as the settings keep them.
+    /// Saved widths, `key=width,…` as the settings keep them.
     pub(super) fn widths_spec(&self) -> Option<String> {
-        let entries: Vec<(String, i32)> = self
-            .order
-            .iter()
-            .map(|column| (column.title(), self.widths[column.id() as usize]))
-            .collect();
         big_relm4_components::layout::column_persist::encode_column_width_entries(
-            entries
+            self.order
                 .iter()
-                .map(|(title, width)| (title.as_str(), *width)),
+                .map(|column| (column.key(), self.widths[column.id() as usize])),
         )
     }
 
@@ -314,7 +275,13 @@ impl Columns {
             let Ok(width) = width.parse::<i32>() else {
                 continue;
             };
-            if let Some(column) = self.order.iter().copied().find(|c| c.title() == name) {
+            // Widths saved before the stable keys are named by the heading.
+            if let Some(column) = self
+                .order
+                .iter()
+                .copied()
+                .find(|c| c.key() == name || c.title() == name)
+            {
                 self.resize(column, width);
             }
         }
@@ -322,12 +289,11 @@ impl Columns {
 
     /// The view's shape for these columns.
     pub(super) fn geometry(&self) -> Geometry {
-        let mut geometry = Geometry::rows(self.art);
-        geometry.gap = if self.art > 0 { 8 } else { 0 };
-        // 48 px from one row to the next, with or without a cover: a long
-        // list of short rows is hard to follow across its columns.
+        let mut geometry = Geometry::rows(0);
+        // 48 px from one row to the next: a long list of short rows is hard
+        // to follow across its columns.
         geometry.margin = (2, 6);
-        geometry.padding = if self.art > 0 { 8 } else { 12 };
+        geometry.padding = 12;
         geometry.columns = self
             .order
             .iter()
@@ -339,7 +305,7 @@ impl Columns {
                 shows: match column {
                     Column::Title => ColumnShows::Primary,
                     Column::Rating => ColumnShows::Stars(0),
-                    Column::Action => ColumnShows::Button(self.action_icon),
+                    Column::Action => ColumnShows::Button("edit-delete-symbolic"),
                     other => ColumnShows::Cell(other.id() as usize),
                 },
                 width: self.widths[column.id() as usize],
@@ -355,7 +321,7 @@ impl Columns {
     }
 }
 
-/// The track an item of either list holds.
+/// The track a queue item holds.
 pub(super) fn track_of(item: &glib::Object) -> Option<std::cell::Ref<'_, Track>> {
     Some(
         item.downcast_ref::<glib::BoxedAnyObject>()?
@@ -375,28 +341,23 @@ pub(super) fn rate_in_place(store: &gio::ListStore, position: u32, rating: i32) 
     Some(track.id)
 }
 
-/// The cover for a track, if known now; else asked for, and the view is
-/// refreshed when it arrives.
-pub(super) type Cover = Box<dyn Fn(&Track) -> Option<gdk::Texture>>;
 /// What dragging these positions carries.
 pub(super) type Drag = Box<dyn Fn(&[u32]) -> Option<gdk::ContentProvider>>;
 /// Take a drop on a position (the end when `None`).
 pub(super) type Receive = Box<dyn Fn(Option<u32>, &glib::Value) -> bool>;
 
-/// What a list does beyond showing tracks.
-pub(super) struct Behaviour {
-    /// Whether `item` (holding `track`) is the one playing.
-    pub(super) is_current: Box<dyn Fn(&glib::Object, &Track) -> bool>,
-    pub(super) cover: Option<Cover>,
+/// What the queue does beyond showing tracks.
+pub(super) struct Behavior {
+    /// How `item` (holding `track`) plays: `Stopped` for every track but the
+    /// current one.
+    pub(super) playback: Box<dyn Fn(&glib::Object, &Track) -> PlaybackStatus>,
     pub(super) drag: Option<Drag>,
     pub(super) drop: Option<Receive>,
 }
 
-/// What one list's view asks about its tracks.
+/// What the queue view asks about its tracks.
 pub(super) struct TrackPresenter {
-    behaviour: Behaviour,
-    /// Read for each item: the words of every column, by id.
-    columns: Rc<RefCell<Columns>>,
+    behavior: Behavior,
 }
 
 impl ItemPresenter for TrackPresenter {
@@ -405,34 +366,34 @@ impl ItemPresenter for TrackPresenter {
             return;
         };
         track.display_title().clone_into(&mut out.title);
-        out.emphasized = (self.behaviour.is_current)(item, &track);
+        let playback = (self.behavior.playback)(item, &track);
+        out.emphasized = playback != PlaybackStatus::Stopped;
         out.cells = Column::ALL
             .iter()
             .map(|column| column.cell(&track, position))
             .collect();
-        out.ratings = vec![u8::try_from(track.rating.clamp(0, 5)).unwrap_or(0)];
-        if self.columns.borrow().art > 0 {
-            out.frame = big_item_view::IconFrame::Cover;
-            if let Some(texture) = self
-                .behaviour
-                .cover
-                .as_ref()
-                .and_then(|cover| cover(&track))
-            {
-                out.icon = IconSource::Texture(texture);
-            }
+        if let Some(marker) = playback_marker(playback) {
+            marker.clone_into(&mut out.cells[Column::Position.id() as usize]);
         }
-        let mut said = vec![track.display_artist().to_owned()];
+        out.ratings = vec![u8::try_from(track.rating.clamp(0, 5)).unwrap_or(0)];
+        let mut said = Vec::new();
+        if !track.display_artist().is_empty() {
+            said.push(track.display_artist().to_owned());
+        }
         if track.duration_secs > 0.0 {
-            said.push(track.duration_display());
+            said.push(big_media_components::time::playback_time(
+                track.duration_secs,
+            ));
         }
         if track.rating > 0 {
             said.push(i18n("{} of 5 stars").replace("{}", &track.rating.to_string()));
         }
-        if out.emphasized {
-            said.push(i18n("Playing"));
+        match playback {
+            PlaybackStatus::Playing => said.push(i18n("Playing")),
+            PlaybackStatus::Paused => said.push(i18n("Paused")),
+            PlaybackStatus::Stopped => {}
         }
-        out.accessible_description = Some(said.join(", "));
+        out.accessible_description = (!said.is_empty()).then(|| said.join(", "));
     }
 
     fn title(&self, _position: u32, item: &glib::Object) -> String {
@@ -446,18 +407,29 @@ impl ItemPresenter for TrackPresenter {
     }
 
     fn drag_content(&self, positions: &[u32]) -> Option<gdk::ContentProvider> {
-        self.behaviour.drag.as_ref()?(positions)
+        self.behavior.drag.as_ref()?(positions)
     }
 
     fn accepts_drop(&self, _target: Option<u32>) -> bool {
-        self.behaviour.drop.is_some()
+        self.behavior.drop.is_some()
     }
 
     fn receive_drop(&self, target: Option<u32>, value: &glib::Value, _want_move: bool) -> bool {
-        self.behaviour
+        self.behavior
             .drop
             .as_ref()
             .is_some_and(|drop| drop(target, value))
+    }
+}
+
+/// The glyph that takes the current track's number in the `#` column; the
+/// row's description says the state, so assistive technology never reads it.
+/// U+FE0E keeps the emoji font from drawing it in color.
+fn playback_marker(playback: PlaybackStatus) -> Option<&'static str> {
+    match playback {
+        PlaybackStatus::Playing => Some("\u{25B6}\u{FE0E}"),
+        PlaybackStatus::Paused => Some("\u{23F8}\u{FE0E}"),
+        PlaybackStatus::Stopped => None,
     }
 }
 
@@ -485,15 +457,12 @@ pub(super) enum ListEvent {
 impl TrackList {
     pub(super) fn new(
         columns: Columns,
-        behaviour: Behaviour,
+        behavior: Behavior,
         accessible_label: &str,
         on_event: impl Fn(ListEvent) + 'static,
     ) -> Self {
         let columns = Rc::new(RefCell::new(columns));
-        let presenter = Rc::new(TrackPresenter {
-            behaviour,
-            columns: Rc::clone(&columns),
-        });
+        let presenter = Rc::new(TrackPresenter { behavior });
         let view = ItemView::new(presenter, columns.borrow().geometry());
         view.set_stripes(true);
         view.set_vexpand(true);
@@ -608,7 +577,7 @@ fn show_column_menu(
         actions.add_action(&action);
         menu.append(Some(&column.title()), Some(&format!("columns.{name}")));
     }
-    let popover = gtk::PopoverMenu::from_model(Some(&menu));
+    let popover = big_relm4_components::feedback::popover_menu::from_model(&menu);
     popover.insert_action_group("columns", Some(&actions));
     popover.set_has_arrow(false);
     popover.set_parent(header);
@@ -625,6 +594,56 @@ mod tests {
         let mut track = Track::new_external_path_with_title("/music/a.flac", Some(title.into()));
         track.rating = rating;
         track
+    }
+
+    /// What the queue draws and says for its first row in `playback`.
+    fn queue_row(playback: PlaybackStatus) -> ItemContent {
+        let presenter = TrackPresenter {
+            behavior: Behavior {
+                playback: Box::new(move |_, _| playback),
+                drag: None,
+                drop: None,
+            },
+        };
+        let item = glib::BoxedAnyObject::new(track("Song", 0)).upcast();
+        let mut out = ItemContent::default();
+        presenter.content(0, &item, &mut out);
+        out
+    }
+
+    #[test]
+    fn current_track_keeps_its_marker_while_paused() {
+        let position = Column::Position.id() as usize;
+        for (playback, marker, state) in [
+            (PlaybackStatus::Playing, "\u{25B6}\u{FE0E}", "Playing"),
+            (PlaybackStatus::Paused, "\u{23F8}\u{FE0E}", "Paused"),
+        ] {
+            let row = queue_row(playback);
+            assert!(row.emphasized, "{state}");
+            assert_eq!(row.cells[position], marker);
+            let description = row.accessible_description.unwrap_or_default();
+            assert!(description.ends_with(state), "{description}");
+        }
+        let row = queue_row(PlaybackStatus::Stopped);
+        assert!(!row.emphasized);
+        assert_eq!(row.cells[position], "1");
+    }
+
+    #[test]
+    fn untagged_description_skips_empty_artist() {
+        let row = queue_row(PlaybackStatus::Paused);
+        assert_eq!(row.accessible_description.as_deref(), Some("Paused"));
+        let row = queue_row(PlaybackStatus::Stopped);
+        assert_eq!(row.accessible_description, None);
+    }
+
+    #[test]
+    fn duration_over_an_hour_shows_hours() {
+        let mut long = track("Long", 0);
+        long.duration_secs = 3661.0;
+        assert_eq!(Column::Duration.cell(&long, 0), "1:01:01");
+        long.duration_secs = 0.0;
+        assert_eq!(Column::Duration.cell(&long, 0), "");
     }
 
     #[test]
@@ -659,14 +678,22 @@ mod tests {
 
     #[test]
     fn widths_round_trip_title_stays_visible() {
-        let mut columns = Columns::library();
+        let mut columns = Columns::queue();
         columns.resize(Column::Artist, 210);
         let spec = columns.widths_spec().expect("titled columns");
-        let mut restored = Columns::library();
+        let mut restored = Columns::queue();
         restored.apply_widths(&spec);
         assert_eq!(restored.widths, columns.widths);
         restored.apply_widths("Artist=abc,Nothing=99,=5");
         assert_eq!(restored.widths, columns.widths);
+        assert_eq!(
+            spec,
+            "position=44,title=200,artist=210,album=150,duration=84,genre=100,\
+             year=60,bitrate=90,format=72,rating=90,action=36"
+        );
+        restored.apply_widths("Album=180,#=50");
+        assert_eq!(restored.widths[Column::Album.id() as usize], 180);
+        assert_eq!(restored.widths[Column::Position.id() as usize], 50);
 
         columns.toggle(Column::Title);
         assert!(columns.shown(Column::Title));
@@ -691,7 +718,7 @@ mod tests {
             shown[..3],
             [Column::Artist, Column::Position, Column::Title]
         );
-        assert_eq!(columns.order.len(), Column::ALL.len() - 1);
+        assert_eq!(columns.order.len(), Column::ALL.len());
     }
 
     #[test]
@@ -704,6 +731,5 @@ mod tests {
         assert!(shows.contains(&ColumnShows::Stars(0)));
         assert!(shows.contains(&ColumnShows::Button("edit-delete-symbolic")));
         assert_eq!(geometry.icon_size, 0);
-        assert_eq!(Columns::library().geometry().icon_size, 28);
     }
 }

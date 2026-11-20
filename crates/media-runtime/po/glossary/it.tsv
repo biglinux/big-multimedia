@@ -1,0 +1,16 @@
+player	lettore	catalog
+playlist	playlist	catalog, celluloid
+queue	coda	catalog
+track	traccia	catalog majority over "brano"
+library	libreria	catalog
+station	stazione	catalog
+episode	episodio	catalog
+keyring	portachiavi	gnome-keyring
+provider	provider	catalog
+screenshot	schermata	catalog
+scan	scansione	catalog
+sidebar	barra laterale	gtk40, catalog
+Preferences	Preferenze	catalog
+save	salvare	catalog
+Retry	Riprova	catalog
+you	tu	catalog

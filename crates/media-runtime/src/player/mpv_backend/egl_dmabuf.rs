@@ -5,15 +5,19 @@
 //! GraphicsOffload → wl_subsurface → compositor hw plane (zero GSK compositing).
 //!
 //! Uses `EGL_MESA_image_dma_buf_export`. Falls back to GdkGLTexture when the
-//! extension is unavailable or export fails at runtime.
+//! extension is unavailable or export fails at runtime. With
+//! `EGL_ANDROID_native_fence_sync`, the GPU work that drew a frame becomes the
+//! dma-buf's write fence, so readers wait for it instead of this thread.
 
+use super::gl_proc_address::{egl_function, gl_function};
 use log::{debug, info, warn};
-use std::ffi::c_void;
-use std::os::fd::RawFd;
+use std::ffi::{CStr, c_char, c_void};
+use std::os::fd::{FromRawFd, OwnedFd, RawFd};
 
 type EglDisplayHandle = *mut c_void;
 type EglContextHandle = *mut c_void;
 type EglImageHandle = *mut c_void;
+type EglSyncHandle = *mut c_void;
 type EglInteger = i32;
 type EglBooleanFlag = u32;
 
@@ -23,10 +27,40 @@ const EGL_NO_CONTEXT: EglContextHandle = std::ptr::null_mut();
 const EGL_NO_IMAGE: EglImageHandle = std::ptr::null_mut();
 const EGL_GL_TEXTURE_2D: u32 = 0x30B1; // EGL_GL_TEXTURE_2D_KHR
 const EGL_NONE: EglInteger = 0x3038;
+const EGL_NO_SYNC: EglSyncHandle = std::ptr::null_mut();
+const EGL_EXTENSIONS: EglInteger = 0x3055;
+const EGL_SYNC_NATIVE_FENCE_ANDROID: u32 = 0x3144;
+const EGL_NO_NATIVE_FENCE_FD_ANDROID: EglInteger = -1;
+const NATIVE_FENCE_EXTENSION: &str = "EGL_ANDROID_native_fence_sync";
+const EGL_DEVICE_EXT: EglInteger = 0x322C;
+const EGL_DRM_RENDER_NODE_FILE_EXT: EglInteger = 0x3377;
+const EGL_LINUX_DMA_BUF_EXT: u32 = 0x3270;
+const EGL_WIDTH: EglInteger = 0x3057;
+const EGL_HEIGHT: EglInteger = 0x3056;
+const EGL_LINUX_DRM_FOURCC_EXT: EglInteger = 0x3271;
+const EGL_DMA_BUF_PLANE0_FD_EXT: EglInteger = 0x3272;
+const EGL_DMA_BUF_PLANE0_OFFSET_EXT: EglInteger = 0x3273;
+const EGL_DMA_BUF_PLANE0_PITCH_EXT: EglInteger = 0x3274;
+const EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT: EglInteger = 0x3443;
+const EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT: EglInteger = 0x3444;
+const GL_TEXTURE_2D: u32 = 0x0DE1;
+const GL_NO_ERROR: u32 = 0;
+/// GL keeps one flag per error kind, fewer than ten.
+const MAX_GL_ERRORS: usize = 16;
+/// Drivers list a few dozen modifiers per format.
+const MAX_MODIFIERS: EglInteger = 256;
+// linux/dma-buf.h: _IOW('b', 3, struct dma_buf_import_sync_file).
+const DMA_BUF_IOCTL_IMPORT_SYNC_FILE: libc::Ioctl = 0x4008_6203;
+const DMA_BUF_SYNC_WRITE: u32 = 2;
+
+#[repr(C)]
+struct DmaBufImportSyncFile {
+    flags: u32,
+    fd: i32,
+}
 
 type EglGetCurrentDisplayFn = unsafe extern "C" fn() -> EglDisplayHandle;
 type EglGetCurrentContextFn = unsafe extern "C" fn() -> EglContextHandle;
-type EglGetProcAddressFn = unsafe extern "C" fn(*const std::ffi::c_char) -> *mut c_void;
 type EglCreateImageFn = unsafe extern "C" fn(
     EglDisplayHandle,
     EglContextHandle,
@@ -49,6 +83,23 @@ type EglExportImageFn = unsafe extern "C" fn(
     *mut EglInteger,
     *mut EglInteger,
 ) -> EglBooleanFlag;
+type EglQueryStringFn = unsafe extern "C" fn(EglDisplayHandle, EglInteger) -> *const c_char;
+type EglCreateSyncFn =
+    unsafe extern "C" fn(EglDisplayHandle, u32, *const EglInteger) -> EglSyncHandle;
+type EglDestroySyncFn = unsafe extern "C" fn(EglDisplayHandle, EglSyncHandle) -> EglBooleanFlag;
+type EglDupNativeFenceFdFn = unsafe extern "C" fn(EglDisplayHandle, EglSyncHandle) -> EglInteger;
+type EglQueryDisplayAttribFn =
+    unsafe extern "C" fn(EglDisplayHandle, EglInteger, *mut isize) -> EglBooleanFlag;
+type EglQueryDeviceStringFn = unsafe extern "C" fn(*mut c_void, EglInteger) -> *const c_char;
+type EglQueryDmaBufModifiersFn = unsafe extern "C" fn(
+    EglDisplayHandle,
+    EglInteger,
+    EglInteger,
+    *mut u64,
+    *mut EglBooleanFlag,
+    *mut EglInteger,
+) -> EglBooleanFlag;
+type GlEglImageTargetTexture2DFn = unsafe extern "C" fn(u32, *mut c_void);
 
 pub(crate) struct EglDmaBufFns {
     get_display: EglGetCurrentDisplayFn,
@@ -57,86 +108,109 @@ pub(crate) struct EglDmaBufFns {
     destroy_image: EglDestroyImageFn,
     export_query: EglExportQueryFn,
     export_image: EglExportImageFn,
+    /// `None` when the display lacks `EGL_ANDROID_native_fence_sync`.
+    pub(crate) native_fence: Option<NativeFenceFns>,
+    /// `None` without dma-buf import, modifier queries or device queries.
+    pub(crate) import: Option<ImportFns>,
+}
+
+/// What allocating frames outside GL needs: the device GL renders on, the
+/// modifiers it renders to, and binding a dma-buf to a texture.
+pub(crate) struct ImportFns {
+    query_display_attrib: EglQueryDisplayAttribFn,
+    query_device_string: EglQueryDeviceStringFn,
+    query_modifiers: EglQueryDmaBufModifiersFn,
+    image_target_texture: GlEglImageTargetTexture2DFn,
+}
+
+pub(crate) struct NativeFenceFns {
+    create_sync: EglCreateSyncFn,
+    destroy_sync: EglDestroySyncFn,
+    dup_fence_fd: EglDupNativeFenceFdFn,
+}
+
+/// Why a frame could not carry its fence.
+pub(crate) enum FenceError {
+    /// This frame only; the next one tries again.
+    Failed,
+    /// The kernel has no `DMA_BUF_IOCTL_IMPORT_SYNC_FILE` for this buffer.
+    Unsupported(std::io::Error),
 }
 
 impl EglDmaBufFns {
-    /// Core fns via `dlsym`; extension fns via `eglGetProcAddress` (NVIDIA
-    /// drivers don't expose extension entry points to plain dlsym).
-    pub fn load() -> Option<Self> {
-        // GTK loads libEGL internally but may not export symbols to RTLD_DEFAULT.
-        // SAFETY: dlopen of a system library by constant name; it returns the
-        // already loaded instance, and the handle is never closed.
-        static EGL_LIBRARY: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
-        let lib = *EGL_LIBRARY.get_or_init(|| unsafe {
-            libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL) as usize
-        }) as *mut c_void;
-        if lib.is_null() {
-            warn!("EGL DMA-BUF: cannot load libEGL.so.1");
-            return None;
-        }
-
-        /// SAFETY: lib must be a valid dlopen handle, name null-terminated.
-        unsafe fn dlsym_fn<F>(lib: *mut c_void, name: &[u8]) -> Option<F> {
-            let ptr = unsafe { libc::dlsym(lib, name.as_ptr().cast::<std::ffi::c_char>()) };
-            if ptr.is_null() {
-                return None;
-            }
-            // F is always a bare fn pointer (pointer-width); guard against a
-            // mistyped F that would make transmute_copy read out of bounds.
-            debug_assert_eq!(
-                std::mem::size_of::<F>(),
-                std::mem::size_of::<*mut c_void>(),
-                "dlsym target F must be a plain function pointer",
-            );
-            // SAFETY: ptr is a non-null symbol address; F is a fn pointer of the
-            // same width as the void* it was loaded as (asserted above).
-            Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
-        }
-
-        // SAFETY: `lib` is a live dlopen handle; names are nul-terminated.
-        let get_display: EglGetCurrentDisplayFn =
-            unsafe { dlsym_fn(lib, b"eglGetCurrentDisplay\0")? };
-        let get_context: EglGetCurrentContextFn =
-            unsafe { dlsym_fn(lib, b"eglGetCurrentContext\0")? };
-        let get_proc_address: EglGetProcAddressFn =
-            unsafe { dlsym_fn(lib, b"eglGetProcAddress\0")? };
-
-        /// SAFETY: get_proc_address must be a valid eglGetProcAddress pointer.
-        unsafe fn egl_fn<F>(get_proc_address: EglGetProcAddressFn, name: &[u8]) -> Option<F> {
-            let ptr = unsafe { get_proc_address(name.as_ptr().cast::<std::ffi::c_char>()) };
-            if ptr.is_null() {
-                debug!(
-                    "EGL DMA-BUF: missing extension function: {}",
-                    std::str::from_utf8(&name[..name.len() - 1]).unwrap_or("?")
-                );
-                return None;
-            }
-            // F is always a bare fn pointer (pointer-width); guard against a
-            // mistyped F that would make transmute_copy read out of bounds.
-            debug_assert_eq!(
-                std::mem::size_of::<F>(),
-                std::mem::size_of::<*mut c_void>(),
-                "eglGetProcAddress target F must be a plain function pointer",
-            );
-            // SAFETY: ptr is a non-null symbol address; F is a fn pointer of the
-            // same width as the void* it was loaded as (asserted above).
-            Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
-        }
-
-        // lib is never dlclosed: the functions must stay valid for the
-        // process lifetime, and GTK keeps EGL loaded anyway.
-        // SAFETY: get_proc_address is valid; names are null-terminated.
+    /// Core functions from libEGL, extension functions through `eglGetProcAddress`.
+    pub(crate) fn load() -> Option<Self> {
+        // SAFETY: each name is paired with its EGL signature.
         unsafe {
+            let Some(get_display) = egl_function(c"eglGetCurrentDisplay") else {
+                warn!("EGL DMA-BUF: EGL is not available");
+                return None;
+            };
             Some(Self {
                 get_display,
-                get_context,
-                create_image: egl_fn(get_proc_address, b"eglCreateImageKHR\0")?,
-                destroy_image: egl_fn(get_proc_address, b"eglDestroyImageKHR\0")?,
-                export_query: egl_fn(get_proc_address, b"eglExportDMABUFImageQueryMESA\0")?,
-                export_image: egl_fn(get_proc_address, b"eglExportDMABUFImageMESA\0")?,
+                get_context: egl_function(c"eglGetCurrentContext")?,
+                create_image: extension_function(c"eglCreateImageKHR")?,
+                destroy_image: extension_function(c"eglDestroyImageKHR")?,
+                export_query: extension_function(c"eglExportDMABUFImageQueryMESA")?,
+                export_image: extension_function(c"eglExportDMABUFImageMESA")?,
+                native_fence: load_native_fence(get_display),
+                import: load_import(),
             })
         }
     }
+}
+
+/// # Safety
+/// Call with a current EGL context; `get_display` is `eglGetCurrentDisplay`.
+unsafe fn load_native_fence(get_display: EglGetCurrentDisplayFn) -> Option<NativeFenceFns> {
+    // SAFETY: each name is paired with its EGL signature; the display is the
+    // current one and the returned string is owned by EGL.
+    unsafe {
+        let query_string: EglQueryStringFn = egl_function(c"eglQueryString")?;
+        let extensions = query_string(get_display(), EGL_EXTENSIONS);
+        if extensions.is_null()
+            || !has_extension(
+                &CStr::from_ptr(extensions).to_string_lossy(),
+                NATIVE_FENCE_EXTENSION,
+            )
+        {
+            return None;
+        }
+        Some(NativeFenceFns {
+            create_sync: extension_function(c"eglCreateSyncKHR")?,
+            destroy_sync: extension_function(c"eglDestroySyncKHR")?,
+            dup_fence_fd: extension_function(c"eglDupNativeFenceFDANDROID")?,
+        })
+    }
+}
+
+fn load_import() -> Option<ImportFns> {
+    // SAFETY: each name is paired with its EGL or GL signature.
+    unsafe {
+        Some(ImportFns {
+            query_display_attrib: extension_function(c"eglQueryDisplayAttribEXT")?,
+            query_device_string: extension_function(c"eglQueryDeviceStringEXT")?,
+            query_modifiers: extension_function(c"eglQueryDmaBufModifiersEXT")?,
+            image_target_texture: extension_function(c"glEGLImageTargetTexture2DOES")?,
+        })
+    }
+}
+
+/// `list` is EGL's space-separated extension string; a name matches only whole.
+fn has_extension(list: &str, name: &str) -> bool {
+    list.split_ascii_whitespace()
+        .any(|extension| extension == name)
+}
+
+/// # Safety
+/// `F` must be the `unsafe extern "C" fn` type of `name`.
+unsafe fn extension_function<F: Copy>(name: &CStr) -> Option<F> {
+    // SAFETY: forwarded from the caller.
+    let function = unsafe { gl_function(name) };
+    if function.is_none() {
+        debug!("EGL DMA-BUF: missing extension function: {name:?}");
+    }
+    function
 }
 
 /// Owns the fd; `Drop` closes it.
@@ -265,13 +339,201 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
     }
 }
 
+/// Make the GL work submitted so far the write fence of `export`'s dma-buf.
+/// `flush` must be `glFlush` of the current context: the fence fd exists only
+/// once the commands that signal it are flushed.
+pub(crate) fn attach_write_fence(
+    egl: &EglDmaBufFns,
+    fence: &NativeFenceFns,
+    flush: unsafe extern "C" fn(),
+    export: &DmaBufExport,
+) -> Result<(), FenceError> {
+    // SAFETY: the context is current (caller), the functions were loaded for
+    // its display, and the sync is destroyed on every path after creation.
+    let sync_file = unsafe {
+        let dpy = (egl.get_display)();
+        let attribs = [EGL_NONE];
+        let sync = (fence.create_sync)(dpy, EGL_SYNC_NATIVE_FENCE_ANDROID, attribs.as_ptr());
+        if sync == EGL_NO_SYNC {
+            return Err(FenceError::Failed);
+        }
+        flush();
+        let fd = (fence.dup_fence_fd)(dpy, sync);
+        (fence.destroy_sync)(dpy, sync);
+        if fd == EGL_NO_NATIVE_FENCE_FD_ANDROID {
+            return Err(FenceError::Failed);
+        }
+        // EGL hands over a new descriptor that nothing else closes.
+        OwnedFd::from_raw_fd(fd)
+    };
+    let mut import = DmaBufImportSyncFile {
+        flags: DMA_BUF_SYNC_WRITE,
+        fd: std::os::fd::AsRawFd::as_raw_fd(&sync_file),
+    };
+    // SAFETY: `export.fd` is the open dma-buf and `import` matches the
+    // kernel's struct dma_buf_import_sync_file for this request.
+    let status = unsafe { libc::ioctl(export.fd, DMA_BUF_IOCTL_IMPORT_SYNC_FILE, &raw mut import) };
+    if status == 0 {
+        return Ok(());
+    }
+    let error = std::io::Error::last_os_error();
+    match error.raw_os_error() {
+        Some(libc::ENOTTY | libc::EINVAL) => Err(FenceError::Unsupported(error)),
+        _ => Err(FenceError::Failed),
+    }
+}
+
+/// The render node of the device the current context draws on.
+pub(crate) fn render_node(egl: &EglDmaBufFns, import: &ImportFns) -> Option<std::ffi::CString> {
+    // SAFETY: the context is current (caller); the device string is owned by
+    // EGL and copied before return.
+    unsafe {
+        let mut device: isize = 0;
+        if (import.query_display_attrib)((egl.get_display)(), EGL_DEVICE_EXT, &raw mut device)
+            != EGL_TRUE
+            || device == 0
+        {
+            return None;
+        }
+        let path =
+            (import.query_device_string)(device as *mut c_void, EGL_DRM_RENDER_NODE_FILE_EXT);
+        (!path.is_null()).then(|| CStr::from_ptr(path).to_owned())
+    }
+}
+
+/// Modifiers of `fourcc` the current context renders to (not external-only).
+pub(crate) fn renderable_modifiers(
+    egl: &EglDmaBufFns,
+    import: &ImportFns,
+    fourcc: u32,
+) -> Vec<u64> {
+    let mut modifiers = vec![0_u64; MAX_MODIFIERS as usize];
+    let mut external_only: Vec<EglBooleanFlag> = vec![0; MAX_MODIFIERS as usize];
+    let mut count: EglInteger = 0;
+    // SAFETY: the context is current (caller); both arrays hold MAX_MODIFIERS.
+    let ok = unsafe {
+        (import.query_modifiers)(
+            (egl.get_display)(),
+            fourcc as EglInteger,
+            MAX_MODIFIERS,
+            modifiers.as_mut_ptr(),
+            external_only.as_mut_ptr(),
+            &raw mut count,
+        )
+    };
+    let Ok(count) = usize::try_from(count) else {
+        return Vec::new();
+    };
+    if ok != EGL_TRUE {
+        return Vec::new();
+    }
+    modifiers
+        .into_iter()
+        .zip(external_only)
+        .take(count)
+        .filter_map(|(modifier, external)| (external != EGL_TRUE).then_some(modifier))
+        .collect()
+}
+
+/// Make `texture` the dma-buf described by `export`, `width` by `height`.
+/// `false` when EGL refuses the buffer, leaving the texture unchanged, or GL
+/// refuses to bind it, leaving the texture without storage.
+pub(crate) fn bind_dmabuf_texture(
+    egl: &EglDmaBufFns,
+    import: &ImportFns,
+    export: &DmaBufExport,
+    width: i32,
+    height: i32,
+    texture: u32,
+    bind_texture: unsafe extern "C" fn(u32, u32),
+    get_error: unsafe extern "C" fn() -> u32,
+) -> bool {
+    let attribs = [
+        EGL_WIDTH,
+        width,
+        EGL_HEIGHT,
+        height,
+        EGL_LINUX_DRM_FOURCC_EXT,
+        export.fourcc as EglInteger,
+        EGL_DMA_BUF_PLANE0_FD_EXT,
+        export.fd,
+        EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+        export.offset as EglInteger,
+        EGL_DMA_BUF_PLANE0_PITCH_EXT,
+        export.stride as EglInteger,
+        EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
+        export.modifier as u32 as EglInteger,
+        EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT,
+        (export.modifier >> 32) as u32 as EglInteger,
+        EGL_NONE,
+    ];
+    // SAFETY: the context is current (caller), `export.fd` is open for the
+    // call, and the image is destroyed once the texture holds the buffer.
+    unsafe {
+        let dpy = (egl.get_display)();
+        let image = (egl.create_image)(
+            dpy,
+            EGL_NO_CONTEXT,
+            EGL_LINUX_DMA_BUF_EXT,
+            std::ptr::null_mut(),
+            attribs.as_ptr(),
+        );
+        if image == EGL_NO_IMAGE {
+            return false;
+        }
+        // Errors queue up until read: clear older ones so the check below
+        // sees only this binding's.
+        for _ in 0..MAX_GL_ERRORS {
+            if get_error() == GL_NO_ERROR {
+                break;
+            }
+        }
+        bind_texture(GL_TEXTURE_2D, texture);
+        (import.image_target_texture)(GL_TEXTURE_2D, image);
+        let bound = get_error() == GL_NO_ERROR;
+        bind_texture(GL_TEXTURE_2D, 0);
+        (egl.destroy_image)(dpy, image);
+        bound
+    }
+}
+
 /// Call with a current EGL/GL context.
 pub(crate) fn probe() -> Option<EglDmaBufFns> {
     let fns = EglDmaBufFns::load();
-    if fns.is_some() {
-        info!("EGL DMA-BUF export: available (EGL_MESA_image_dma_buf_export)");
-    } else {
-        info!("EGL DMA-BUF export: not available (missing EGL functions)");
+    // One line per renderer, naming how frames are synchronized.
+    match &fns {
+        Some(fns) if fns.native_fence.is_some() => info!(
+            "EGL DMA-BUF export: available (EGL_MESA_image_dma_buf_export), frames fenced by EGL_ANDROID_native_fence_sync"
+        ),
+        Some(_) => info!(
+            "EGL DMA-BUF export: available (EGL_MESA_image_dma_buf_export), no native fence: glFinish per frame"
+        ),
+        None => info!("EGL DMA-BUF export: not available (missing EGL functions)"),
     }
     fns
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn extension_matches_whole_token() {
+        for (list, expected) in [
+            (
+                "EGL_KHR_fence_sync EGL_ANDROID_native_fence_sync EGL_KHR_wait_sync",
+                true,
+            ),
+            ("EGL_ANDROID_native_fence_sync", true),
+            ("  EGL_ANDROID_native_fence_sync\n", true),
+            ("EGL_ANDROID_native_fence_sync_v2 EGL_KHR_fence_sync", false),
+            ("XEGL_ANDROID_native_fence_sync", false),
+            ("EGL_KHR_fence_sync", false),
+            ("", false),
+        ] {
+            assert_eq!(
+                super::has_extension(list, super::NATIVE_FENCE_EXTENSION),
+                expected,
+                "{list:?}"
+            );
+        }
+    }
 }

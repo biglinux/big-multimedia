@@ -3,7 +3,7 @@
   <id>br.com.biglinux.AudioPlayer</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <developer id="com.biglinux">
+  <developer id="br.com.biglinux">
     <name>BigLinux</name>
   </developer>
   <name>Big Audio Player</name>
@@ -50,7 +50,7 @@
     <p xml:lang="et">Big Audio Player on libadwaita-põhine muusika- ja helimängija, mis on kirjutatud Rustis BigLinuxi ühiskomponentide peale. See esitab MP3-, FLAC-, OGG Vorbis-, Opus-, AAC- ja WAV-faile, haldab muusikakogu esitusloendite ja esitusjärjekorraga, esitab internetiraadiot ja taskuhäälinguid, kuvab laulusõnu ning pakub MPRIS-juhtimist meediaklahvidele ja töölauale.</p>
     <p xml:lang="fi">Big Audio Player on libadwaita-pohjainen musiikki- ja äänisoitin, joka on kirjoitettu Rustilla BigLinuxin jaettujen komponenttien päälle. Se toistaa MP3-, FLAC-, OGG Vorbis-, Opus-, AAC- ja WAV-tiedostoja, ylläpitää musiikkikirjastoa soittolistoineen ja toistojonoineen, toistaa verkkoradiota ja podcasteja, näyttää sanoitukset ja tarjoaa MPRIS-ohjauksen mediapainikkeille ja työpöydälle.</p>
     <p xml:lang="fr">Big Audio Player est un lecteur de musique et d’audio libadwaita écrit en Rust sur les composants partagés de BigLinux. Il lit les fichiers MP3, FLAC, OGG Vorbis, Opus, AAC et WAV, gère une bibliothèque musicale avec des listes de lecture et une file d’attente, lit les radios en ligne et les podcasts, affiche les paroles et expose des commandes MPRIS pour les touches multimédia et le bureau.</p>
-    <p xml:lang="he">Big Audio Player הוא נגן מוזיקה ואודיו מבוסס libadwaita שנכתב ב־Rust על גבי הרכיבים המשותפים של BigLinux. הוא מנגן קובצי MP3‏, FLAC‏, OGG Vorbis‏, Opus‏, AAC ו־WAV, מנהל ספריית מוזיקה עם רשימות השמעה ותור השמעה, מנגן רדיו אינטרנטי והסכתים, מציג מילות שירים וחושף פקדי MPRIS למקשי המדיה ולשולחן העבודה.</p>
+    <p xml:lang="he">Big Audio Player הוא נגן מוזיקה ואודיו מבוסס libadwaita שנכתב ב־Rust על גבי הרכיבים המשותפים של BigLinux. הוא מנגן קובצי MP3‏, FLAC‏, OGG Vorbis‏, Opus‏, AAC ו־WAV, מנהל ספריית מוזיקה עם רשימות השמעה ותור השמעה, מנגן רדיו אינטרנטי ופודקאסטים, מציג מילות שירים וחושף פקדי MPRIS למקשי המדיה ולשולחן העבודה.</p>
     <p xml:lang="hr">Big Audio Player je player glazbe i zvuka s libadwaitom, napisan u Rustu povrh zajedničkih komponenti BigLinuxa. Reproducira datoteke MP3, FLAC, OGG Vorbis, Opus, AAC i WAV, održava glazbenu biblioteku s popisima za reprodukciju i redom čekanja, reproducira internetski radio i podcaste, prikazuje tekstove pjesama i nudi MPRIS kontrole za multimedijske tipke i radnu površinu.</p>
     <p xml:lang="hu">A Big Audio Player egy libadwaita alapú zene- és hanglejátszó, amely Rustban készült a BigLinux közös összetevőire építve. Lejátssza az MP3, FLAC, OGG Vorbis, Opus, AAC és WAV fájlokat, zenei könyvtárat kezel lejátszási listákkal és lejátszási sorral, internetes rádiót és podcastokat játszik le, megjeleníti a dalszövegeket, és MPRIS-vezérlőket biztosít a médiabillentyűkhöz és az asztalhoz.</p>
     <p xml:lang="is">Big Audio Player er tónlistar- og hljóðspilari með libadwaita, skrifaður í Rust ofan á sameiginlega hluta BigLinux. Hann spilar MP3-, FLAC-, OGG Vorbis-, Opus-, AAC- og WAV-skrár, heldur utan um tónlistarsafn með spilunarlistum og spilunarröð, spilar netútvarp og hlaðvörp, sýnir söngtexta og býður upp á MPRIS-stýringar fyrir margmiðlunarlykla og skjáborðið.</p>
@@ -65,12 +65,16 @@
     <p xml:lang="ru">Big Audio Player — это проигрыватель музыки и аудио на libadwaita, написанный на Rust на основе общих компонентов BigLinux. Он воспроизводит файлы MP3, FLAC, OGG Vorbis, Opus, AAC и WAV, ведёт музыкальную библиотеку с плейлистами и очередью воспроизведения, проигрывает интернет-радио и подкасты, показывает тексты песен и предоставляет элементы управления MPRIS для мультимедийных клавиш и рабочего стола.</p>
     <p xml:lang="sk">Big Audio Player je prehrávač hudby a zvuku s libadwaita napísaný v jazyku Rust nad zdieľanými komponentmi BigLinuxu. Prehráva súbory MP3, FLAC, OGG Vorbis, Opus, AAC a WAV, spravuje hudobnú knižnicu so zoznamami skladieb a frontom prehrávania, prehráva internetové rádiá a podcasty, zobrazuje texty piesní a poskytuje ovládanie MPRIS pre multimediálne klávesy a pracovné prostredie.</p>
     <p xml:lang="sv">Big Audio Player är en musik- och ljudspelare med libadwaita, skriven i Rust ovanpå BigLinux delade komponenter. Den spelar upp MP3-, FLAC-, OGG Vorbis-, Opus-, AAC- och WAV-filer, håller ordning på ett musikbibliotek med spellistor och en uppspelningskö, spelar internetradio och poddar, visar låttexter och erbjuder MPRIS-kontroller för mediatangenter och skrivbordet.</p>
-    <p xml:lang="tr">Big Audio Player, BigLinux’un ortak bileşenleri üzerine Rust ile geliştirilmiş, libadwaita tabanlı bir müzik ve ses çalardır. MP3, FLAC, OGG Vorbis, Opus, AAC ve WAV dosyalarını oynatır, çalma listeleri ve oynatma kuyruğu olan bir müzik kitaplığı tutar, internet radyolarını ve podcast’leri çalar, şarkı sözlerini gösterir ve ortam tuşları ile masaüstü için MPRIS denetimleri sunar.</p>
+    <p xml:lang="tr">Big Audio Player, BigLinux’un ortak bileşenleri üzerine Rust ile geliştirilmiş, libadwaita tabanlı bir müzik ve ses çalardır. MP3, FLAC, OGG Vorbis, Opus, AAC ve WAV dosyalarını oynatır, çalma listeleri ve oynatma kuyruğu olan bir müzik kütüphanesi tutar, internet radyolarını ve podcast’leri çalar, şarkı sözlerini gösterir ve ortam tuşları ile masaüstü için MPRIS denetimleri sunar.</p>
     <p xml:lang="uk">Big Audio Player — це програвач музики й аудіо на libadwaita, написаний мовою Rust на основі спільних компонентів BigLinux. Він відтворює файли MP3, FLAC, OGG Vorbis, Opus, AAC і WAV, веде музичну бібліотеку зі списками відтворення та чергою відтворення, програє інтернет-радіо й подкасти, показує тексти пісень і надає елементи керування MPRIS для мультимедійних клавіш і стільниці.</p>
     <p xml:lang="zh_CN">Big Audio Player 是一款基于 libadwaita 的音乐和音频播放器，使用 Rust 在 BigLinux 共享组件之上构建。它可播放 MP3、FLAC、OGG Vorbis、Opus、AAC 和 WAV 文件，管理包含播放列表和播放队列的音乐库，播放网络电台和播客，显示歌词，并为媒体键和桌面提供 MPRIS 控制。</p>
     <p xml:lang="zh_TW">Big Audio Player 是一款以 libadwaita 打造的音樂與音訊播放器，使用 Rust 並建構於 BigLinux 的共用元件之上。它可播放 MP3、FLAC、OGG Vorbis、Opus、AAC 與 WAV 檔案，管理含有播放清單與播放佇列的音樂庫，播放網路電台與 Podcast，顯示歌詞，並為媒體鍵與桌面提供 MPRIS 控制。</p>
   </description>
   <launchable type="desktop-id">br.com.biglinux.AudioPlayer.desktop</launchable>
+  <provides>
+    <binary>big-audio-player</binary>
+  </provides>
+  <translation type="gettext">big-media-runtime</translation>
   <categories>
     <category>AudioVideo</category>
     <category>Audio</category>
@@ -174,6 +178,7 @@
   </keywords>
   <url type="homepage">https://github.com/biglinux/big-multimedia</url>
   <url type="bugtracker">https://github.com/biglinux/big-multimedia/issues</url>
+  <url type="vcs-browser">https://github.com/biglinux/big-multimedia</url>
   <screenshots>
     <screenshot type="default">
       <caption>Main window playing a track</caption>
@@ -216,6 +221,40 @@
     <control>touch</control>
   </supports>
   <releases>
+    <release version="2.0.0" date="2026-11-18">
+      <description>
+        <p>Plays music files, internet radio and podcasts, keeps a music library with playlists and a play queue, and shows lyrics.</p>
+        <p xml:lang="pt_BR">Reproduz arquivos de música, rádios online e podcasts, mantém uma biblioteca de músicas com listas de reprodução e fila de reprodução e mostra letras.</p>
+        <p xml:lang="bg">Възпроизвежда музикални файлове, интернет радио и подкасти, поддържа музикална библиотека с плейлисти и опашка за възпроизвеждане и показва текстове на песни.</p>
+        <p xml:lang="cs">Přehrává hudební soubory, internetová rádia a podcasty, spravuje hudební knihovnu s playlisty a frontou přehrávání a zobrazuje texty písní.</p>
+        <p xml:lang="da">Afspiller musikfiler, internetradio og podcasts, vedligeholder et musikbibliotek med afspilningslister og en afspilningskø og viser sangtekster.</p>
+        <p xml:lang="de">Spielt Musikdateien, Internetradio und Podcasts ab, verwaltet eine Musikbibliothek mit Wiedergabelisten und einer Warteschlange und zeigt Liedtexte an.</p>
+        <p xml:lang="el">Αναπαράγει αρχεία μουσικής, διαδικτυακό ραδιόφωνο και podcast, διαχειρίζεται βιβλιοθήκη μουσικής με λίστες αναπαραγωγής και ουρά αναπαραγωγής και εμφανίζει στίχους.</p>
+        <p xml:lang="es">Reproduce archivos de música, radio por internet y podcasts, mantiene una biblioteca de música con listas de reproducción y una cola de reproducción, y muestra letras.</p>
+        <p xml:lang="et">Esitab muusikafaile, internetiraadiot ja taskuhäälinguid, haldab muusikakogu esitusloendite ja esitusjärjekorraga ning kuvab laulusõnu.</p>
+        <p xml:lang="fi">Toistaa musiikkitiedostoja, verkkoradiota ja podcasteja, ylläpitää musiikkikirjastoa soittolistoineen ja toistojonoineen ja näyttää sanoitukset.</p>
+        <p xml:lang="fr">Lit les fichiers musicaux, les radios en ligne et les podcasts, gère une bibliothèque musicale avec des listes de lecture et une file d’attente, et affiche les paroles.</p>
+        <p xml:lang="he">מנגן קובצי מוזיקה, רדיו אינטרנטי ופודקאסטים, מנהל ספריית מוזיקה עם רשימות השמעה ותור השמעה ומציג מילות שירים.</p>
+        <p xml:lang="hr">Reproducira glazbene datoteke, internetski radio i podcaste, vodi glazbenu biblioteku s popisima za reprodukciju i redom čekanja te prikazuje tekstove pjesama.</p>
+        <p xml:lang="hu">Lejátssza a zenefájlokat, az internetes rádiót és a podcastokat, zenei könyvtárat kezel lejátszólistákkal és várólistával, és megjeleníti a dalszövegeket.</p>
+        <p xml:lang="is">Spilar tónlistarskrár, netútvarp og hlaðvörp, heldur utan um tónlistarsafn með spilunarlistum og biðröð og sýnir söngtexta.</p>
+        <p xml:lang="it">Riproduce file musicali, radio via internet e podcast, mantiene una libreria musicale con playlist e coda di riproduzione e mostra i testi.</p>
+        <p xml:lang="ja">音楽ファイル、インターネットラジオ、ポッドキャストを再生し、プレイリストと再生キューを備えた音楽ライブラリを管理して、歌詞を表示します。</p>
+        <p xml:lang="ko">음악 파일, 인터넷 라디오, 팟캐스트를 재생하고, 재생 목록과 재생 대기열이 있는 음악 라이브러리를 관리하며, 가사를 표시합니다.</p>
+        <p xml:lang="nb">Spiller av musikkfiler, internettradio og podkaster, holder orden på et musikkbibliotek med spillelister og en avspillingskø og viser sangtekster.</p>
+        <p xml:lang="nl">Speelt muziekbestanden, internetradio en podcasts af, beheert een muziekbibliotheek met afspeellijsten en een wachtrij en toont songteksten.</p>
+        <p xml:lang="pl">Odtwarza pliki muzyczne, radio internetowe i podcasty, prowadzi bibliotekę muzyczną z listami odtwarzania i kolejką odtwarzania oraz wyświetla teksty utworów.</p>
+        <p xml:lang="pt">Reproduz ficheiros de música, rádios na Internet e podcasts, mantém uma biblioteca de música com listas de reprodução e fila de reprodução e mostra letras.</p>
+        <p xml:lang="ro">Redă fișiere muzicale, radio pe internet și podcasturi, gestionează o bibliotecă muzicală cu liste de redare și o coadă de redare și afișează versuri.</p>
+        <p xml:lang="ru">Воспроизводит музыкальные файлы, интернет-радио и подкасты, ведёт музыкальную библиотеку с плейлистами и очередью воспроизведения и показывает тексты песен.</p>
+        <p xml:lang="sk">Prehráva hudobné súbory, internetové rádiá a podcasty, spravuje hudobnú knižnicu so zoznamami skladieb a frontom prehrávania a zobrazuje texty piesní.</p>
+        <p xml:lang="sv">Spelar upp musikfiler, internetradio och poddar, håller ordning på ett musikbibliotek med spellistor och en uppspelningskö och visar låttexter.</p>
+        <p xml:lang="tr">Müzik dosyalarını, internet radyolarını ve podcast’leri çalar, çalma listeleri ve oynatma kuyruğu olan bir müzik kütüphanesi tutar ve şarkı sözlerini gösterir.</p>
+        <p xml:lang="uk">Відтворює музичні файли, інтернет-радіо й подкасти, веде музичну бібліотеку зі списками відтворення та чергою відтворення і показує тексти пісень.</p>
+        <p xml:lang="zh_CN">播放音乐文件、网络电台和播客，管理包含播放列表和播放队列的音乐库，并显示歌词。</p>
+        <p xml:lang="zh_TW">播放音樂檔案、網路電台與 Podcast，管理含有播放清單與播放佇列的音樂庫，並顯示歌詞。</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-04-26">
       <description>
         <p>Initial Rust release with libadwaita UI, MPRIS support, and BigLinux desktop integration.</p>

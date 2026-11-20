@@ -24,6 +24,37 @@ impl PlaybackStatus {
         }
     }
 }
+/// Repeat mode as MPRIS2 spells it on the bus.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum LoopStatus {
+    /// Playback stops at the end of the queue.
+    #[default]
+    None,
+    /// The current track repeats.
+    Track,
+    /// The whole queue repeats.
+    Playlist,
+}
+impl LoopStatus {
+    /// The exact string MPRIS2 expects for the `LoopStatus` property.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "None",
+            Self::Track => "Track",
+            Self::Playlist => "Playlist",
+        }
+    }
+
+    /// The status a bus client wrote, or `None` for a value MPRIS2 does not define.
+    pub fn from_bus(value: &str) -> Option<Self> {
+        match value {
+            "None" => Some(Self::None),
+            "Track" => Some(Self::Track),
+            "Playlist" => Some(Self::Playlist),
+            _ => None,
+        }
+    }
+}
 /// Typed intentions. Track identity survives the bus -> GTK mailbox crossing.
 #[derive(Debug, Clone, PartialEq)]
 pub enum MprisCommand {
@@ -57,16 +88,17 @@ pub enum MprisCommand {
         /// Absolute position in microseconds.
         position_us: i64,
     },
-    /// Load and play the given URI.
+    /// Load and play a local path, or an `http`/`https` URL as given.
     OpenUri(String),
-    /// Set the volume, expressed as the MPRIS 0.0–1.0 ratio.
+    /// Set the volume, expressed as the MPRIS 0.0–1.0 ratio; always finite
+    /// and at least zero.
     SetVolume(f64),
-    /// Set the playback rate.
+    /// Set the playback rate, always within the published 0.25–4.0 range.
     SetRate(f64),
     /// Enable or disable shuffle.
     SetShuffle(bool),
-    /// Set the loop mode (`None`, `Track` or `Playlist`).
-    SetLoopStatus(String),
+    /// Set the loop mode.
+    SetLoopStatus(LoopStatus),
 }
 /// Sink the service calls on the GTK side for each decoded bus command.
 pub type CommandCallback = Box<dyn Fn(MprisCommand) + Send + Sync + 'static>;
@@ -105,8 +137,8 @@ pub struct PlayerState {
     pub can_pause: bool,
     /// Whether the position can be moved.
     pub can_seek: bool,
-    /// Loop mode (`None`, `Track` or `Playlist`).
-    pub loop_status: String,
+    /// Loop mode.
+    pub loop_status: LoopStatus,
     /// Whether shuffle is active.
     pub shuffle: bool,
 }

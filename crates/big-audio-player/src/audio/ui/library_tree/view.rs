@@ -22,6 +22,7 @@ use crate::db::models::Track;
 use crate::i18n::i18n;
 
 use super::super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
+use super::super::track_count_text;
 use super::interaction::{
     LibraryTreeContextTarget, library_panel_node_selected_output, library_tree_context_target,
     library_tree_selection, selected_leaf_drag_paths,
@@ -76,8 +77,8 @@ impl TreePresenter {
             );
             big_media_components::player_chrome::spawn_blocking_result(
                 move || {
-                    let data = crate::library::metadata::extract_album_art(&wanted)?;
-                    big_media_components::media::images::bytes_to_thumbnail(&data, 2 * PICTURE_PX)
+                    let art = crate::library::metadata::extract_album_art(&wanted)?;
+                    big_media_components::media::images::bytes_to_thumbnail(&art, 2 * PICTURE_PX)
                 },
                 move |texture| {
                     pending.borrow_mut().remove(&hash);
@@ -158,12 +159,9 @@ impl ItemPresenter for TreePresenter {
                 (None, None) => (themed(), IconFrame::Small),
             };
             if let Some(count) = row.track_count_label {
-                let unit = if node.track_count() == 1 {
-                    i18n("track")
-                } else {
-                    i18n("tracks")
-                };
-                said.push(format!("{count} {unit}"));
+                said.push(track_count_text(u64::from(
+                    node.track_count().unsigned_abs(),
+                )));
                 out.cells = vec![count];
             }
         }
@@ -287,7 +285,7 @@ fn build_tree_model(
             return None;
         }
         let store = child_store(
-            &child_store_key(node.kind(), &node.key()),
+            &child_store_key(node),
             &mut stores.borrow_mut(),
             &mut leaves.borrow_mut(),
         )?;
@@ -306,7 +304,7 @@ fn node_at(view: &ItemView, position: u32) -> Option<(gtk::TreeListRow, BrowserN
 }
 
 /// Activation (double click, Enter) and a group's button → `NodeSelected`:
-/// the shell queries its tracks → `PopulateDetail`. Dividers are inert.
+/// the shell queues its tracks. Dividers are inert.
 fn wire_activation(view: &ItemView, sender: &ComponentSender<LibraryPanel>) {
     let select = {
         let out = sender.clone();

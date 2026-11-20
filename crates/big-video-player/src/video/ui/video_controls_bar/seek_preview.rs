@@ -130,15 +130,7 @@ pub(super) fn wire_thumb_consumer(
             if !generator.is_current(&result) {
                 continue;
             }
-            let bytes = glib::Bytes::from_owned(result.rgb_data);
-            let texture = gdk::MemoryTexture::new(
-                THUMB_WIDTH,
-                THUMB_HEIGHT,
-                gdk::MemoryFormat::R8g8b8,
-                &bytes,
-                (THUMB_WIDTH * 3) as usize,
-            );
-            thumb.set_paintable(Some(&texture));
+            thumb.set_paintable(Some(&result.into_texture()));
         }
     });
 }
@@ -146,7 +138,7 @@ pub(super) fn wire_thumb_consumer(
 /// Hovering Previous (`step` -1) or Next (+1) shows where it goes: that
 /// video's picture and name, in the order the playlist plays (shuffled
 /// too). Nothing shows where there is nowhere to go.
-pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
+pub(super) fn wire_neighbor_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
     // one reused popover per button, for
     // the life of the controls bar.
     let popover = gtk::Popover::builder()
@@ -155,17 +147,10 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
         .css_classes(["seek-preview"])
         .build();
     popover.set_parent(button);
-    {
-        let popover = popover.downgrade();
-        button.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown(
+        button.upcast_ref(),
+        &popover,
+    );
     let thumb = gtk::Picture::builder()
         .width_request(THUMB_WIDTH)
         .height_request(THUMB_HEIGHT)
@@ -213,7 +198,7 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             };
             // The preview says "Next" and where: a tooltip over it would too.
             button.set_has_tooltip(false);
-            name.set_label(&display_name(&path));
+            name.set_label(&crate::media::playlist::display_name(&path));
             if shown.borrow().as_deref() != Some(path.as_str()) {
                 shown.replace(Some(path.clone()));
                 thumb.set_paintable(gdk::Paintable::NONE);
@@ -257,17 +242,6 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
     });
     motion.connect_leave(move |_| popover.popdown());
     button.add_controller(motion);
-}
-
-/// A playlist entry as a person names it: the file name without its
-/// extension, or a stream's last path segment.
-fn display_name(path: &str) -> String {
-    let trimmed = path.trim_end_matches('/');
-    let last = trimmed.rsplit('/').next().unwrap_or(trimmed);
-    std::path::Path::new(last).file_stem().map_or_else(
-        || last.to_string(),
-        |stem| stem.to_string_lossy().into_owned(),
-    )
 }
 
 /// Title of the last chapter at or before `time` (non-empty), else `None`.

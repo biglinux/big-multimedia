@@ -34,7 +34,8 @@ pub struct LibraryTreeNode {
     pub key: String,
     /// Track count badge (0 = hidden).
     pub count: i32,
-    /// Secondary payload: album artist, or the tab-joined leaf metadata
+    /// Secondary payload: a nested group's parent `column:value` filters, the
+    /// "Various Artists" album marker, or the tab-joined leaf metadata
     /// (`album\tduration\tartist\tart_hash`) used by the file-leaf binder.
     pub secondary: String,
     /// Preloaded children (already grouped/sorted by the shell). Empty = leaf or
@@ -66,9 +67,8 @@ pub(super) enum ChildEntry {
     Built(gio::ListStore),
 }
 
-/// Maps a node's identity to its children. Keyed exactly as
-/// `"{kind as u32}:{key}"` (see [`child_store_key`]) so the create-func is a
-/// pure HashMap lookup with no fallback DB path.
+/// Maps a node's identity to its children, keyed by [`child_store_key`] so the
+/// create-func is a pure HashMap lookup with no fallback DB path.
 pub(super) type ChildStores = Rc<RefCell<HashMap<String, ChildEntry>>>;
 
 /// Resolved-track lookup for drag-export, keyed by file path. Kept off the
@@ -116,9 +116,16 @@ pub(super) fn group_divider_letter(value: &str) -> char {
     }
 }
 
-/// The `ChildStores` key of a node.
-pub(super) fn child_store_key(kind: BrowserNodeKind, key: &str) -> String {
-    format!("{}:{key}", kind as u32)
+/// The `ChildStores` key of a node. Same-named groups under different parents
+/// differ only in `secondary`; the key's length keeps the two fields apart.
+pub(super) fn child_store_key(node: &BrowserNode) -> String {
+    let key = node.key();
+    format!(
+        "{}:{}:{key}{}",
+        node.kind() as u32,
+        key.len(),
+        node.secondary()
+    )
 }
 
 /// Convert one `LibraryTreeNode` into a `BrowserNode`, registering its track
@@ -132,10 +139,7 @@ pub(super) fn build_node(
     let gnode = to_browser_node(&node);
     let children = std::mem::take(&mut node.children);
     if !children.is_empty() {
-        stores.insert(
-            child_store_key(node.kind, &node.key),
-            ChildEntry::Pending(children),
-        );
+        stores.insert(child_store_key(&gnode), ChildEntry::Pending(children));
     }
     if let Some(track) = node.track {
         leaves.insert(node.key, track);
@@ -184,6 +188,7 @@ pub(super) fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
         BrowserNodeKind::Artist => BrowserNode::artist(&node.label, node.count),
         BrowserNodeKind::Album => BrowserNode::album(&node.label, &node.secondary, node.count),
         BrowserNodeKind::Genre => BrowserNode::genre(&node.label, node.count),
+        BrowserNodeKind::Format => BrowserNode::format(&node.label, node.count),
         BrowserNodeKind::Year => BrowserNode::year(node.key.parse().unwrap_or(0), node.count),
         BrowserNodeKind::VariousArtists => BrowserNode::various_artists(node.count),
         BrowserNodeKind::Divider => BrowserNode::divider(&node.label),
@@ -201,6 +206,10 @@ pub(super) fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
     // `key` is authoritative for resolution (year stores the raw string).
     if !node.key.is_empty() && gnode.key() != node.key {
         gnode.set_key(node.key.as_str());
+    }
+    // A nested group's secondary holds the parent filters its tracks resolve by.
+    if !node.secondary.is_empty() && gnode.secondary() != node.secondary {
+        gnode.set_secondary(node.secondary.as_str());
     }
     gnode
 }

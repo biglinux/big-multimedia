@@ -3,8 +3,8 @@
 ## Owners and thread boundaries
 
 `big-os-kit::background` has a bounded, serial lane for short disk transactions
-(64 queued tasks) and a separate serial account/service lane (8 tasks). Admission
-uses `try_send`. A widget disappearing does not discard an admitted write. GTK
+(64 queued tasks) and a separate serial service lane for keyring access (8
+tasks). Admission uses `try_send`. A widget disappearing does not discard an admitted write. GTK
 objects never enter the worker closure; completions use weak widget references.
 The existing `Settings` store snapshots its in-memory state under a short lock,
 then releases it before filesystem operations. A separate disk lock serializes
@@ -15,18 +15,18 @@ The same cooperating-writer lock covers compare and publication. Saves replace
 the file atomically and are not fsynced: losing the last seconds of player state
 to a power cut is acceptable, a sync per edit is not. Invalid source, external
 conflict and disk errors remain observable states. Retry does not implicitly
-rebase or overwrite an external revision. Resolve a conflict by reloading the
-application;
-export unsaved preferences to a new file before restarting when they must be kept.
-A failed save is not made successful merely because the worker finished.
+rebase or overwrite an external revision. Resolve a conflict by restarting the
+player; edits that were not saved are lost. A failed save is not made
+successful merely because the worker finished.
 
-The UI shows Pending/Saving/Saved/Failed and Retry on the relevant
-preferences/state surfaces. Main-store settings, generic JSON state, IPTV provider
-state, favorites, recents, plugin live control values, preference/profile exports
-and playlist exports write to disk outside the GTK callback. Snapshot
-construction and widget updates stay on GTK. Initial loading and media streaming
-do not go through these lanes. User document exports use staged no-replace
-publication rather than a universal private-mode overwrite policy.
+Preferences pages show a banner with Retry Saving only when a settings write
+failed. The IPTV provider and channel lists show a status line (saved, saving or
+failed) with Retry saving. Main-store settings, generic JSON state, IPTV provider
+state, favorites, recents and playlist exports write to disk outside the GTK
+callback. Snapshot construction and widget updates stay on GTK. Initial loading
+and media streaming do not go through these lanes. User document exports use
+staged no-replace publication rather than a universal private-mode overwrite
+policy.
 
 Normal window closing and requested quit/suspend/poweroff drain admitted jobs.
 Scans own a drain guard until terminal completion, not merely until the UI
@@ -34,7 +34,7 @@ requests cancellation. Forced termination, kernel calls stuck in I/O, panic=abor
 and power loss are not successful-save guarantees. Hosts bypassing these window/
 quit paths must honor the same drain contract. Error states remain errors.
 
-## Secret Service account protocol
+## Secret Service
 
 The bridge uses the system `secret-tool` from libsecret on a service worker.
 Nothing is installed automatically. The default persistent collection is used;
@@ -44,27 +44,26 @@ or failed lookup by exit code alone. Helper output/error is never logged, and th
 secret goes on stdin, not argv or lookup attributes. Payload is capped at 7,900
 UTF-8 bytes, below the helper's current 8,192-byte input buffer.
 
-Last.fm and ListenBrainz use a fresh random candidate ID per update. A small
-private journal stores only provider, identifiers, source-revision hash, intended
-payload hash and existing listening-history consent. It is durably written before
-calling the service. Store is followed by exact readback; only then is the account
-JSON replaced by a versioned reference. The old keyring item is cleaned only after
-the reference/readback/durability checks. Legacy plaintext is not erased early.
-Replacing the file does not securely erase old filesystem blocks or user
-backups.
-
-Protect/Check/Configure/Recover actions are available in audio preferences. A
-credential editor uses password rows, explicit Save, the account revision it loaded
-and a separate worker. Existing consent is preserved; protecting credentials does
-not implement or silently enable unavailable scrobbling features. A pending
-transaction cannot be replaced by a different edit. Recover replays that exact
-transaction; if the helper failed before creating its candidate, manually reenter
-exactly the intended credentials. A different payload is refused. Old-item
-cleanup uncertainty retains the journal and requires recovery/explicit inspection,
-not speculative deletion. Keyring and JSON are not one ACID resource.
-
-This bridge covers Last.fm and ListenBrainz account credentials, not arbitrary
-IPTV provider URLs or all credentials anywhere in the desktop.
+IPTV providers keep their secret there: the Xtream password, or the whole M3U
+URL when `big_os_kit::url::redact_url` would change it (credentials in the
+query or userinfo). `iptv-providers.toml` holds the item's random 128-bit
+`secret_id` and, for an M3U URL, its redacted form. Saving the provider form
+stores the item first and adds the provider only after the keyring accepts it;
+a refusal keeps the form open with the reason. A file that still holds a plain
+password is moved into the keyring when the TV panel opens, reloads or closes
+the provider editor, and rewritten only for providers nobody edited meanwhile.
+Until then the panel and the provider list say the password is not in the
+keyring yet. Replacing or removing a secret deletes the old item after the
+provider list is updated; a failed delete is shown, never retried silently.
+Played channel URLs carry the Xtream credentials. The playlist sidebar, whose
+Save writes a file, lists a channel by its stored URL, with `/{credentials}/`
+in their place, and only mpv gets the played URL. A channel whose URL may
+repeat the provider's secret in another form (an M3U URL with credentials, or
+a list cached with them) plays without entering the sidebar. Opening a saved
+playlist puts the credentials back from the Xtream provider whose server the
+channel is on, never another; when none is, or the keyring keeps the
+password, the playlist does not open and the player says why. Recent files
+never take a stream.
 
 ## LAN remote
 
@@ -128,6 +127,6 @@ termination and a host that bypasses these hooks remain outside the guarantee.
 
 ## Tests
 
-The Rust tests for deferred state, accounts, the remote server and unavailable
+The Rust tests for deferred state, the remote server and unavailable
 records run with `cargo test`. They cover no GTK appearance, keyring or cast
 receiver behavior.

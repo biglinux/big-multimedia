@@ -1,0 +1,18 @@
+id: bitrate-label-owner
+language: rust
+severity: error
+message: Format a bitrate with big_media_components::audio::labels::bitrate_kbps_label_from_bps
+note: >-
+  crates/ui/media/big-media-components/src/audio/labels.rs rounds to the
+  nearest kbps, so one stream reads the same in every dialog and list.
+rule:
+  kind: string_literal
+  regex: kbps
+  inside:
+    kind: macro_invocation
+    stopBy: end
+    has:
+      field: macro
+      regex: ^format$
+ignores:
+  - crates/ui/media/big-media-components/src/audio/labels.rs

@@ -25,27 +25,20 @@ fn parse_uri_list(text: &str, max_items: Option<usize>) -> Vec<String> {
 
 /// Resolve a `text/uri-list` drop payload to local filesystem paths.
 ///
-/// Each entry is parsed by [`parse_uri_list`]; `file://` URIs are decoded
-/// via [`gio::File::for_uri`] while plain entries are taken verbatim as
-/// [`PathBuf`]. Entries that cannot be decoded are dropped silently.
+/// Each entry is parsed by [`parse_uri_list`] and kept when
+/// [`big_os_kit::url::local_path`] reads it as a path on this computer.
 fn drop_paths_from_text(text: &str, max_items: Option<usize>) -> Vec<PathBuf> {
     parse_uri_list(text, max_items)
         .into_iter()
-        .filter_map(|entry| {
-            if entry.starts_with("file://") {
-                gio::File::for_uri(&entry).path()
-            } else {
-                Some(PathBuf::from(entry))
-            }
-        })
+        .filter_map(|entry| big_os_kit::url::local_path(&entry))
         .collect()
 }
 
 /// Extract dropped paths from a `gtk::DropTarget` signal value.
 ///
-/// Recognises [`gio::File`], [`gdk::FileList`], and plain `String`
+/// Recognizes [`gio::File`], [`gdk::FileList`], and plain `String`
 /// (treated as a uri-list). Returns an empty vector when the value carries
-/// no recognised type; receivers usually abort the drop on empty.
+/// no recognized type; receivers usually abort the drop on empty.
 #[must_use]
 pub fn drop_paths_from_value(value: &glib::Value) -> Vec<PathBuf> {
     if let Ok(file) = value.get::<gio::File>() {
@@ -66,7 +59,7 @@ pub fn drop_paths_from_value(value: &glib::Value) -> Vec<PathBuf> {
 
 /// Build a [`gtk::DropTarget`] that accepts file/path payloads.
 ///
-/// The returned target reports the supplied [`gdk::DragAction`] and recognises
+/// The returned target reports the supplied [`gdk::DragAction`] and recognizes
 /// `gio::File`, `gdk::FileList`, and plain string drops. Pair with
 /// [`drop_paths_from_value`] to extract paths from the drop signal.
 pub fn path_drop_target(action: gdk::DragAction) -> gtk::DropTarget {

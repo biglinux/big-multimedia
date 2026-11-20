@@ -1,0 +1,18 @@
+player	Player	catalog
+playlist	Wiedergabeliste	catalog, celluloid
+queue	Warteschlange	catalog
+track (music)	Titel	catalog
+track (audio or subtitle stream)	Spur	catalog
+library	Bibliothek	catalog
+station	Sender	catalog
+episode	Folge	catalog
+keyring	Schlüsselbund	gnome-keyring
+provider	Anbieter	catalog
+screenshot	Bildschirmfoto	catalog
+scan	Durchsuchen, Prüfung	catalog
+sidebar	Seitenleiste	gtk40, catalog
+Preferences	Einstellungen	catalog
+save	speichern	catalog
+Retry	Erneut versuchen	catalog phrasing (Versuchen Sie es erneut)
+you	Sie	catalog
+ellipsis	space before …	catalog

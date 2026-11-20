@@ -11,10 +11,13 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::atomic::AtomicBool;
 
 use adw::prelude::*;
+use big_os_kit::keyring::{SecretService, Vault};
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::entry_row;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -27,15 +30,16 @@ use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use big_relm4_components::list::editable_action_row::{
     BigEditableActionRow, BigEditableActionRowSpec,
 };
+use gtk::glib;
 use relm4::ComponentSender;
 
 use crate::i18n::i18n;
-use crate::media::iptv::{IptvKind, IptvProvider, IptvProviderStore};
+use crate::media::iptv::{IptvKind, IptvProvider, IptvProviderStore, SECRET_SCOPE};
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserInput};
 
 /// Present the providers-management dialog over `parent`, notifying the browser
 /// component (via `sender`) when it closes so the dropdown can refresh.
-pub fn present_providers_dialog(
+pub(super) fn present_providers_dialog(
     parent: &impl IsA<gtk::Widget>,
     store: Rc<RefCell<IptvProviderStore>>,
     sender: ComponentSender<VideoIptvBrowser>,
@@ -45,9 +49,11 @@ pub fn present_providers_dialog(
     page.header().pack_end(&add_provider_button);
 
     let provider_list =
-        BigBoundedListBox::new(BigBoundedListBoxSpec::new(24).css_class("boxed-list"));
+        BigBoundedListBox::new(BigBoundedListBoxSpec::default().css_class("boxed-list"));
     let list = provider_list.root().clone();
     page.content().append(&list);
+    let keyring_note = keyring_leftover_note();
+    page.content().append(&keyring_note);
     let status_store = store.clone();
     let retry_store = store.clone();
     page.content()
@@ -56,7 +62,7 @@ pub fn present_providers_dialog(
             move || retry_store.borrow().retry_save(),
         ));
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("IPTV Providers"))
         .content_width(600)
         .content_height(480)
@@ -66,21 +72,23 @@ pub fn present_providers_dialog(
     let dialog_weak = dialog.downgrade();
     let store_for_add = store.clone();
     let list_weak = list.downgrade();
+    let note_weak = keyring_note.downgrade();
     add_provider_button.connect_clicked(move |_| {
         let Some(parent) = dialog_weak.upgrade() else {
             return;
         };
         let list = list_weak.clone();
+        let note = note_weak.clone();
         let store = store_for_add.clone();
-        show_provider_form(Some(&parent), IptvProvider::default(), move |p| {
+        show_provider_form(Some(parent.dialog()), IptvProvider::default(), move |p| {
             store.borrow_mut().add(p);
-            if let Some(list) = list.upgrade() {
-                rebuild_list(&list, &store);
+            if let (Some(list), Some(note)) = (list.upgrade(), note.upgrade()) {
+                rebuild_list(&list, &store, &note);
             }
         });
     });
 
-    rebuild_list(&list, &store);
+    rebuild_list(&list, &store, &keyring_note);
 
     let sender = sender.clone();
     dialog.connect_closed(move |_| {
@@ -89,7 +97,21 @@ pub fn present_providers_dialog(
     dialog.present(Some(parent));
 }
 
-fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>) {
+/// Hidden until a password the keyring kept could not be deleted.
+fn keyring_leftover_note() -> gtk::Label {
+    gtk::Label::builder()
+        .label(i18n(
+            "A replaced or removed password could not be deleted from your keyring. You can delete the \u{201C}Big Multimedia IPTV provider\u{201D} item it left with your keyring manager.",
+        ))
+        .wrap(true)
+        .selectable(true)
+        .xalign(0.0)
+        .css_classes(["caption", "warning"])
+        .visible(false)
+        .build()
+}
+
+fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>, note: &gtk::Label) {
     clear_list_box_rows(list);
 
     let providers = store.borrow().providers.clone();
@@ -104,46 +126,148 @@ fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>) {
     }
 
     for (idx, provider) in providers.into_iter().enumerate() {
+        let mut subtitle = provider.source.summary();
+        if provider.plaintext_secret().is_some() {
+            subtitle.push('\n');
+            subtitle.push_str(&i18n(
+                "Password not in your keyring yet. Unlock your keyring, then close this window to try again.",
+            ));
+        }
         let provider_row = BigEditableActionRow::new(
             BigEditableActionRowSpec::new(&provider.name, i18n("Edit"), i18n("Remove"))
-                .subtitle(provider.source.summary())
+                .subtitle(subtitle)
                 .prefix_icon_name(source_icon(&provider.source)),
         );
         let (row, edit_btn, remove_btn) = provider_row.into_parts();
 
         let list_weak = list.downgrade();
+        let note_weak = note.downgrade();
         let store_for_edit = store.clone();
         edit_btn.connect_clicked(move |btn| {
-            let parent = btn
-                .ancestor(adw::Dialog::static_type())
-                .and_downcast::<adw::Dialog>();
-            let provider = store_for_edit
-                .borrow()
-                .providers
-                .get(idx)
-                .cloned()
-                .unwrap_or_default();
-            let list = list_weak.clone();
-            let store = store_for_edit.clone();
-            show_provider_form(parent.as_ref(), provider, move |p| {
-                store.borrow_mut().update(idx, p);
-                if let Some(list) = list.upgrade() {
-                    rebuild_list(&list, &store);
-                }
-            });
+            edit_provider(btn, idx, &store_for_edit, &list_weak, &note_weak);
         });
 
         let list_weak = list.downgrade();
+        let note_weak = note.downgrade();
         let store_for_remove = store.clone();
         remove_btn.connect_clicked(move |_| {
-            store_for_remove.borrow_mut().remove(idx);
-            if let Some(list) = list_weak.upgrade() {
-                rebuild_list(&list, &store_for_remove);
-            }
+            remove_provider(idx, &store_for_remove, &list_weak, &note_weak);
         });
 
         list.append(&row);
     }
+}
+
+/// Open the form on the provider at `index`; saving replaces it and deletes
+/// a keyring item the edit replaced.
+fn edit_provider(
+    button: &gtk::Button,
+    index: usize,
+    store: &Rc<RefCell<IptvProviderStore>>,
+    list: &glib::WeakRef<gtk::ListBox>,
+    note: &glib::WeakRef<gtk::Label>,
+) {
+    let parent = button
+        .ancestor(adw::Dialog::static_type())
+        .and_downcast::<adw::Dialog>();
+    let provider = store
+        .borrow()
+        .providers
+        .get(index)
+        .cloned()
+        .unwrap_or_default();
+    let replaced_secret = provider.secret_id.clone();
+    let list = list.clone();
+    let note = note.clone();
+    let store = store.clone();
+    show_provider_form(parent.as_ref(), provider, move |p| {
+        let replaced = p.secret_id != replaced_secret;
+        store.borrow_mut().update(index, p);
+        if replaced {
+            forget_secret(replaced_secret.clone(), &store, note.clone());
+        }
+        if let (Some(list), Some(note)) = (list.upgrade(), note.upgrade()) {
+            rebuild_list(&list, &store, &note);
+        }
+    });
+}
+
+/// Remove the provider at `index` and the keyring item it named.
+fn remove_provider(
+    index: usize,
+    store: &Rc<RefCell<IptvProviderStore>>,
+    list: &glib::WeakRef<gtk::ListBox>,
+    note: &glib::WeakRef<gtk::Label>,
+) {
+    let removed_secret = store
+        .borrow()
+        .providers
+        .get(index)
+        .map(|provider| provider.secret_id.clone());
+    store.borrow_mut().remove(index);
+    if let Some(secret_id) = removed_secret {
+        forget_secret(secret_id, store, note.clone());
+    }
+    if let (Some(list), Some(note)) = (list.upgrade(), note.upgrade()) {
+        rebuild_list(&list, store, &note);
+    }
+}
+
+/// Delete the keyring item `secret_id` no provider names any more, once the
+/// providers file that drops it is written, and show `note` when the keyring
+/// keeps it. While the file still names the item, the item stays.
+fn forget_secret(
+    secret_id: String,
+    store: &Rc<RefCell<IptvProviderStore>>,
+    note: glib::WeakRef<gtk::Label>,
+) {
+    let Some(dropped_in) = store.borrow().save_status().map(|status| status.revision) else {
+        return;
+    };
+    if secret_id.is_empty() {
+        return;
+    }
+    let store = Rc::clone(store);
+    let (wake, changes) = async_channel::bounded(1);
+    let watch = big_os_kit::background::watch(move || {
+        let _ = wake.try_send(());
+    });
+    glib::spawn_future_local(async move {
+        let _watch = watch;
+        loop {
+            let Some(status) = store.borrow().save_status() else {
+                return;
+            };
+            if status.saved_revision >= dropped_in {
+                break;
+            }
+            // A failed save keeps waiting: a retry that writes it still drops the item.
+            if changes.recv().await.is_err() {
+                return;
+            }
+        }
+        clear_secret(secret_id, note);
+    });
+}
+
+fn clear_secret(secret_id: String, note: glib::WeakRef<gtk::Label>) {
+    crate::settings::saving::acknowledged_task(
+        true,
+        move || {
+            let cancelled = AtomicBool::new(false);
+            SecretService {
+                cancelled: &cancelled,
+            }
+            .clear(SECRET_SCOPE, &secret_id)
+        },
+        move |result| {
+            if result.is_err()
+                && let Some(note) = note.upgrade()
+            {
+                note.set_visible(true);
+            }
+        },
+    );
 }
 
 fn source_icon(source: &IptvKind) -> &'static str {
@@ -158,7 +282,7 @@ fn show_provider_form<F>(parent: Option<&adw::Dialog>, initial: IptvProvider, on
 where
     F: Fn(IptvProvider) + 'static,
 {
-    let form = adw::Dialog::builder()
+    let form = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("IPTV Provider"))
         .content_width(540)
         .content_height(520)
@@ -168,6 +292,14 @@ where
     let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
     let inputs = ProviderFormInputs::build(&initial);
     page.content().append(&inputs.content);
+    let keyring_status = gtk::Label::builder()
+        .wrap(true)
+        .selectable(true)
+        .xalign(0.0)
+        .css_classes(["caption"])
+        .visible(false)
+        .build();
+    page.content().append(&keyring_status);
     page.root().add_bottom_bar(footer.root());
     form.set_child(Some(&page.into_root()));
 
@@ -179,15 +311,66 @@ where
     });
 
     let form_weak = form.downgrade();
+    let status_weak = keyring_status.downgrade();
     let on_save = Rc::new(on_save);
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(provider) = inputs.collect() else {
+    footer.accept_button().connect_clicked(move |button| {
+        let Some(mut provider) = inputs.collect(&initial) else {
             return;
         };
-        on_save(provider);
-        if let Some(f) = form_weak.upgrade() {
-            f.close();
+        if provider.plaintext_secret().is_none() {
+            on_save(provider);
+            if let Some(f) = form_weak.upgrade() {
+                f.close();
+            }
+            return;
         }
+        button.set_sensitive(false);
+        // Closing now would leave the outcome to a form nobody sees: a later
+        // success would still save what the person cancelled.
+        if let Some(f) = form_weak.upgrade() {
+            f.set_can_close(false);
+        }
+        if let Some(status) = status_weak.upgrade() {
+            status.remove_css_class("error");
+            status.set_label(&i18n("Saving the password in your keyring\u{2026}"));
+            status.set_visible(true);
+        }
+        let button = button.downgrade();
+        let status = status_weak.clone();
+        let form = form_weak.clone();
+        let on_save = on_save.clone();
+        crate::settings::saving::acknowledged_task(
+            true,
+            move || {
+                let cancelled = AtomicBool::new(false);
+                provider
+                    .protect_secret(&SecretService {
+                        cancelled: &cancelled,
+                    })
+                    .map(|()| provider)
+            },
+            move |result| {
+                if let Some(f) = form.upgrade() {
+                    f.set_can_close(true);
+                }
+                if let Ok(provider) = result {
+                    on_save(provider);
+                    if let Some(f) = form.upgrade() {
+                        f.close();
+                    }
+                    return;
+                }
+                if let Some(status) = status.upgrade() {
+                    status.add_css_class("error");
+                    status.set_label(&i18n(
+                        "Could not save the password in your keyring, so nothing was saved. Unlock your keyring, then save again.",
+                    ));
+                }
+                if let Some(button) = button.upgrade() {
+                    button.set_sensitive(true);
+                }
+            },
+        );
     });
 
     if let Some(parent) = parent {
@@ -220,7 +403,7 @@ impl ProviderFormInputs {
             .build();
 
         let name_group = BigPreferencesGroupSpec::untitled().build();
-        let name_row = adw::EntryRow::builder().title(i18n("Name")).build();
+        let name_row = entry_row::build(adw::EntryRow::builder().title(i18n("Name")));
         name_row.set_text(&initial.name);
         name_group.add(&name_row);
         content.append(&name_group);
@@ -243,19 +426,20 @@ impl ProviderFormInputs {
         content.append(&type_group);
 
         let url_group = BigPreferencesGroupSpec::untitled().build();
-        let url_row = adw::EntryRow::builder().title(i18n("URL")).build();
+        let url_row = entry_row::build(adw::EntryRow::builder().title(i18n("URL")));
         url_group.add(&url_row);
 
         let path_group = BigPreferencesGroupSpec::untitled().build();
-        let path_row = adw::EntryRow::builder().title(i18n("File path")).build();
+        let path_row = entry_row::build(adw::EntryRow::builder().title(i18n("File path")));
         path_group.add(&path_row);
 
         let xtream_group = BigPreferencesGroupSpec::untitled().build();
-        let server_row = adw::EntryRow::builder().title(i18n("Server URL")).build();
-        let username_row = adw::EntryRow::builder().title(i18n("Username")).build();
+        let server_row = entry_row::build(adw::EntryRow::builder().title(i18n("Server URL")));
+        let username_row = entry_row::build(adw::EntryRow::builder().title(i18n("Username")));
         let password_row = big_gtk_kit::password::password_row(
             adw::PasswordEntryRow::builder().title(i18n("Password")),
         );
+        entry_row::name_by_title(&password_row);
         xtream_group.add(&server_row);
         xtream_group.add(&username_row);
         xtream_group.add(&password_row);
@@ -273,15 +457,23 @@ impl ProviderFormInputs {
                 password_row.set_text(password);
             }
         }
+        if !initial.secret_id.is_empty() {
+            url_group.set_description(Some(&i18n(
+                "The full address is saved in your keyring. Leave it as shown to keep it.",
+            )));
+            xtream_group.set_description(Some(&i18n(
+                "The password is saved in your keyring. Leave Password empty to keep it.",
+            )));
+        }
 
         content.append(&url_group);
         content.append(&path_group);
         content.append(&xtream_group);
 
         let headers_group = BigPreferencesGroupSpec::new(i18n("HTTP headers (optional)")).build();
-        let ua_row = adw::EntryRow::builder().title(i18n("User-Agent")).build();
+        let ua_row = entry_row::build(adw::EntryRow::builder().title(i18n("User-Agent")));
         ua_row.set_text(&initial.user_agent);
-        let referer_row = adw::EntryRow::builder().title(i18n("Referer")).build();
+        let referer_row = entry_row::build(adw::EntryRow::builder().title(i18n("Referer")));
         referer_row.set_text(&initial.referer);
         headers_group.add(&ua_row);
         headers_group.add(&referer_row);
@@ -310,7 +502,8 @@ impl ProviderFormInputs {
     }
 
     /// Read the form into a provider, or `None` if the (required) name is blank.
-    fn collect(&self) -> Option<IptvProvider> {
+    /// A typed password or address stays in plain text until saved.
+    fn collect(&self, initial: &IptvProvider) -> Option<IptvProvider> {
         let name = self.name_row.text().trim().to_string();
         if name.is_empty() {
             return None;
@@ -330,11 +523,27 @@ impl ProviderFormInputs {
         };
         Some(IptvProvider {
             name,
+            secret_id: kept_secret(initial, &source),
             source,
             user_agent: self.ua_row.text().trim().to_string(),
             referer: self.referer_row.text().trim().to_string(),
             order: 0,
         })
+    }
+}
+
+/// The keyring item `initial` names, while the form left its secret alone: the
+/// redacted address as shown, or an empty Xtream password.
+fn kept_secret(initial: &IptvProvider, source: &IptvKind) -> String {
+    let kept = match (&initial.source, source) {
+        (IptvKind::M3uUrl { url: before }, IptvKind::M3uUrl { url }) => url == before,
+        (IptvKind::Xtream { .. }, IptvKind::Xtream { password, .. }) => password.is_empty(),
+        _ => false,
+    };
+    if kept {
+        initial.secret_id.clone()
+    } else {
+        String::new()
     }
 }
 
@@ -372,4 +581,52 @@ fn wire_type_visibility(
     };
     sync(initial_index);
     type_row.connect_selected_notify(move |row| sync(row.selected()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SAVED: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    fn saved(source: IptvKind) -> IptvProvider {
+        IptvProvider {
+            source,
+            secret_id: SAVED.into(),
+            ..IptvProvider::default()
+        }
+    }
+
+    fn xtream(password: &str) -> IptvKind {
+        IptvKind::Xtream {
+            server: "http://panel".into(),
+            username: "ana".into(),
+            password: password.into(),
+        }
+    }
+
+    #[test]
+    fn untouched_secrets_stay_in_the_keyring() {
+        let shown = "https://h/get.php?username=***&password=***";
+        let list = saved(IptvKind::M3uUrl { url: shown.into() });
+        assert_eq!(
+            kept_secret(&list, &IptvKind::M3uUrl { url: shown.into() }),
+            SAVED
+        );
+        assert_eq!(kept_secret(&saved(xtream("")), &xtream("")), SAVED);
+    }
+
+    #[test]
+    fn edited_secrets_drop_the_saved_item() {
+        let list = saved(IptvKind::M3uUrl {
+            url: "https://h/get.php?password=***".into(),
+        });
+        let edited = IptvKind::M3uUrl {
+            url: "https://h/get.php?password=new".into(),
+        };
+        assert_eq!(kept_secret(&list, &edited), "");
+        assert_eq!(kept_secret(&saved(xtream("")), &xtream("new")), "");
+        assert_eq!(kept_secret(&saved(xtream("")), &edited), "");
+        assert_eq!(kept_secret(&IptvProvider::default(), &xtream("")), "");
+    }
 }

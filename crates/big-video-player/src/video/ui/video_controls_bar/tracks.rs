@@ -1,4 +1,5 @@
 use super::*;
+use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::layout::hamburger_menu::{
     BigMenuActionItem, populate_flat_action_popover,
 };
@@ -105,28 +106,18 @@ impl VideoControlsBar {
 
 /// Open a file chooser for an external subtitle and add it via mpv `sub-add`.
 fn open_subtitle_file_dialog(mpv: &MpvSlot, anchor: &gtk::Button) {
-    let filter = gtk::FileFilter::new();
-    filter.set_name(Some(&i18n("Subtitle files")));
-    for ext in ["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"] {
-        filter.add_suffix(ext);
-    }
-    let filters = gio::ListStore::new::<gtk::FileFilter>();
-    filters.append(&filter);
-
-    let dialog = gtk::FileDialog::builder()
-        .title(i18n("Load Subtitle File"))
-        .modal(true)
-        .filters(&filters)
-        .build();
     let window = anchor.root().and_downcast::<gtk::Window>();
     let mpv = mpv.clone();
-    dialog.open(window.as_ref(), gio::Cancellable::NONE, move |result| {
-        let Ok(file) = result else { return };
-        let Some(path) = file.path() else { return };
-        if let Some(mpv) = mpv.borrow().as_ref() {
-            mpv.add_subtitle_file(&path.to_string_lossy());
-        }
-    });
+    FilePicker::new(i18n("Load Subtitle File"))
+        .filter(
+            &i18n("Subtitle files"),
+            big_media_components::media::files::SUBTITLE_EXTENSIONS,
+        )
+        .open_optional(window.as_ref(), move |path| {
+            if let Some(mpv) = mpv.borrow().as_ref() {
+                mpv.add_subtitle_file(&path.to_string_lossy());
+            }
+        });
 }
 
 /// Select the primary subtitle track (`id == -1` disables it).
@@ -170,10 +161,7 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         .margin_start(6)
         .margin_end(6)
         .build();
-    let delay = mpv
-        .borrow()
-        .as_ref()
-        .map_or(0.0, |mpv| mpv.get_property_f64("sub-delay"));
+    let delay = mpv.borrow().as_ref().map_or(0.0, |mpv| mpv.sub_delay());
     let value = gtk::Label::builder()
         .label(format!("{delay:+.1} s"))
         .hexpand(true)
@@ -184,7 +172,7 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         let mpv = mpv.clone();
         move |label| {
             if let Some(mpv) = mpv.borrow().as_ref() {
-                label.set_label(&format!("{:+.1} s", mpv.get_property_f64("sub-delay")));
+                label.set_label(&format!("{:+.1} s", mpv.sub_delay()));
             }
         }
     });
@@ -195,10 +183,9 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         let label = value.downgrade();
         button.connect_clicked(move |_| {
             if let Some(mpv) = mpv.borrow().as_ref() {
-                let delay = ((mpv.get_property_f64("sub-delay") + step) * 10.0).round() / 10.0;
-                mpv.set_sub_delay(delay);
+                mpv.set_sub_delay(((mpv.sub_delay() + step) * 10.0).round() / 10.0);
                 if let Some(label) = label.upgrade() {
-                    label.set_label(&format!("{delay:+.1} s"));
+                    label.set_label(&format!("{:+.1} s", mpv.sub_delay()));
                 }
             }
         });

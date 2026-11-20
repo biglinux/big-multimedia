@@ -22,16 +22,14 @@ use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
 };
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent, video_surface};
+use crate::player::mpv_backend::{EndReason, MpvBackend, PlayerEvent, video_surface};
 use crate::settings::{Settings, keys};
-use crate::shared::converter_handoff;
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
 use crate::video::ui::gl_framebuffer::{GL_FRAMEBUFFER_BINDING, get_gl_get_integerv};
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
 use crate::video::ui::keyboard_shortcuts_dialog::show_video_keyboard_shortcuts_dialog;
 use crate::video::ui::media_adjust;
 use crate::video::ui::media_details_dialog::show_video_media_details_dialog;
-use crate::video::ui::menu_dialogs::sleep_minutes_to_secs;
 use crate::video::ui::video_browser_sidebar::{
     SidebarMode, VideoBrowserSidebar, VideoBrowserSidebarInput, VideoBrowserSidebarOutput,
 };
@@ -39,8 +37,9 @@ use crate::video::ui::video_controls_bar::{
     VideoControlsBar, VideoControlsBarInit, VideoControlsBarInput, VideoControlsBarOutput,
 };
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::media::files::VIDEO_EXTENSIONS;
+use big_media_components::media::files::{PLAYLIST_EXTENSIONS, VIDEO_EXTENSIONS};
 use big_media_components::time::playback_time;
+use big_media_runtime::converter_handoff;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 /// OSD auto-hide delay after the last pointer activity.
@@ -59,6 +58,7 @@ mod adjustments;
 mod component;
 mod dialogs;
 mod export;
+mod header_buttons;
 mod idle_wallpaper;
 mod input;
 mod input_gestures;
@@ -72,12 +72,14 @@ pub(crate) use playback::is_remote_uri;
 mod playlist_panel;
 mod render;
 mod state_access;
+mod stored_urls;
 mod trim;
 mod tv;
 
 pub use input::{VideoShellInput, mark_opening_files, send_to_shell};
 
-use osd::{AspectSnap, IdleBackground, OsdState};
+use header_buttons::HeaderButtons;
+use osd::{AspectSnap, IdleBackground, OsdState, SubtitleLift};
 
 pub struct VideoShell {
     /// OSD controls bar (seek row + volume/speed/voice + transport + tracks).
@@ -96,6 +98,8 @@ pub struct VideoShell {
     playlist_sidebar_button: gtk::ToggleButton,
     /// Guard shared with the header toggles to avoid re-entrant state changes.
     sidebar_toggle_updating: Rc<Cell<bool>>,
+    /// The header buttons the Buttons page places, re-placed when it changes.
+    header_buttons: HeaderButtons,
     /// IPTV browser (providers / channels / favorites). Presented in a dialog
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,
@@ -107,6 +111,8 @@ pub struct VideoShell {
     /// `PlayFromList` reuses the already-loaded list (jump in place) versus a new
     /// folder (reload), and to resolve a `RemoveEntry` path to its mpv index.
     playlist_paths: Vec<String>,
+    /// IPTV channels `playlist_paths` lists by their stored URL.
+    stored_urls: stored_urls::StoredUrls,
     /// Pending load-time shuffle: the chosen start path and the list length,
     /// applied at the `FileLoaded` where mpv holds both.
     shuffle_on_load: Option<(String, usize)>,
@@ -123,14 +129,14 @@ pub struct VideoShell {
     /// The settings panel (right-hand card over the video).
     panel: Rc<panel::SettingsPanel>,
     /// This player's line to BigNetScreen: TV page, card and controls.
-    tv: Rc<crate::shared::tv_cast::TvLink>,
+    tv: Rc<big_media_runtime::cast::tv::TvLink>,
     /// Over the video while a TV plays this player's session.
-    tv_card: crate::shared::tv_cast::TvCard,
+    tv_card: big_media_runtime::cast::tv::TvCard,
     /// Header button while the TV plays but the player was released; opens
     /// `tv_menu`.
     tv_pill: gtk::MenuButton,
     /// What the TV plays and the ways back, under `tv_pill`.
-    tv_menu: crate::shared::tv_cast::TvCard,
+    tv_menu: big_media_runtime::cast::tv::TvCard,
     /// "Play the TV's here": seek to the TV's point once its file loads.
     tv_catch_up: bool,
     /// The session's last state: where it was when it ended.
@@ -149,12 +155,18 @@ pub struct VideoShell {
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    /// Why mpv failed to start, said again whenever something is asked to play.
+    engine_failure: Option<String>,
     /// The GL render path, built when the first media loads.
     video_start: render::VideoStart,
     /// Duration of the loaded media (scrub fraction → seconds conversion).
     duration_secs: f64,
     /// Player settings (passed to the on-demand filters/shortcuts dialogs).
     settings: Settings,
+    /// Saves the volume once it stays put, not on every slider step.
+    volume_save: big_relm4_components::input::debounce::BigDebouncedAction,
+    /// OSD palette and layout CSS, re-applied by the Appearance dialog.
+    theme: big_relm4_components::theme::CssSlot,
     /// Live transform state for values mpv does not expose back directly
     /// (currently flip/crop), shared with cast snapshot construction.
     video_transform: media_adjust::VideoTransformState,
@@ -170,21 +182,14 @@ pub struct VideoShell {
     /// The `win.*` action group, kept so the shell can gate context-dependent
     /// entries (e.g. enable Stream Quality only for online media).
     win_actions: gio::SimpleActionGroup,
-    /// Armed sleep-timer countdown source; `None` when disarmed. Stored so it is
-    /// removed on disarm / re-arm / drop (no leaked `glib::timeout`).
-    sleep_timer_source: Option<glib::SourceId>,
-    /// Seconds left on the armed sleep timer (drives the volume fade + expiry).
-    sleep_timer_remaining: u32,
-    /// On-expiry action id (`pause` / `quit` / `suspend` / `poweroff`).
-    sleep_timer_action: String,
-    /// Pre-fade volume, restored when the timer fires (so the next play is not
-    /// stuck at the faded-down level).
-    sleep_timer_volume: f64,
+    sleep_timer: big_media_runtime::sleep_timer::SleepTimer,
     /// Window aspect-ratio snap (resize to fit the video, no letterbox bars).
     aspect_snap: Rc<AspectSnap>,
-    /// Token for the thread-local shell input broker. Cleared on drop so a
-    /// closed host module does not keep the Relm4 component alive.
-    shell_input_token: Rc<Cell<Option<input::ShellInputToken>>>,
+    /// Subtitles kept above the controls while they show.
+    subtitle_lift: Rc<SubtitleLift>,
+    /// Leaves the shell input slot on drop, so a closed host module does not
+    /// keep the Relm4 component alive.
+    _shell_input: big_media_runtime::app::ShellInputRegistration<relm4::Sender<VideoShellInput>>,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
     /// "Play only the marked cuts" toggle state.
@@ -194,14 +199,17 @@ pub struct VideoShell {
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
     /// and the trim key controller.
     trim_active: Rc<Cell<bool>>,
-    /// MPRIS2 service; `None` in background mode or without a session bus.
-    mpris: Option<big_app_kit::mpris::Mpris>,
+    /// MPRIS2 service, inactive without a session bus.
+    mpris: big_app_kit::mpris::Mpris,
     /// Snapshot the MPRIS service polls, mirrored from mpv events.
     mpris_state: Arc<std::sync::Mutex<big_app_kit::mpris::PlayerState>>,
     /// Counter behind each loaded file's MPRIS track id.
     mpris_track_seq: u64,
     /// True between an unpause and the next pause or end of file.
     playing: bool,
+    /// mpv holds the last frame of a file (`eof-reached`): the button offers
+    /// Play though mpv is not paused.
+    ended: bool,
     /// GTK inhibit cookie keeping the screen awake. mpv cannot do it: its
     /// screensaver control needs a window of its own, which libmpv lacks.
     screen_inhibit: Option<u32>,

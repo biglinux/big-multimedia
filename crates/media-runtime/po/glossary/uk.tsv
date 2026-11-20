@@ -1,0 +1,26 @@
+player	програвач	catalog
+track	доріжка	catalog
+library	бібліотека	catalog
+queue	черга	catalog
+playlist	список відтворення	catalog
+station	станція	catalog
+episode	випуск	catalog
+podcast subscriptions	підписки на подкасти	catalog Підписки
+screenshot	знімок екрана	catalog
+provider	провайдер	catalog
+keyring	в’язка ключів	gnome-keyring, libsecret (catalog apostrophe ’)
+unlock	розблокувати	gtk40, gnome-keyring
+Preferences	Параметри	catalog
+Advanced	Додатково	catalog
+Audio Output	Виведення звуку	catalog
+Video Output	Виведення відео	catalog
+mpv Options	Параметри mpv	catalog
+remove	вилучити	catalog
+sidebar	бічна панель	catalog, nautilus
+top bar, bottom bar	верхня панель, нижня панель	libadwaita
+Paused	Призупинено	gtk40
+retry	Повторити	catalog повторіть спробу
+scan (library)	сканування	catalog
+playback engine	рушій відтворення	new term
+entry (playlist)	елемент	catalog
+web remote	вебпульт	catalog

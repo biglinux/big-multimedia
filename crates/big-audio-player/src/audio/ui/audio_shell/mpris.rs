@@ -1,4 +1,5 @@
 use super::*;
+use big_app_kit::mpris::LoopStatus;
 
 impl AudioShell {
     pub(super) fn handle_mpris_command(
@@ -64,6 +65,7 @@ impl AudioShell {
                         if let Some(mpv) = &self.mpv {
                             mpv.load_file_with_audio_profile(
                                 &self.current_file,
+                                TargetSource::List(ListOrigin::Network),
                                 AudioCacheProfile::Radio,
                             );
                         }
@@ -85,7 +87,6 @@ impl AudioShell {
             }
             MprisCommand::Stop => {
                 self.is_playing = false;
-                self.sync_now_playing();
                 self.duration_secs = 0.0;
                 self.mpris_state.invalidate();
                 *self
@@ -93,6 +94,7 @@ impl AudioShell {
                     .status
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped;
+                self.sync_now_playing();
                 *self
                     .mpris_state
                     .position
@@ -149,13 +151,8 @@ impl AudioShell {
                     mpv.seek_absolute_async(target);
                 }
             }
-            MprisCommand::OpenUri(uri) => {
+            MprisCommand::OpenUri(path) => {
                 self.cancel_pending_opens();
-                let file = gio::File::for_uri(&uri);
-                let path = file
-                    .path()
-                    .and_then(|p| p.to_str().map(str::to_owned))
-                    .unwrap_or(uri);
                 self.snapshot_queue();
                 self.podcast_mode = false;
                 self.queue
@@ -165,31 +162,22 @@ impl AudioShell {
                 Self::load_external_metadata(vec![path], sender);
             }
             MprisCommand::SetVolume(volume) => {
-                if volume.is_finite()
-                    && let Some(mpv) = &self.mpv
-                {
-                    mpv.set_volume((volume * 100.0).clamp(0.0, 250.0));
+                if let Some(mpv) = &self.mpv {
+                    let volume_max = f64::from(self.settings.volume_max_percent());
+                    mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                 }
             }
             MprisCommand::SetRate(rate) => {
-                if rate.is_finite()
-                    && (0.25..=4.0).contains(&rate)
-                    && let Some(mpv) = &self.mpv
-                {
+                if let Some(mpv) = &self.mpv {
                     mpv.set_speed(rate);
                 }
             }
             MprisCommand::SetLoopStatus(mode) => {
-                self.queue.set_repeat(match mode.as_str() {
-                    "Track" => RepeatMode::One,
-                    "Playlist" => RepeatMode::All,
-                    _ => RepeatMode::None,
+                self.queue.set_repeat(match mode {
+                    LoopStatus::Track => RepeatMode::One,
+                    LoopStatus::Playlist => RepeatMode::All,
+                    LoopStatus::None => RepeatMode::None,
                 });
-                *self
-                    .mpris_state
-                    .loop_status
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner) = mode;
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetRepeat(self.queue.repeat()));
             }
@@ -251,11 +239,11 @@ impl AudioShell {
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
                 .clone(),
-            loop_status: s
-                .loop_status
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
+            loop_status: match self.queue.repeat() {
+                RepeatMode::None => LoopStatus::None,
+                RepeatMode::One => LoopStatus::Track,
+                RepeatMode::All => LoopStatus::Playlist,
+            },
             shuffle: self.queue.shuffle(),
             can_next: operational && can_next,
             can_prev: operational && !self.is_stream && self.queue.len() > 1,
@@ -267,9 +255,7 @@ impl AudioShell {
             can_seek: operational && present && s.seekable.load(Ordering::Relaxed),
         };
         *s.snapshot.lock().unwrap_or_else(PoisonError::into_inner) = snapshot;
-        if let Some(mpris) = &self.mpris {
-            mpris.sync();
-        }
+        self.mpris.sync();
     }
 }
 fn finite(x: f64) -> f64 {
@@ -280,7 +266,7 @@ pub(super) fn build_mpris_service(
     sender: &ComponentSender<AudioShell>,
     state: &Arc<SharedMprisState>,
     settings: &Settings,
-) -> Option<Mpris> {
+) -> Mpris {
     let input = sender.input_sender().clone();
     let command_cb: CommandCallback = Box::new(move |command| {
         let _ = input.send(AudioShellInput::MprisCommand(command));
@@ -293,11 +279,11 @@ pub(super) fn build_mpris_service(
             .unwrap_or_else(PoisonError::into_inner)
             .clone()
     });
-    Mpris::new_with_name(
+    Mpris::new(
         "org.mpris.MediaPlayer2.BigAudioPlayer",
         crate::config::audio::APP_ID,
         command_cb,
         state_cb,
-        settings.get_bool_or(keys::TASKBAR_PROGRESS, true),
+        settings.get_bool(keys::TASKBAR_PROGRESS),
     )
 }

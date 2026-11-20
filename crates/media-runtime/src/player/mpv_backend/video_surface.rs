@@ -32,6 +32,21 @@ pub fn wayland_display_ptr(display: &gdk::Display) -> Option<*mut c_void> {
     }
 }
 
+/// The `wl_surface` of `surface`, `None` outside Wayland.
+pub(crate) fn wayland_surface_ptr(surface: &gdk::Surface) -> Option<*mut c_void> {
+    use glib::translate::FromGlib;
+    // SAFETY: a type getter without arguments.
+    let wayland_surface =
+        unsafe { glib::Type::from_glib(gdk_wayland_sys::gdk_wayland_surface_get_type()) };
+    if !surface.type_().is_a(wayland_surface) {
+        return None;
+    }
+    let surface_ptr: *mut gdk::ffi::GdkSurface = surface.to_glib_none().0;
+    // SAFETY: the type check above makes this a GdkWaylandSurface.
+    let ptr = unsafe { gdk_wayland_sys::gdk_wayland_surface_get_wl_surface(surface_ptr.cast()) };
+    (!ptr.is_null()).then_some(ptr.cast())
+}
+
 pub fn install_best_backend(
     display: &gdk::Display,
     overlay: &gtk::Overlay,

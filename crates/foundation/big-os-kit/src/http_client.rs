@@ -12,6 +12,8 @@ use crate::url::MediaLogTarget;
 mod transport;
 
 const CURL: &str = "curl";
+/// Start of the error text for a curl process that exited unsuccessfully; the exit code follows.
+const CURL_EXIT_PREFIX: &str = "curl exited with code ";
 const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-multimedia)";
 const TIMEOUT_SECS: u64 = 15;
 const _: () = assert!(TIMEOUT_SECS >= 5);
@@ -55,6 +57,23 @@ pub struct HttpStreamResponse {
     pub reader: Box<dyn Read>,
 }
 
+/// How long a request may take.
+#[derive(Clone, Copy)]
+enum Deadline {
+    /// The whole request, for small buffered responses.
+    Total(Duration),
+    /// The longest wait for the next bytes, for streams of any length.
+    Stall(Duration),
+}
+
+impl Deadline {
+    fn duration(self) -> Duration {
+        match self {
+            Self::Total(duration) | Self::Stall(duration) => duration,
+        }
+    }
+}
+
 struct CurlHeaders {
     status: u16,
     content_type: Option<String>,
@@ -63,7 +82,7 @@ struct CurlHeaders {
 
 /// DNS/lookup failures are permanent per invocation; never retry.
 fn is_dns_error(err: &str) -> bool {
-    err.contains("code 6")
+    err.ends_with(&format!("{CURL_EXIT_PREFIX}6"))
         || err.contains("Could not resolve host")
         || err.contains("Name or service not known")
         || err.contains("No address associated")
@@ -142,10 +161,6 @@ pub struct RequestHeaders<'a> {
 }
 
 impl<'a> RequestHeaders<'a> {
-    fn is_empty(&self) -> bool {
-        self.user_agent.is_empty() && self.referer.is_empty()
-    }
-
     fn pairs(&self) -> Vec<(&str, &str)> {
         let mut pairs = Vec::with_capacity(2);
         if !self.user_agent.is_empty() {
@@ -156,14 +171,6 @@ impl<'a> RequestHeaders<'a> {
         }
         pairs
     }
-}
-
-/// Reuses the shared command policy; retries once on transient errors.
-pub fn http_get_with_headers(url: &str, headers: &RequestHeaders<'_>) -> Option<String> {
-    if headers.is_empty() {
-        return http_get_with_retry(url);
-    }
-    http_get_text_with_headers(url, headers, &[], Duration::from_secs(TIMEOUT_SECS))
 }
 
 /// Binary GET + per-request headers; 1 MB cap.
@@ -202,23 +209,26 @@ pub fn http_get_bytes_capped_with_extra_headers(
 }
 
 /// GET a streaming response with metadata and caller-owned body policy.
+///
+/// There is no total deadline: connecting is bounded, then the transfer fails
+/// once no bytes arrive for `stall_timeout`.
 pub fn http_get_stream(
     url: &str,
     headers: &RequestHeaders<'_>,
-    timeout: Duration,
+    stall_timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    http_get_stream_with_extra_headers(url, headers, &[], timeout)
+    http_get_stream_with_extra_headers(url, headers, &[], stall_timeout)
 }
 
 /// GET a streaming response with metadata, additional per-call headers, and
-/// caller-owned body policy.
+/// caller-owned body policy; `stall_timeout` as in [`http_get_stream`].
 pub fn http_get_stream_with_extra_headers(
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    timeout: Duration,
+    stall_timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    curl_stream(url, headers, extra_headers, timeout)
+    curl_stream(url, headers, extra_headers, Deadline::Stall(stall_timeout))
 }
 
 /// Copy a response stream to a writer with cancellation and progress callbacks.
@@ -296,7 +306,7 @@ fn curl_bytes(
     max_bytes: u64,
     timeout: Duration,
 ) -> Result<HttpResponseBytes, String> {
-    let mut response = curl_stream(url, headers, extra_headers, timeout)?;
+    let mut response = curl_stream(url, headers, extra_headers, Deadline::Total(timeout))?;
     let bytes = read_capped(response.reader.as_mut(), max_bytes)?;
     Ok(HttpResponseBytes {
         status: response.status,
@@ -310,9 +320,10 @@ fn curl_stream(
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    timeout: Duration,
+    deadline: Deadline,
 ) -> Result<HttpStreamResponse, String> {
     validate_url(url)?;
+    let timeout = deadline.duration();
     if timeout.is_zero() || timeout > Duration::from_secs(7200) {
         return Err("Invalid HTTP timeout".into());
     }
@@ -326,7 +337,7 @@ fn curl_stream(
                 && matches!(*value, "application/json" | "text/html" | "*/*")
         });
     let config = request_config(url, headers, extra_headers)?;
-    let mut command = base_curl(timeout);
+    let mut command = base_curl(deadline);
     command.args(["--include", "--suppress-connect-headers"]);
     if follow {
         command.args([
@@ -346,7 +357,7 @@ fn curl_stream(
             "=http,https"
         },
     ]);
-    let transport = transport::Transport::new(command, config.as_bytes(), timeout)
+    let transport = transport::Transport::new(command, config.as_bytes(), deadline)
         .map_err(|e| e.to_string())?;
     // The same reader goes into the response: any prefetched body bytes survive
     // header parsing. EOF verifies the child exit status, not just pipe closure.
@@ -360,28 +371,36 @@ fn curl_stream(
         reader: Box::new(reader),
     })
 }
-fn base_curl(timeout: Duration) -> Command {
+fn base_curl(deadline: Deadline) -> Command {
+    let timeout = deadline.duration();
     let mut command = Command::new(CURL);
     // curl honors --disable only as the first parameter. All untrusted values go through
     // stdin configuration; none are command-line arguments or environment values.
+    command.args([
+        "--disable",
+        "--silent",
+        "--show-error",
+        "--globoff",
+        "--proto",
+        "=http,https",
+        "--connect-timeout",
+        &timeout
+            .as_secs_f64()
+            .min(FAST_TIMEOUT_SECS as f64)
+            .to_string(),
+    ]);
+    match deadline {
+        Deadline::Total(timeout) => {
+            command.args(["--max-time", &timeout.as_secs_f64().to_string()]);
+        }
+        // The reader enforces the stall limit; unbuffered output lets it see
+        // each received byte as progress.
+        Deadline::Stall(_) => {
+            command.arg("--no-buffer");
+        }
+    }
     command
-        .args([
-            "--disable",
-            "--silent",
-            "--show-error",
-            "--globoff",
-            "--proto",
-            "=http,https",
-            "--connect-timeout",
-            &timeout
-                .as_secs_f64()
-                .min(FAST_TIMEOUT_SECS as f64)
-                .to_string(),
-            "--max-time",
-            &timeout.as_secs_f64().to_string(),
-            "--config",
-            "-",
-        ])
+        .args(["--config", "-"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
@@ -443,18 +462,18 @@ fn validate_url(url: &str) -> Result<(), String> {
     if url.len() > 65536 || url.chars().any(|ch| ch.is_control() || ch.is_whitespace()) {
         return Err("Invalid HTTP URL".into());
     }
-    let (scheme, authority) = url
-        .split_once("://")
-        .ok_or("HTTP URL requires a scheme and authority")?;
-    if !(scheme.eq_ignore_ascii_case("https") || scheme.eq_ignore_ascii_case("http"))
-        || authority.is_empty()
-        || authority.starts_with('/')
-    {
-        return Err("Only HTTP and HTTPS URLs are supported".into());
+    if !crate::url::is_http_url(url) {
+        return Err("Only HTTP and HTTPS URLs with a host are supported".into());
     }
     Ok(())
 }
-fn validate_header_name(name: &str) -> Result<(), String> {
+/// Accept an HTTP field name: an RFC 9110 token of at most 256 bytes.
+///
+/// # Errors
+///
+/// Returns a message when `name` is empty, longer than 256 bytes, or holds a
+/// byte outside the token characters.
+pub fn validate_header_name(name: &str) -> Result<(), String> {
     if name.is_empty()
         || name.len() > 256
         || !name
@@ -560,6 +579,14 @@ fn read_capped(reader: &mut dyn Read, max_bytes: u64) -> Result<Vec<u8>, String>
     Ok(body)
 }
 
+/// Reads curl's header blocks as a download does, following redirects.
+/// The fuzz targets' entry to the private header parser.
+#[cfg(fuzzing)]
+#[doc(hidden)]
+pub fn fuzz_read_headers(mut input: &[u8]) {
+    let _ = read_final_headers(&mut input, true);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -580,14 +607,15 @@ mod tests {
         assert!(http_get_fast("not-a-url").is_none());
     }
 
+    /// Exit codes from curl(1): 6 is a failed host lookup, 28 a timeout,
+    /// 60 an unverified peer certificate and 67 a refused login.
     #[test]
-    fn dns_error_detected() {
-        assert!(is_dns_error("curl exited with code 6"));
-    }
-
-    #[test]
-    fn timeout_is_distinct_from_dns() {
-        assert!(!is_dns_error("curl exited with code 28"));
+    fn dns_error_matches_exit_code_exactly() {
+        assert!(is_dns_error("read curl headers: curl exited with code 6"));
+        for other in [28, 60, 61, 67] {
+            let error = format!("read curl headers: curl exited with code {other}");
+            assert!(!is_dns_error(&error), "{error}");
+        }
     }
 
     #[test]
@@ -596,15 +624,6 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn bytes_returns_none_for_invalid_url() {
         assert!(http_get_bytes("not-a-url").is_none());
-    }
-
-    #[test]
-    // Empty headers delegate to the system curl retry path.
-    #[cfg_attr(miri, ignore)]
-    fn empty_headers_delegate_to_retry() {
-        let headers = RequestHeaders::default();
-        assert!(headers.is_empty());
-        assert!(http_get_with_headers("not-a-url", &headers).is_none());
     }
 
     #[test]
@@ -618,6 +637,35 @@ mod tests {
     #[test]
     fn rejects_header_newlines() {
         assert!(validate_header_value("Bearer ok\nInjected: yes").is_err());
+    }
+
+    /// Each refused row breaks one rule; the accepted rows sit at the caps.
+    #[test]
+    fn request_fields_validated() {
+        let url = |len: usize| format!("https://h/{}", "a".repeat(len - 10));
+        assert!(validate_url(&url(65_536)).is_ok());
+        for url in [
+            url(65_537),
+            "ftp://h/a".into(),
+            "https://h/a b".into(),
+            "https://h/a\u{7}".into(),
+        ] {
+            assert!(validate_url(&url).is_err(), "{url:?}");
+        }
+        assert!(validate_header_name(&"X".repeat(256)).is_ok());
+        for name in [
+            String::new(),
+            "X".repeat(257),
+            "X Token".into(),
+            "X:Token".into(),
+        ] {
+            assert!(validate_header_name(&name).is_err(), "{name:?}");
+        }
+        assert!(validate_header_value(&"v".repeat(65_536)).is_ok());
+        assert!(validate_header_value("a\tb").is_ok());
+        for value in ["v".repeat(65_537), "a\u{7f}b".into()] {
+            assert!(validate_header_value(&value).is_err(), "{value:?}");
+        }
     }
 
     #[test]
@@ -649,13 +697,80 @@ mod tests {
         )
         .unwrap();
         assert!(config.contains("header = \"Authorization: Bearer secret\""));
-        let args: Vec<_> = base_curl(Duration::from_secs(10))
+        let args: Vec<_> = base_curl(Deadline::Total(Duration::from_secs(10)))
             .get_args()
             .map(|s| s.to_string_lossy().into_owned())
             .collect();
         assert_eq!(args[0], "--disable");
         assert!(!args.iter().any(|arg| arg.contains("secret")));
     }
+    /// Serve `chunks` single bytes on a local port, `gap` apart, and return the URL.
+    fn trickle_server(chunks: usize, gap: Duration) -> (String, std::thread::JoinHandle<()>) {
+        use std::io::Read as _;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/episode.mp3", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0; 2048];
+            assert!(stream.read(&mut request).unwrap() > 0);
+            let header = format!("HTTP/1.1 200 OK\r\nContent-Length: {chunks}\r\n\r\n");
+            stream.write_all(header.as_bytes()).unwrap();
+            for chunk in 0..chunks {
+                if chunk > 0 {
+                    std::thread::sleep(gap);
+                }
+                if stream.write_all(b"x").is_err() {
+                    return;
+                }
+            }
+        });
+        (url, server)
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn stream_outlives_stall_limit_while_progressing() {
+        let (url, server) = trickle_server(6, Duration::from_millis(400));
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(1)).unwrap();
+        let mut body = Vec::new();
+        response.reader.read_to_end(&mut body).unwrap();
+        server.join().unwrap();
+        assert_eq!(body, b"xxxxxx");
+    }
+
+    /// Each byte arrives inside the stall limit although the rate stays under
+    /// one byte per second.
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn slow_trickle_stream_completes() {
+        let (url, server) = trickle_server(4, Duration::from_millis(1500));
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(2)).unwrap();
+        let mut body = Vec::new();
+        response.reader.read_to_end(&mut body).unwrap();
+        server.join().unwrap();
+        assert_eq!(body, b"xxxx");
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn stalled_stream_fails_after_stall_limit() {
+        let (url, server) = trickle_server(2, Duration::from_secs(4));
+        let started = std::time::Instant::now();
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(1)).unwrap();
+        let mut body = Vec::new();
+        assert!(response.reader.read_to_end(&mut body).is_err());
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{:?}",
+            started.elapsed()
+        );
+        drop(response);
+        server.join().unwrap();
+    }
+
     #[test]
     fn buffered_header_parser_preserves_prefetched_body() {
         let bytes = b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody";

@@ -4,7 +4,8 @@ use super::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
+    name_prompt::{BigNamePromptSpec, prompt_name},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -14,7 +15,7 @@ impl VideoShell {
     /// TV plays.
     pub(super) fn tv_page(&self) -> gtk::Widget {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, tv_page};
+        use big_media_runtime::cast::tv::{TvMedia, tv_page};
         let mpv = self.mpv.borrow().clone();
         let current = mpv.clone();
         let media = move || {
@@ -80,7 +81,7 @@ impl VideoShell {
         let page = BigDialogPage::scrolled_clamped(420, 360);
         page.content().append(&group);
 
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Online Video Quality"))
             .content_width(420)
             .content_height(360)
@@ -112,7 +113,8 @@ impl VideoShell {
     /// before mpv is up.
     pub(super) fn show_media_details(&self, root: &adw::ApplicationWindow) {
         if let Some(mpv) = self.mpv.borrow().as_ref() {
-            show_video_media_details_dialog(root, mpv);
+            let file_path = mpv.get_current_file().unwrap_or_default();
+            show_video_media_details_dialog(root, mpv, self.stored_urls.stored_url(&file_path));
         }
     }
 
@@ -130,7 +132,7 @@ impl VideoShell {
         };
         FilePicker::new(i18n("Open Video"))
             .filter(&i18n("Video files"), VIDEO_EXTENSIONS)
-            .filter(&i18n("Playlist files"), &["m3u", "m3u8", "pls"])
+            .filter(&i18n("Playlist files"), PLAYLIST_EXTENSIONS)
             .pattern_filter(&i18n("All files"), &["*"])
             .open_multiple(root, move |paths| {
                 let strs: Vec<String> = paths
@@ -150,73 +152,26 @@ impl VideoShell {
             log::warn!("video open-url dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Open URL"))
-            .content_width(460)
-            .content_height(260)
-            .build();
-        let page = BigDialogPage::plain();
-        page.content().set_spacing(12);
-
-        let group = BigPreferencesGroupSpec::untitled()
-            .description(i18n(
+        let spec = BigNamePromptSpec {
+            title: i18n("Open URL"),
+            description: Some(i18n(
                 "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs.",
-            ))
-            .build();
-        let entry = adw::EntryRow::builder()
-            .title(i18n("Media URL"))
-            .show_apply_button(true)
-            .build();
-        group.add(&entry);
-        page.content().append(&group);
-
-        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Play")));
-        footer.accept_button().set_sensitive(false);
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(page.root()));
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_changed(move |row| {
-            if let Some(accept_button) = accept_button.upgrade() {
-                accept_button.set_sensitive(accepted_open_url(&row.text()).is_some());
-            }
-        });
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_apply(move |_| {
-            if let Some(accept_button) = accept_button.upgrade()
-                && accept_button.is_sensitive()
-            {
-                accept_button.emit_clicked();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        let entry_for_accept = entry.clone();
-        footer.accept_button().connect_clicked(move |_| {
-            if let Some(url) = accepted_open_url(&entry_for_accept.text()) {
+            )),
+            entry_title: i18n("Media URL"),
+            prefill: String::new(),
+            accept_label: i18n("Play"),
+            content_width: 460,
+            content_height: -1,
+        };
+        prompt_name(
+            Some(root.upcast_ref()),
+            &spec,
+            accepted_open_url,
+            move |url| {
                 let _ = sender.send(VideoShellInput::OpenFiles(vec![url]));
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
-                }
-            }
-        });
-
-        let entry_for_idle = entry.clone();
-        dialog.connect_map(move |_| {
-            let entry = entry_for_idle.clone();
-            gtk::glib::idle_add_local_once(move || {
-                entry.grab_focus();
-            });
-        });
-        dialog.present(Some(root));
+                true
+            },
+        );
     }
 
     /// Present the open-disc entry dialog (DVD / Blu-ray device or ISO/folder).
@@ -227,7 +182,7 @@ impl VideoShell {
             log::warn!("video open-disc dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Open Disc"))
             .content_width(460)
             .content_height(320)
@@ -244,11 +199,12 @@ impl VideoShell {
             i18n("Disc type"),
             [i18n("DVD"), i18n("Blu-ray")],
         ));
-        let entry = adw::EntryRow::builder()
-            .title(i18n("Disc device path"))
-            .text("/dev/sr0")
-            .show_apply_button(true)
-            .build();
+        let entry = big_relm4_components::input::entry_row::build(
+            adw::EntryRow::builder()
+                .title(i18n("Disc device path"))
+                .show_apply_button(true),
+        );
+        entry.set_text("/dev/sr0");
         entry.add_css_class("monospace");
         group.add(disc_type_row.root());
         group.add(&entry);
@@ -311,14 +267,7 @@ impl VideoShell {
             }
         });
 
-        let entry_for_idle = entry.clone();
-        dialog.connect_map(move |_| {
-            let entry = entry_for_idle.clone();
-            gtk::glib::idle_add_local_once(move || {
-                entry.grab_focus();
-                entry.select_region(0, -1);
-            });
-        });
+        focus_when_shown(&entry, 0, -1);
         dialog.present(Some(root));
     }
 
@@ -330,6 +279,11 @@ impl VideoShell {
             root,
             &self.settings,
             mpv,
+            || {
+                if let Some(sender) = shell_input_sender() {
+                    let _ = sender.send(VideoShellInput::VolumeMaxChanged);
+                }
+            },
             |preferences| {
                 // The preferences show the old values after a reset, so close them.
                 let preferences_ref = preferences.downgrade();
@@ -348,20 +302,43 @@ impl VideoShell {
     }
 
     /// Open the appearance dialog (palette + OSD layout + button-layout editor).
-    /// `on_changed` re-applies the OSD CSS live through the app-owned provider
-    /// slot and reapplies the bottom OSD button zones exposed by the controls
-    /// bar.
+    /// `on_changed` re-applies the OSD CSS live through the shell's theme slot
+    /// and reapplies the header and bottom bar button zones.
     pub(super) fn show_appearance(&self, root: &adw::ApplicationWindow) {
         let settings = self.settings.clone();
+        let theme = self.theme.clone();
         let button_layout = self.controls.model().button_layout();
+        let header_buttons = self.header_buttons.clone();
         crate::video::ui::appearance::show_appearance_dialog(root, &self.settings, move || {
-            reapply_theme(&settings);
+            crate::video::ui::appearance::apply_appearance(&settings, &theme);
             button_layout.apply_settings(&settings);
+            header_buttons.apply_settings(&settings);
         });
     }
 
-    /// Confirm, then reset every setting to its default; `on_confirmed` runs
-    /// after the reset request is sent.
+    /// Reset the preferences and put them on the running player: mpv, the
+    /// volume ceiling of the sliders, the theme, the controls layout, the file
+    /// browser and the screen inhibitor.
+    pub(super) fn restore_defaults(&mut self, window: Option<&adw::ApplicationWindow>) {
+        self.settings.reset_to_defaults();
+        if let Some(mpv) = self.mpv.borrow().as_ref() {
+            crate::video::ui::preferences::apply_saved_preferences(mpv, &self.settings);
+        }
+        let volume_max = f64::from(self.settings.volume_max_percent());
+        self.controls
+            .emit(VideoControlsBarInput::SetMaxVolume(volume_max));
+        crate::video::ui::appearance::apply_appearance(&self.settings, &self.theme);
+        self.controls
+            .model()
+            .button_layout()
+            .apply_settings(&self.settings);
+        self.header_buttons.apply_settings(&self.settings);
+        self.playlist.emit(VideoBrowserSidebarInput::RefreshFolder);
+        self.sync_screen_inhibit(window);
+    }
+
+    /// Confirm, then reset the preferences; `on_confirmed` runs after the
+    /// reset request is sent.
     pub(super) fn show_restore_defaults_dialog(
         parent: &impl IsA<gtk::Widget>,
         on_confirmed: impl Fn() + 'static,
@@ -370,10 +347,10 @@ impl VideoShell {
             log::warn!("video restore-defaults dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::AlertDialog::builder()
+        let dialog = big_gtk_kit::alert::Alert::builder()
             .heading(i18n("Restore Default Settings?"))
             .body(i18n(
-                "Every setting, including appearance, goes back to its default value. Some changes take effect after reopening the player.",
+                "Preferences and appearance go back to their defaults. Your library folders, keyboard shortcuts, volume, shuffle, and voice and equalizer levels are kept. Video Output, Audio Output and the custom mpv options take effect after reopening the player.",
             ))
             .default_response("cancel")
             .close_response("cancel")
@@ -386,48 +363,6 @@ impl VideoShell {
         });
         dialog.present(Some(parent));
     }
-}
-
-thread_local! {
-    /// Display-wide OSD-theme CSS provider slot. Single slot replaced in place
-    /// on boot and on every Appearance-dialog change (the provider is attached
-    /// to the default `gdk::Display`, which is process-global, so a thread-local
-    /// is the right ownership home: no per-shell duplication, no stacking).
-    static LIVE_THEME_PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
-    /// Open players sharing that provider.
-    static LIVE_THEME_USERS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
-/// Apply the OSD theme for a new player and keep it on the display while
-/// any player is open. Its rules are display-wide (`popover > contents`,
-/// `windowcontrols button`): in a host that embeds the player, they must
-/// leave with the last one instead of restyling the host's other modules.
-pub(super) fn hold_theme(root: &gtk::Box, settings: &Settings) {
-    LIVE_THEME_USERS.with(|users| users.set(users.get() + 1));
-    reapply_theme(settings);
-    root.connect_destroy(|_| {
-        let last = LIVE_THEME_USERS.with(|users| {
-            users.set(users.get().saturating_sub(1));
-            users.get() == 0
-        });
-        if !last {
-            return;
-        }
-        if let Some(provider) = LIVE_THEME_PROVIDER.with(|cell| cell.borrow_mut().take())
-            && let Some(display) = gtk::gdk::Display::default()
-        {
-            gtk::style_context_remove_provider_for_display(&display, &provider);
-        }
-    });
-}
-
-/// (Re)apply the OSD palette + layout CSS into the shared provider slot. Called
-/// at boot and from the Appearance dialog's `on_changed`.
-pub(super) fn reapply_theme(settings: &Settings) {
-    LIVE_THEME_PROVIDER.with(|cell| {
-        let mut slot = cell.borrow_mut();
-        crate::video::ui::appearance::apply_appearance(settings, &mut slot);
-    });
 }
 
 /// The disc in `device`: Blu-ray for the dropdown's second entry, else DVD.
@@ -473,7 +408,7 @@ pub(super) fn present_controller_dialog(
     let page = BigDialogPage::plain();
     page.root().set_content(Some(widget));
     let dialog_root = page.into_root();
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(title)
         .content_width(content_width)
         .content_height(content_height)
@@ -530,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn disc_input_picks_dvd_or_bluray_with_the_device() {
+    fn disc_input_picks_kind_and_device() {
         assert_eq!(disc(0, "/dev/sr0"), Some((false, "/dev/sr0".to_string())));
         assert_eq!(disc(1, " /dev/sr1 "), Some((true, "/dev/sr1".to_string())));
         // A folder or ISO path may contain dashes.
@@ -541,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn disc_input_rejects_empty_or_option_like_device() {
+    fn disc_input_rejects_blank_or_option_device() {
         assert_eq!(disc(0, ""), None);
         assert_eq!(disc(1, "  "), None);
         assert_eq!(disc(1, "--foo"), None);

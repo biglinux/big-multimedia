@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! BigLinux action row with an accessible spin-button suffix.
+//! BigLinux action row with an accessible spin-button suffix, and an
+//! `AdwSpinRow` that screen readers can reach.
 
 use adw::prelude::*;
 use relm4::gtk;
 
-use super::preference_cards::BigSpinRange;
+use super::preference_cards::{BigSpinRange, finite_or};
 
 const DEFAULT_WIDTH_CHARS: i32 = 7;
 
@@ -74,10 +75,12 @@ impl BigSpinRowSpec {
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
     pub fn resolved(&self) -> BigSpinRowResolved {
-        let min = finite_or(self.range.min, 0.0);
-        let max = finite_or(self.range.max, min).max(min);
-        let step = finite_or(self.range.step, 1.0).abs().max(f64::EPSILON);
-        let page_step = finite_or(self.range.page_step, step * 10.0).abs().max(step);
+        let BigSpinRange {
+            min,
+            max,
+            step,
+            page_step,
+        } = self.range.resolved();
 
         BigSpinRowResolved {
             value: finite_or(self.value, min).clamp(min, max),
@@ -121,23 +124,14 @@ impl BigSpinRow {
     /// Creates a new instance.
     #[must_use]
     pub fn new(spec: BigSpinRowSpec) -> Self {
-        let resolved = spec.resolved();
-        let adjustment = gtk::Adjustment::new(
-            resolved.value,
-            resolved.min,
-            resolved.max,
-            resolved.step,
-            resolved.page_step,
-            0.0,
+        let spin = accessible_spin_button(
+            &spec.title,
+            spec.range,
+            spec.value,
+            spec.digits,
+            spec.width_chars,
         );
-        let spin = gtk::SpinButton::builder()
-            .adjustment(&adjustment)
-            .digits(resolved.digits)
-            .numeric(true)
-            .valign(gtk::Align::Center)
-            .width_chars(resolved.width_chars)
-            .build();
-        spin.update_property(&[gtk::accessible::Property::Label(&spec.title)]);
+        spin.set_valign(gtk::Align::Center);
         if let Some(subtitle) = spec.subtitle.as_deref() {
             spin.update_property(&[gtk::accessible::Property::Description(subtitle)]);
         }
@@ -178,8 +172,50 @@ impl BigSpinRow {
     }
 }
 
-fn finite_or(value: f64, fallback: f64) -> f64 {
-    if value.is_finite() { value } else { fallback }
+/// An `AdwSpinRow` builder whose spin button reaches screen readers.
+///
+/// libadwaita 1.10 gives the row the presentation role, and GTK 4.24's AT-SPI
+/// bridge drops a presentation widget with everything below it; the generic
+/// role keeps the row itself out of the tree while its spin button stays.
+pub fn accessible_spin_row() -> adw::builders::SpinRowBuilder {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "the owner of accessible spin rows"
+    )]
+    adw::SpinRow::builder().accessible_role(gtk::AccessibleRole::Generic)
+}
+
+/// A numeric spin button over `range`, resolved as [`BigSpinRange::resolved`],
+/// starting at `value` clamped into it and named `label` for screen readers.
+#[must_use]
+pub fn accessible_spin_button(
+    label: &str,
+    range: BigSpinRange,
+    value: f64,
+    digits: u32,
+    width_chars: i32,
+) -> gtk::SpinButton {
+    let range = range.resolved();
+    let adjustment = gtk::Adjustment::new(
+        finite_or(value, range.min).clamp(range.min, range.max),
+        range.min,
+        range.max,
+        range.step,
+        range.page_step,
+        0.0,
+    );
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "the owner of accessible spin buttons"
+    )]
+    let spin = gtk::SpinButton::builder()
+        .adjustment(&adjustment)
+        .digits(digits)
+        .numeric(true)
+        .width_chars(width_chars.max(1))
+        .build();
+    spin.update_property(&[gtk::accessible::Property::Label(label)]);
+    spin
 }
 
 #[cfg(test)]

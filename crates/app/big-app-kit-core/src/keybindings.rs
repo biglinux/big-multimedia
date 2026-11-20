@@ -20,7 +20,7 @@ pub struct ShortcutDef {
     /// Grouping label shown above the row in the shortcut dialog.
     pub category: &'static str,
     /// Canonical GTK accelerator (`"<Ctrl>m"`, `"space"`) used when
-    /// the user has not customised it.
+    /// the user has not customized it.
     pub default_accel: &'static str,
     /// `true` when the binding is a bare key (no modifiers) and must
     /// be suppressed while a text entry has focus.
@@ -64,43 +64,65 @@ pub fn build_accel_map(
     resolve_accels(shortcuts, custom)
         .into_iter()
         .filter(|(shortcut, _)| !only_single_key || shortcut.single_key)
-        .map(|(shortcut, accel)| (accel, shortcut.action.to_string()))
+        .map(|(shortcut, accel)| (canonical_accel(&accel), shortcut.action.to_string()))
         .collect()
 }
 
-/// Convert a `Ctrl+Shift+f`-style accel to canonical `<Ctrl><Shift>f`.
-///
-/// Returns the input unchanged when it already contains `<` or carries no
-/// `+` separators. Unknown modifier tokens fall back to the original
-/// string rather than producing a broken accelerator.
+/// The modifiers a shortcut lookup tells apart.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AccelModifiers {
+    /// Control, written `<Ctrl>`.
+    pub ctrl: bool,
+    /// Shift, written `<Shift>`.
+    pub shift: bool,
+    /// Alt, written `<Alt>`.
+    pub alt: bool,
+}
+
+/// The accelerator text for `key` held with `modifiers`, in the one order every
+/// lookup uses: `<Ctrl>`, `<Shift>`, `<Alt>`, then the key name.
 #[must_use]
-pub fn migrate_legacy_accel(accel: &str) -> String {
-    if accel.contains('<') || !accel.contains('+') {
-        return accel.to_string();
+pub fn accel_text(modifiers: AccelModifiers, key: &str) -> String {
+    let mut text = String::new();
+    if modifiers.ctrl {
+        text.push_str("<Ctrl>");
     }
-    let parts: Vec<&str> = accel.split('+').collect();
-    let (key, mods) = match parts.split_last() {
-        Some((key, mods)) => (*key, mods),
-        None => return accel.to_string(),
-    };
-    let mut out = String::new();
-    for modifier in mods {
-        match *modifier {
-            "Ctrl" | "ctrl" | "Control" | "control" => out.push_str("<Ctrl>"),
-            "Shift" | "shift" => out.push_str("<Shift>"),
-            "Alt" | "alt" => out.push_str("<Alt>"),
-            _ => return accel.to_string(),
+    if modifiers.shift {
+        text.push_str("<Shift>");
+    }
+    if modifiers.alt {
+        text.push_str("<Alt>");
+    }
+    text.push_str(key);
+    text
+}
+
+/// `accel` in [`accel_text`]'s order. `<Control>` and `<Primary>` read as
+/// `<Ctrl>` and `<Mod1>` as `<Alt>`, in any case; other modifiers follow these.
+#[must_use]
+pub fn canonical_accel(accel: &str) -> String {
+    let mut modifiers = AccelModifiers::default();
+    let mut key = String::new();
+    let mut rest = accel;
+    while let Some(after) = rest.strip_prefix('<')
+        && let Some((name, tail)) = after.split_once('>')
+    {
+        match name.to_ascii_lowercase().as_str() {
+            "ctrl" | "control" | "primary" => modifiers.ctrl = true,
+            "shift" => modifiers.shift = true,
+            "alt" | "mod1" => modifiers.alt = true,
+            _ => key.push_str(&rest[..name.len() + 2]),
         }
+        rest = tail;
     }
-    out.push_str(key);
-    out
+    key.push_str(rest);
+    accel_text(modifiers, &key)
 }
 
 /// Decode the serialized custom-overrides string into `(action, accel)` pairs.
 ///
-/// Expected format is `action=accel;action=accel`. Each accel passes through
-/// [`migrate_legacy_accel`], so on-disk values from older releases are
-/// silently upgraded.
+/// Expected format is `action=accel;action=accel`, each accel a GTK
+/// accelerator such as `<Ctrl>m`.
 #[must_use]
 pub fn parse_custom(value: &str) -> Vec<(String, String)> {
     let mut result = Vec::new();
@@ -108,7 +130,7 @@ pub fn parse_custom(value: &str) -> Vec<(String, String)> {
         let entry = entry.trim();
         if let Some((action, accel)) = entry.split_once('=') {
             let action = action.trim().to_string();
-            let accel = migrate_legacy_accel(accel.trim());
+            let accel = accel.trim().to_string();
             if !action.is_empty() && !accel.is_empty() {
                 result.push((action, accel));
             }
@@ -131,7 +153,7 @@ pub fn serialize_custom(overrides: &[(String, String)]) -> String {
 
 /// Drop any override for `action_id` from the in-memory list.
 ///
-/// No-op when the action is not currently customised. Paired with
+/// No-op when the action is not currently customized. Paired with
 /// [`set_custom_override`] to implement the "reset to default" path.
 pub fn remove_custom_override(overrides: &mut Vec<(String, String)>, action_id: &str) {
     overrides.retain(|(action, _)| action != action_id);
@@ -174,24 +196,6 @@ mod tests {
     ];
 
     #[test]
-    fn parse_custom_migrates_legacy_format() {
-        let result = parse_custom("mute=Ctrl+m;fullscreen=Ctrl+Shift+f");
-        assert_eq!(result[0], ("mute".into(), "<Ctrl>m".into()));
-        assert_eq!(result[1], ("fullscreen".into(), "<Ctrl><Shift>f".into()));
-    }
-
-    #[test]
-    fn migrate_legacy_accel_supports_alt_modifier() {
-        assert_eq!(migrate_legacy_accel("Alt+Return"), "<Alt>Return");
-        assert_eq!(migrate_legacy_accel("alt+space"), "<Alt>space");
-    }
-
-    #[test]
-    fn legacy_accel_with_angle_marker_stays_unmigrated() {
-        assert_eq!(migrate_legacy_accel("Ctrl+<m"), "Ctrl+<m");
-    }
-
-    #[test]
     fn parse_custom_rejects_empty_action_or_accel() {
         let result = parse_custom("=p;mute=;play-pause=space");
 
@@ -212,6 +216,34 @@ mod tests {
         let map = build_accel_map(SHORTCUTS, "", true);
         assert_eq!(map.get("space"), Some(&"play-pause".to_string()));
         assert_eq!(map.get("<Ctrl>m"), None);
+    }
+
+    /// GTK accepts modifiers in any order and under several names; a press is
+    /// looked up as `<Ctrl><Shift><Alt>key`.
+    #[test]
+    fn build_accel_map_orders_modifiers() {
+        let map = build_accel_map(
+            SHORTCUTS,
+            "mute=<Shift><Control>m;play-pause=<alt><Primary>p",
+            false,
+        );
+        assert_eq!(map.get("<Ctrl><Shift>m"), Some(&"mute".to_string()));
+        assert_eq!(map.get("<Ctrl><Alt>p"), Some(&"play-pause".to_string()));
+    }
+
+    #[test]
+    fn canonical_accel_keeps_unknown_text() {
+        for (accel, canonical) in [
+            ("", ""),
+            ("space", "space"),
+            ("<Ctrl><Shift>z", "<Ctrl><Shift>z"),
+            ("<Mod1><SHIFT>F9", "<Shift><Alt>F9"),
+            ("<Super><Shift>k", "<Shift><Super>k"),
+            ("<Ctrl", "<Ctrl"),
+            ("<>x", "<>x"),
+        ] {
+            assert_eq!(canonical_accel(accel), canonical, "{accel}");
+        }
     }
 
     #[test]

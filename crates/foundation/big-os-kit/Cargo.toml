@@ -12,22 +12,23 @@ homepage.workspace = true
 authors.workspace = true
 keywords = ["subprocess", "keyring", "storage", "biglinux"]
 categories = ["os", "filesystem"]
+# Names the metadata build.rs hands to dependents' build scripts; links no library.
+links = "big_os_kit"
 
 [dependencies]
 bon.workspace = true
 thiserror.workspace = true
 log.workspace = true
-# Reuse the exact ring release already locked by the workspace for SHA-256 receipts.
-ring = "0.17.14"
 libc.workspace = true
 # Statically linked jemalloc behind the `jemalloc` feature (see src/allocator.rs).
 tikv-jemalloc-sys = { workspace = true, optional = true }
 
 [features]
 default = []
-# Compatibility feature for consumers that explicitly opt into shared HTTP
-# policy. The backend uses the system curl binary and adds no Rust HTTP/TLS dep.
-http-client = []
 # Link jemalloc in as the allocator of the whole process. Only executables
 # enable it; they must also export the symbols (see src/allocator.rs).
 jemalloc = ["dep:tikv-jemalloc-sys"]
+
+[lints.rust]
+# cargo-fuzz sets cfg(fuzzing) for the entry points the fuzz targets call.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }

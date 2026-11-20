@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_relm4_components::feedback::tooltip;
+use big_relm4_components::feedback::{popover_menu, tooltip};
 use big_relm4_components::layout::sidebar_header::{BigSidebarHeader, BigSidebarHeaderSpec};
 use gtk::{gio, glib};
 
@@ -11,6 +11,7 @@ use super::menu_actions::install_menu_actions;
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
+use crate::video::ui::preferences::general::{LOOP_MODE_VALUES, loop_mode_labels};
 
 /// Mode-specific header: in Files, a "load folder" button + a files options menu
 /// (subfolders / sort); in Playlist, an "add files" button + a playlist options
@@ -43,13 +44,12 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     }
     if mode == SidebarMode::Files && browsing {
         // Triage multi-select toggle (creator workflow).
-        let select_mode_button = gtk::ToggleButton::builder()
-            .icon_name("selection-mode-symbolic")
-            .active(state.select_mode.get())
-            .css_classes(["flat"])
-            .build();
-        select_mode_button.set_tooltip_text(Some(&i18n("Select")));
-        select_mode_button.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
+        let select_mode_button = tooltip::icon_toggle_button(
+            "selection-mode-symbolic",
+            &i18n("Select"),
+            state.select_mode.get(),
+            &["flat"],
+        );
         select_mode_button.connect_toggled({
             let state = state.clone();
             move |button| state.set_select_mode(button.is_active())
@@ -82,7 +82,7 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
 /// List ⇄ grid view toggle (the one frequently-used, self-evident control kept
 /// out of the overflow menu).
 fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
-    let is_grid = state.settings.get_string(keys::PLAYLIST_VIEW) == "grid";
+    let is_grid = state.is_grid_view();
     let (icon, label) = if is_grid {
         ("view-list-symbolic", i18n("Show as list"))
     } else {
@@ -92,11 +92,7 @@ fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
     view_toggle_button.connect_clicked({
         let state = state.clone();
         move |_| {
-            let next = if state.settings.get_string(keys::PLAYLIST_VIEW) == "list" {
-                "grid"
-            } else {
-                "list"
-            };
+            let next = if state.is_grid_view() { "list" } else { "grid" };
             state.settings.put_string(keys::PLAYLIST_VIEW, next);
             state.rebuild();
         }
@@ -193,9 +189,14 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
                 "video-playlist-playback",
                 || {
                     let repeat = gio::Menu::new();
-                    repeat.append(Some(&i18n("Off")), Some("pl.loop::no"));
-                    repeat.append(Some(&i18n("Current file")), Some("pl.loop::file"));
-                    repeat.append(Some(&i18n("Whole playlist")), Some("pl.loop::playlist"));
+                    for (value, label) in LOOP_MODE_VALUES.iter().zip(loop_mode_labels()) {
+                        let item = gio::MenuItem::new(Some(&label), None);
+                        item.set_action_and_target_value(
+                            Some("pl.loop"),
+                            Some(&value.to_variant()),
+                        );
+                        repeat.append_item(&item);
+                    }
                     let playback = gio::Menu::new();
                     playback.append(Some(&i18n("Shuffle")), Some("pl.shuffle"));
                     playback.append_submenu(Some(&i18n("Repeat")), &repeat);
@@ -214,7 +215,7 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
 
     let options_menu_button =
         tooltip::icon_menu_button("view-more-symbolic", &i18n("Options"), &["flat"]);
-    options_menu_button.set_menu_model(Some(&menu));
+    popover_menu::set_menu_model(&options_menu_button, &menu);
     // Repeat and shuffle can also change from Preferences or MPRIS; show the
     // stored state each time the menu opens instead of the one at build time.
     let settings = state.settings.clone();

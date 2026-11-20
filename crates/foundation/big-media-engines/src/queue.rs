@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-/// Repeat behaviour for [`PlayQueue::advance`].
+/// Repeat behavior for [`PlayQueue::advance`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RepeatMode {
     /// Stop after the last track.
@@ -174,7 +174,7 @@ impl<T: QueueEntry> PlayQueue<T> {
         self.tracks.is_empty()
     }
 
-    /// Move to the next track honouring [`RepeatMode`] and shuffle settings.
+    /// Move to the next track honoring [`RepeatMode`] and shuffle settings.
     pub fn advance(&mut self) -> Option<&T> {
         let old_idx = self.current_index;
         if self.tracks.is_empty() {
@@ -335,6 +335,8 @@ impl<T: QueueEntry> PlayQueue<T> {
         if self.shuffle_pos >= self.shuffle_order.len() {
             if self.repeat == RepeatMode::All {
                 self.regenerate_shuffle();
+                // The track that just ended goes last in the new cycle instead of replaying.
+                self.shuffle_order.rotate_left(1);
             } else {
                 return None;
             }
@@ -510,14 +512,42 @@ mod tests {
     }
 
     #[test]
-    fn shuffle_keeps_current_track_pinned() {
+    fn shuffle_visits_each_track_once() {
         let mut queue = PlayQueue::new();
         queue.set_tracks(tracks(5));
         queue.jump_to(3);
         queue.set_shuffle(true);
 
-        assert_eq!(queue.current().unwrap().id, 3);
-        assert!(queue.shuffle());
+        let mut played = vec![3];
+        while let Some(track) = queue.advance() {
+            played.push(track.id);
+        }
+        played.sort_unstable();
+        assert_eq!(played, [0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn shuffle_wrap_skips_ended_track() {
+        for count in [2, 3, 5] {
+            let mut queue = PlayQueue::new();
+            queue.set_tracks(tracks(count));
+            queue.jump_to(0);
+            queue.set_shuffle(true);
+            queue.set_repeat(RepeatMode::All);
+            for _ in 1..count {
+                queue.advance();
+            }
+            for _cycle in 0..20 {
+                let ended = queue.current().unwrap().id;
+                let mut cycle: Vec<_> = (0..count).map(|_| queue.advance().unwrap().id).collect();
+                assert_ne!(
+                    cycle[0], ended,
+                    "{count} tracks replayed {ended} at the wrap"
+                );
+                cycle.sort_unstable();
+                assert_eq!(cycle, (0..count).collect::<Vec<_>>());
+            }
+        }
     }
 
     #[test]

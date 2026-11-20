@@ -2,14 +2,14 @@
 //!
 //! This module names the existing shared media-window implementation as the
 //! media-domain surface contract. Apps should import from here when migrating
-//! fullscreen, OSD, overlay layering, idle chrome, or sidebar behavior instead
-//! of rebuilding those policies locally.
+//! fullscreen, OSD, overlay layering or idle chrome instead of rebuilding those
+//! policies locally.
 
 use gtk::prelude::*;
 
 pub use big_relm4_components::layout::media_window::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaImmersionController, BigMediaOverlayStack,
-    BigMediaSidebarShell, BigMediaSidebarSpec, MediaNotice, create_media_root,
+    MediaNotice, create_media_root, make_banner_title_selectable,
 };
 
 /// Toggle fullscreen on the toplevel window that owns `widget`.

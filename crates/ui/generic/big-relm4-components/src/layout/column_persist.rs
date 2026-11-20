@@ -1,9 +1,10 @@
-//! Column width persistence: the `title=width,…` encoding table views save.
+//! Column width persistence: the `name=width,…` encoding table views save.
 //! Apps own where the encoded string is stored.
 
-/// Encode visible column titles and fixed widths as `title=width,title=width`.
+/// Encode column names and widths as `name=width,name=width`; name columns by a
+/// stable key, not their translated heading.
 ///
-/// Empty titles are skipped because they are not stable persistence keys.
+/// Empty names are skipped.
 #[must_use]
 pub fn encode_column_width_entries<'a>(
     columns: impl IntoIterator<Item = (&'a str, i32)>,

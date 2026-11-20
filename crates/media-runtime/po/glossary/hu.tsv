@@ -1,0 +1,29 @@
+source	translation	source of the choice
+track (music)	szám (singular after numerals)	catalog: All Tracks, tracks imported
+track (stream)	sáv	catalog: Track
+playlist	lejátszólista	catalog: Playlist
+queue	várólista	catalog: Queue
+library	könyvtár	catalog: Library
+station	állomás	catalog: My Stations (Saját állomások)
+episode	epizód	catalog: No episodes found
+podcast subscriptions	podcast-feliratkozások	catalog: Podcasts, Subscriptions
+screenshot	képernyőkép	catalog: Screenshot
+recording	felvétel	catalog: Recording was not saved
+provider	szolgáltató	catalog: IPTV Provider
+password	jelszó	catalog: Password; gnome-keyring
+keyring	kulcstartó	gnome-keyring, libsecret
+playback engine	lejátszómotor	new
+Preferences	Beállítások	catalog
+Advanced	Speciális	catalog
+mpv Options	mpv beállítások	catalog
+Video Output	Videókimenet	catalog
+Audio Output	Hangkimenet	catalog
+sidebar	oldalsáv	catalog: Toggle playlist sidebar
+lyrics	dalszöveg	catalog: Lyrics
+web remote	webes távirányító	catalog: Web Remote
+scan	vizsgálat	catalog: Scanning library…
+Retry	Újrapróbálás	new
+register	formal (Ön), nominal phrases for actions	catalog: Húzza, A lejátszó bezárása
+Return (key)	Enter	gtk40 keyboard label
+Left / Right (keys)	Alt+Balra / Alt+Jobbra	gtk40 keyboard label; catalog Alt+Fel style
+quotation marks	„ ”	Hungarian convention; gnome-keyring

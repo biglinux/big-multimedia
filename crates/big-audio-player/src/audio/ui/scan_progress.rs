@@ -6,7 +6,7 @@ use big_relm4_components::layout::dialog_page::BigDialogPage;
 use std::sync::{Arc, atomic::Ordering};
 
 pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Scanning the library"))
         .content_width(440)
         .build();
@@ -91,6 +91,8 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         skipped: skipped.downgrade(),
     };
     let weak_cancel = cancel.downgrade();
+    let weak_explanation = explanation.downgrade();
+    let weak_dialog = dialog.downgrade();
     let weak_spinner = spinner.downgrade();
     let weak_outcome = outcome.downgrade();
     let timer = std::rc::Rc::new(std::cell::RefCell::new(None::<glib::SourceId>));
@@ -105,6 +107,8 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         let status = weak_status.clone();
         let counts = weak_counts.clone();
         let cancel = weak_cancel.clone();
+        let explanation = weak_explanation.clone();
+        let dialog = weak_dialog.clone();
         let spinner = weak_spinner.clone();
         let outcome = weak_outcome.clone();
         let mut last = None;
@@ -135,18 +139,22 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
             counts.imported.set_text(&imported.to_string());
             counts.skipped.set_text(&skipped.to_string());
             let message = if finished && cancelled {
-                "Scan cancelled. Earlier confirmed imports were kept."
+                i18n("Scan cancelled. Earlier confirmed imports were kept.")
             } else if finished && failed {
-                "Scan incomplete. Earlier confirmed imports were kept; check storage and retry."
+                i18n("Scan incomplete. Earlier confirmed imports were kept; check storage and retry.")
             } else if finished {
-                "Library scan finished."
+                i18n("Library scan finished.")
             } else if cancelled {
-                "Cancellation requested. Finishing the current safe step…"
+                i18n("Cancellation requested. Finishing the current safe step…")
             } else {
-                "Reading media information…"
+                i18n("Reading media information…")
             };
-            status.set_text(&i18n(message));
-            cancel.set_label(&i18n(if finished { "Close" } else { "Cancel scan" }));
+            status.set_text(&message);
+            cancel.set_label(&if finished {
+                i18n("Close")
+            } else {
+                i18n("Cancel scan")
+            });
             cancel.set_sensitive(finished || !cancelled);
             if finished {
                 cancel.add_css_class("suggested-action");
@@ -161,6 +169,13 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
                 outcome.add_css_class(class);
                 outcome.set_visible(true);
                 spinner.set_visible(false);
+                // A finished scan has nothing left to cancel.
+                if let Some(explanation) = explanation.upgrade() {
+                    explanation.set_visible(false);
+                }
+                if let Some(dialog) = dialog.upgrade() {
+                    dialog.set_title(&i18n("Library Scan"));
+                }
             }
             if finished {
                 glib::ControlFlow::Break

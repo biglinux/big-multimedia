@@ -43,16 +43,11 @@ pub enum NoiseModel {
 }
 
 impl NoiseModel {
-    /// Resolve a stored setting to a model.
-    ///
-    /// Older players stored GTCRN (0 and 1), the legacy DeepFilterNet (2)
-    /// and the OpenVINO DPDFNet builds (3 to 8). The "natural voice" GTCRN
-    /// and the high-resolution DPDFNet builds (1, 3, 4) become DPDFNet-2;
-    /// everything else, including corrupt values, becomes DeepFilterNet3.
+    /// Resolve a stored setting to a model; a value outside [`MODELS`] is the default.
     #[must_use]
     pub fn from_i32_or_default(value: i32) -> Self {
         match value {
-            1 | 3 | 4 => Self::DpdfNet2,
+            1 => Self::DpdfNet2,
             _ => Self::DeepFilterNet3,
         }
     }
@@ -226,15 +221,13 @@ mod tests {
     }
 
     #[test]
-    fn legacy_settings_map_to_closest_model() {
-        let dpdfnet = [1, 3, 4];
-        for value in -1..10 {
-            let expected = if dpdfnet.contains(&value) {
-                NoiseModel::DpdfNet2
-            } else {
-                NoiseModel::DeepFilterNet3
-            };
-            assert_eq!(NoiseModel::from_i32_or_default(value), expected, "{value}");
+    fn values_outside_the_models_are_the_default() {
+        for value in [-1, 2, 3, 4, 8, i32::MAX] {
+            assert_eq!(
+                NoiseModel::from_i32_or_default(value),
+                NoiseModel::default(),
+                "{value}"
+            );
         }
     }
 

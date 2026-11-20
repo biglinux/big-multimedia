@@ -10,7 +10,7 @@
 //! recycle). Groups become inline section-header rows. Filtering is a cheap
 //! model splice ([`MediaListView::set_items`]), never a widget rebuild.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -39,6 +39,10 @@ pub struct ChannelListView {
     pub status: gtk::Widget,
     view: MediaListView,
     all_channels: Rc<RefCell<Vec<IptvChannel>>>,
+    favorites: Rc<RefCell<IptvFavorites>>,
+    /// False while the rows come from a list whose channel URLs carry its
+    /// credentials: a favorite would write them to a plain file.
+    starrable: Rc<Cell<bool>>,
     user_agent: Rc<RefCell<String>>,
     referer: Rc<RefCell<String>>,
     last_query: RefCell<String>,
@@ -49,6 +53,7 @@ impl ChannelListView {
     pub fn new(sender: ComponentSender<VideoIptvBrowser>) -> Self {
         let all_channels: Rc<RefCell<Vec<IptvChannel>>> = Rc::new(RefCell::new(Vec::new()));
         let favorites = Rc::new(RefCell::new(IptvFavorites::load()));
+        let starrable = Rc::new(Cell::new(true));
 
         // Activation: map the row id (channel URL) back to its title for play.
         let on_activate = {
@@ -70,6 +75,7 @@ impl ChannelListView {
         // Per-row suffix: the favorite-toggle star (rebuilt on each visible bind).
         let build_suffix = {
             let favorites = favorites.clone();
+            let starrable = starrable.clone();
             let sender = sender.clone();
             move |row: &MediaRow| -> Vec<gtk::Widget> {
                 if row.header.is_some() || row.id.is_empty() {
@@ -84,6 +90,12 @@ impl ChannelListView {
                     &["flat", "circular"],
                 );
                 favorite_button.set_valign(gtk::Align::Center);
+                if !starrable.get() || big_os_kit::url::redact_url(&url) != url {
+                    favorite_button.set_sensitive(false);
+                    favorite_button.set_tooltip_text(Some(&i18n(
+                        "This channel's address holds the provider's password, so it cannot be a favorite.",
+                    )));
+                }
                 let favorites = favorites.clone();
                 let sender = sender.clone();
                 favorite_button.connect_toggled(move |button| {
@@ -107,10 +119,18 @@ impl ChannelListView {
             status: status.upcast(),
             view,
             all_channels,
+            favorites,
+            starrable,
             user_agent: Rc::new(RefCell::new(String::new())),
             referer: Rc::new(RefCell::new(String::new())),
             last_query: RefCell::new(String::new()),
         }
+    }
+
+    /// Whether the next channel set may be starred; takes effect with
+    /// [`Self::set_channels`].
+    pub fn set_starrable(&self, starrable: bool) {
+        self.starrable.set(starrable);
     }
 
     /// Set the per-provider HTTP headers used for logo fetches.
@@ -125,6 +145,12 @@ impl ChannelListView {
         self.all_channels.replace(channels);
         let query = self.last_query.borrow().clone();
         self.resplice(&query);
+    }
+
+    /// Move stars saved under the first URL of each pair to the second; the
+    /// rows show them from the next [`Self::set_channels`].
+    pub fn rename_favorites(&self, renames: Vec<(String, String)>) {
+        self.favorites.borrow_mut().rename(renames);
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model

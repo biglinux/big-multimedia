@@ -5,35 +5,32 @@
 
 use relm4::gtk;
 
-/// Pick the trough fill colour for a volume slider that may exceed
-/// 100 %. Normal range stays accent-coloured; the slider warms toward
+/// Pick the trough fill color for a volume slider that may exceed
+/// 100 %. Normal range stays accent-colored; the slider warms toward
 /// warning then error as the value approaches `max_value`.
 #[must_use]
 pub fn volume_trough_color(value: f64, max_value: f64) -> String {
-    let mid = f64::midpoint(100.0, max_value);
-    if value <= 100.0 {
-        "@accent_bg_color".to_string()
-    } else if value <= mid {
-        let t = (value - 100.0) / (mid - 100.0);
-        format!("mix(@accent_bg_color, @warning_bg_color, {t:.2})")
-    } else {
-        let t = ((value - mid) / (max_value - mid)).min(1.0);
-        format!("mix(@warning_bg_color, @error_bg_color, {t:.2})")
-    }
+    tiered_trough_color(value, 100.0, f64::midpoint(100.0, max_value), max_value)
 }
 
-/// Pick the trough fill colour for a voice-volume slider where 50 %
-/// is the recommended ceiling. Warmer colours warn the user above
-/// 50 % and become an error past 80 %.
+/// Pick the trough fill color for a voice-volume slider where 50 %
+/// is the recommended ceiling. Warmer colors warn the user above
+/// 50 % and reach the error color at `max_value`.
 #[must_use]
-pub fn voice_trough_color(value: f64) -> String {
-    if value <= 50.0 {
+pub fn voice_trough_color(value: f64, max_value: f64) -> String {
+    tiered_trough_color(value, 50.0, 80.0, max_value)
+}
+
+/// Accent up to `safe`, blending to warning at `warning`, then to the full
+/// error color at `max_value`.
+fn tiered_trough_color(value: f64, safe: f64, warning: f64, max_value: f64) -> String {
+    if value <= safe {
         "@accent_bg_color".to_string()
-    } else if value <= 80.0 {
-        let t = (value - 50.0) / 30.0;
+    } else if value <= warning {
+        let t = (value - safe) / (warning - safe);
         format!("mix(@accent_bg_color, @warning_bg_color, {t:.2})")
     } else {
-        let t = (value - 80.0) / 50.0;
+        let t = ((value - warning) / (max_value - warning)).min(1.0);
         format!("mix(@warning_bg_color, @error_bg_color, {t:.2})")
     }
 }
@@ -70,15 +67,18 @@ mod tests {
 
     #[test]
     fn voice_color_blends_by_known_ranges() {
-        assert_eq!(voice_trough_color(50.0), "@accent_bg_color");
+        assert_eq!(voice_trough_color(50.0, 100.0), "@accent_bg_color");
         assert!(
-            voice_trough_color(65.0).contains("mix(@accent_bg_color, @warning_bg_color, 0.50)")
+            voice_trough_color(65.0, 100.0)
+                .contains("mix(@accent_bg_color, @warning_bg_color, 0.50)")
         );
         assert!(
-            voice_trough_color(105.0).contains("mix(@warning_bg_color, @error_bg_color, 0.50)")
+            voice_trough_color(90.0, 100.0)
+                .contains("mix(@warning_bg_color, @error_bg_color, 0.50)")
         );
         assert!(
-            voice_trough_color(130.0).contains("mix(@warning_bg_color, @error_bg_color, 1.00)")
+            voice_trough_color(100.0, 100.0)
+                .contains("mix(@warning_bg_color, @error_bg_color, 1.00)")
         );
     }
 }

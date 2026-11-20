@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+<channel><title>Example</title><description>Show</description>
+<image><url>https://example.org/cover.png</url></image>
+<item><title>One</title><itunes:duration>12:34</itunes:duration><pubDate>Mon, 02 Nov 2026 10:00:00 GMT</pubDate>
+<enclosure url="https://example.org/one.mp3" type="audio/mpeg" length="1"/></item>
+<item><title>Local</title><enclosure url="file:///etc/passwd" type="audio/mpeg"/></item>
+</channel></rss>

@@ -1,3 +1,3 @@
-mod detailed_video_metadata;
+mod cache;
 mod display;
 mod probe;

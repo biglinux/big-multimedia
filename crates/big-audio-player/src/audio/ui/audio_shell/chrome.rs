@@ -10,6 +10,7 @@ impl AudioShell {
             tracks,
             current_idx,
             playlist_name: self.current_playlist_name.clone(),
+            podcasts: self.podcast_mode,
         });
         self.sync_now_playing();
     }
@@ -25,21 +26,31 @@ impl AudioShell {
         self.sync_now_playing();
     }
 
-    /// Re-light the now-playing indicator in both panels from the queue's
-    /// current track (matched by file path in the library detail view). While a
-    /// radio stream plays, nothing in the queue/library is "playing", so clear it.
+    /// Re-light the queue's now-playing indicator from its current track while
+    /// it plays or is paused. While a radio stream plays, nothing in the queue
+    /// is "playing", so clear it.
     pub(super) fn sync_now_playing(&self) {
-        if self.is_stream || !self.is_playing {
-            self.playlist
-                .emit(PlaylistPanelInput::SetPlaying { idx: None });
-            self.library.emit(LibraryPanelInput::SetPlayingPath(None));
-            return;
-        }
+        let status = *self
+            .mpris_state
+            .status
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let playback = if self.is_stream {
+            PlaybackStatus::Stopped
+        } else if self.is_playing {
+            PlaybackStatus::Playing
+        } else if status == PlaybackStatus::Paused {
+            PlaybackStatus::Paused
+        } else {
+            PlaybackStatus::Stopped
+        };
+        let current = (playback != PlaybackStatus::Stopped)
+            .then(|| self.queue.current_index())
+            .flatten();
         self.playlist.emit(PlaylistPanelInput::SetPlaying {
-            idx: self.queue.current_index(),
+            idx: current,
+            playback,
         });
-        let path = self.queue.current().map(|t| t.file_path.clone());
-        self.library.emit(LibraryPanelInput::SetPlayingPath(path));
     }
 
     /// Refresh the sidebar-bottom now-playing card from the current track (or a
@@ -54,7 +65,8 @@ impl AudioShell {
             self.np_title.set_label(&self.radio_station_name);
             self.np_artist.set_label(&i18n("Radio"));
             self.np_album.set_visible(false);
-            self.np_art.set_icon_name(Some("icon_radio"));
+            self.np_art
+                .set_icon_name(Some(big_player_ui::radio_panel::RADIO_ICON));
             return;
         }
         let Some(track) = self.queue.current() else {
@@ -90,7 +102,7 @@ impl AudioShell {
 
     /// Bundled illustration loader (audio-player gresource path).
     pub(super) fn illustration(filename: &str) -> gtk::Image {
-        crate::shared::illustration::illustration(
+        big_media_runtime::resources::illustration(
             "/br/com/biglinux/AudioPlayer/illustrations/",
             filename,
         )
@@ -100,7 +112,7 @@ impl AudioShell {
     /// Chromecast or DLNA TV, pausing it here once the TV plays.
     pub(super) fn show_tv_dialog(&self) {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, present_tv_dialog};
+        use big_media_runtime::cast::tv::{TvMedia, present_tv_dialog};
         let Some(win) = self.window() else {
             return;
         };
@@ -145,16 +157,16 @@ impl AudioShell {
         let Some(win) = self.window() else {
             return;
         };
-        let active = self.sleep_timer_source.is_some();
+        let active = self.sleep_timer.is_armed();
 
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Sleep Timer"))
             .content_width(600)
             .content_height(if active { 420 } else { 560 })
             .build();
 
         let page = if active {
-            let remaining = self.sleep_timer_remaining;
+            let remaining = self.sleep_timer.remaining_secs();
             let active_page = BigSleepTimerActivePage::new(
                 BigSleepTimerActiveSpec {
                     labels: BigSleepTimerActiveLabels {
@@ -179,11 +191,11 @@ impl AudioShell {
             active_page.into_page()
         } else {
             let (saved_mins, saved_action) =
-                crate::shared::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
+                big_media_runtime::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
             let setup_page = BigSleepTimerSetupPage::new(
                 BigSleepTimerSetupSpec {
-                    labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                    actions: crate::shared::sleep_timer::sleep_timer_actions(),
+                    labels: big_media_runtime::sleep_timer::sleep_timer_setup_labels(),
+                    actions: big_media_runtime::sleep_timer::sleep_timer_actions(),
                     saved_minutes: saved_mins,
                     saved_action_id: saved_action,
                     icon_size: 72,
@@ -200,7 +212,7 @@ impl AudioShell {
                 &setup_page,
                 &win,
                 move |_, minutes, action| {
-                    crate::shared::sleep_timer::save_sleep_timer_preferences(
+                    big_media_runtime::sleep_timer::save_sleep_timer_preferences(
                         Some(&settings),
                         minutes,
                         &action,
@@ -220,93 +232,6 @@ impl AudioShell {
         dialog_page.content().append(&page);
         dialog.set_child(Some(&dialog_page.into_root()));
         dialog.present(Some(&win));
-    }
-
-    /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown.
-    pub(super) fn start_sleep_timer(
-        &mut self,
-        total_secs: u32,
-        action: String,
-        sender: &ComponentSender<Self>,
-    ) {
-        self.cancel_sleep_timer();
-        self.sleep_timer_remaining = total_secs;
-        self.sleep_timer_action = action;
-        self.sleep_timer_volume = self.mpv.as_ref().map_or(100.0, |m| m.get_volume());
-
-        let input = sender.input_sender().clone();
-        let source = glib::timeout_add_seconds_local(1, move || {
-            let _ = input.send(AudioShellInput::SleepTick);
-            glib::ControlFlow::Continue
-        });
-        self.sleep_timer_source = Some(source);
-    }
-
-    /// Disarm the sleep timer (no-op if none armed).
-    pub(super) fn cancel_sleep_timer(&mut self) {
-        if let Some(source) = self.sleep_timer_source.take() {
-            big_gtk_kit::source::remove(source);
-        }
-        self.sleep_timer_remaining = 0;
-    }
-
-    /// One countdown tick: fade the last 10 s, then on expiry pause + run the
-    /// chosen action (close / suspend / power off), restoring the volume.
-    pub(super) fn sleep_tick(&mut self) {
-        if self.sleep_timer_source.is_none() {
-            return;
-        }
-        if self.sleep_timer_remaining <= 1 {
-            if let Some(mpv) = &self.mpv {
-                mpv.pause();
-                mpv.set_volume(self.sleep_timer_volume);
-            }
-            let action = std::mem::take(&mut self.sleep_timer_action);
-            self.cancel_sleep_timer();
-            match action.as_str() {
-                "quit" => {
-                    self.notify(&i18n("Sleep timer: closing player"));
-                    glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                        if let Some(app) = gtk::gio::Application::default() {
-                            crate::settings::saving::quit_after_writes(&app);
-                        }
-                    });
-                }
-                "suspend" => {
-                    self.notify(&i18n("Sleep timer: suspending computer"));
-                    glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                        crate::settings::saving::after_writes(|| {
-                            if let Err(error) =
-                                big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached()
-                            {
-                                log::warn!("sleep timer: suspend failed: {error}");
-                            }
-                        });
-                    });
-                }
-                "poweroff" => {
-                    self.notify(&i18n("Sleep timer: shutting down"));
-                    glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                        crate::settings::saving::after_writes(|| {
-                            if let Err(error) = big_app_kit::desktop::BigSystemPowerAction::PowerOff
-                                .spawn_detached()
-                            {
-                                log::warn!("sleep timer: poweroff failed: {error}");
-                            }
-                        });
-                    });
-                }
-                _ => self.notify(&i18n("Sleep timer: playback paused")),
-            }
-            return;
-        }
-        self.sleep_timer_remaining -= 1;
-        if self.sleep_timer_remaining <= 10
-            && let Some(mpv) = &self.mpv
-        {
-            let factor = f64::from(self.sleep_timer_remaining) / 10.0;
-            mpv.set_volume(self.sleep_timer_volume * factor);
-        }
     }
 
     /// Show the read-only track metadata dialog (reuses the shared media dialog).

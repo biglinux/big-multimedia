@@ -9,33 +9,12 @@ impl AudioShell {
         match message {
             AudioShellInput::QueueRestored(result) => {
                 let first_load = !self.queue_ready;
-                if let Ok((_, session)) = &result
-                    && self.queue_persistence.status().revision == 0
-                {
-                    self.queue.set_tracks(session.music.tracks.clone());
-                    if let Some(index) = session.music.current {
-                        self.queue.jump_to(index);
-                    }
-                    self.saved_podcast_queue =
-                        Some((session.podcasts.tracks.clone(), session.podcasts.current));
-                    self.sync_queue_to_panels();
-                    let paths = self
-                        .queue
-                        .tracks()
-                        .iter()
-                        .filter(|track| track.id == 0)
-                        .map(|track| track.file_path.clone())
-                        .collect();
-                    Self::load_external_metadata(paths, &sender);
-                }
                 self.queue_ready = true;
-                let recovered_db = result.ok().map(|(db, _)| db);
-                if self.db.is_none() && recovered_db.is_some() {
-                    self.db.clone_from(&recovered_db);
-                    self.rebuild_library_tree(&sender);
-                    self.refresh_playlist_dialog_entries(&sender);
+                match result {
+                    Ok(restored) => self.restore_queue(restored, &sender),
+                    Err(detail) => self.queue_persistence.open_failed(detail),
                 }
-                self.queue_persistence.loaded(recovered_db);
+                self.playlist.emit(PlaylistPanelInput::QueueRestored);
                 if first_load {
                     self.resolve_next_open(&sender);
                 }
@@ -45,8 +24,11 @@ impl AudioShell {
             }
             AudioShellInput::ShowPreferences => {
                 if let Some(window) = self.notice.widget().root().and_downcast::<gtk::Window>() {
-                    let (taskbar_input, tray_input) =
-                        (sender.input_sender().clone(), sender.input_sender().clone());
+                    let (taskbar_input, tray_input, volume_input) = (
+                        sender.input_sender().clone(),
+                        sender.input_sender().clone(),
+                        sender.input_sender().clone(),
+                    );
                     crate::audio::preferences::show_audio_preferences(
                         &window,
                         &self.settings,
@@ -60,15 +42,21 @@ impl AudioShell {
                                 let _ = tray_input.send(AudioShellInput::TrayIconChanged(enabled));
                             }),
                         },
+                        move || {
+                            let _ = volume_input.send(AudioShellInput::VolumeMaxChanged);
+                        },
                     );
                 }
             }
             AudioShellInput::TaskbarProgressChanged(enabled) => {
-                if let Some(mpris) = &self.mpris {
-                    mpris.set_taskbar_progress(enabled);
-                }
+                self.mpris.set_taskbar_progress(enabled);
             }
             AudioShellInput::TrayIconChanged(enabled) => self.set_tray_icon(enabled, &sender),
+            AudioShellInput::VolumeMaxChanged => {
+                let maximum = f64::from(self.settings.volume_max_percent());
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetMaxVolume(maximum));
+            }
             AudioShellInput::Tray(command) => self.handle_tray_command(command, &sender),
             AudioShellInput::TracksDeletedFromStorage(ids) => {
                 self.reconcile_deleted_tracks(ids, &sender);
@@ -80,7 +68,7 @@ impl AudioShell {
                 if let Some(mpv) = &self.mpv
                     && self.settings.get_double(keys::NOISE_STRENGTH) > 0.0
                 {
-                    crate::shared::audio_effects::apply_voice_change(&self.settings, mpv);
+                    big_media_runtime::audio_effects::apply_voice_change(&self.settings, mpv);
                 }
             }
             AudioShellInput::PlaybackRemote { command, permit } => {
@@ -116,10 +104,10 @@ impl AudioShell {
                 }
             }
             AudioShellInput::Podcast(out) => self.handle_podcast(out, &sender),
-            AudioShellInput::PodcastFeedResolved { title, episodes } => {
-                self.enter_podcast_mode(title, episodes);
+            AudioShellInput::PodcastFeedResolved { request, feed } => {
+                self.podcast_feed_resolved(request, feed);
             }
-            AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name),
+            AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name, &sender),
             AudioShellInput::RadioStationsResolved(stations) => {
                 self.radio.emit(RadioPanelInput::RefreshStations(stations));
             }
@@ -137,23 +125,21 @@ impl AudioShell {
                 // An import changes which tracks a playlist can offer, so the
                 // open dialog goes stale exactly as it does after `ScanFinished`.
                 self.refresh_playlist_dialog_entries(&sender);
+                // The bar has room for two short lines; the dialog says the rest.
                 let status = if report.cancelled {
-                    i18n("Scan cancelled. Earlier confirmed imports were kept.")
+                    i18n("Scan cancelled")
                 } else if report.failed {
-                    i18n(
-                        "Scan incomplete. Earlier confirmed imports were kept; check storage and retry.",
-                    )
+                    i18n("Scan incomplete")
                 } else {
-                    i18n("Library scan finished.")
+                    ni18n(
+                        "{count} track imported",
+                        "{count} tracks imported",
+                        report.imported as u64,
+                    )
+                    .replace("{count}", &report.imported.to_string())
                 };
                 self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetStatus(format!(
-                        "{status} {}: {} · {}: {}",
-                        i18n("Imported"),
-                        report.imported,
-                        i18n("Skipped"),
-                        report.skipped
-                    )));
+                    .emit(AudioPlaybackBarInput::SetStatus(status));
             }
             AudioShellInput::ScanFinished(complete) => {
                 self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(if complete {
@@ -179,9 +165,6 @@ impl AudioShell {
                 }
                 self.commit_queue();
             }
-            AudioShellInput::DetailResolved(tracks) => {
-                self.library.emit(LibraryPanelInput::PopulateDetail(tracks));
-            }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
             AudioShellInput::LibraryTreeFailed { generation } => {
@@ -191,9 +174,15 @@ impl AudioShell {
                     )));
                 }
             }
-            AudioShellInput::LibraryTreeResolved { generation, data } => {
+            AudioShellInput::LibraryTreeResolved {
+                generation,
+                data,
+                has_items,
+            } => {
                 if self.library_generation.is_current(generation) {
                     self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+                    self.playlist
+                        .emit(PlaylistPanelInput::SetLibraryHasItems(has_items));
                 }
             }
             AudioShellInput::PlaylistMutationFinished(success) => {
@@ -231,6 +220,8 @@ impl AudioShell {
                 generation,
                 paths,
                 failed,
+                truncated,
+                skipped,
             } => {
                 if generation != self.open_generation {
                     return;
@@ -240,6 +231,8 @@ impl AudioShell {
                     self.notify(&i18n(
                         "The playlist could not be read safely. Check its format and permissions.",
                     ));
+                } else if let Some(notice) = left_out_notice(truncated, skipped) {
+                    self.notify(&notice);
                 }
                 self.append_open_paths(paths, &sender);
                 self.resolve_next_open(&sender);
@@ -249,7 +242,7 @@ impl AudioShell {
             }
             AudioShellInput::ShowEqualizer => {
                 if let Some(win) = self.window() {
-                    let dialog = crate::shared::audio_effects::create_equalizer_dialog(
+                    let dialog = big_media_runtime::audio_effects::create_equalizer_dialog(
                         &self.settings,
                         self.mpv.clone(),
                         None,
@@ -308,7 +301,14 @@ impl AudioShell {
             }
             AudioShellInput::PlaylistImported(result) => {
                 match result {
-                    Ok(added) => self.notify(&format!("{added} {}", i18n("tracks imported"))),
+                    Ok((added, false)) => {
+                        self.notify(&format!("{added} {}", i18n("tracks imported")));
+                    }
+                    Ok((added, true)) => self.notify(&format!(
+                        "{added} {} {}",
+                        i18n("tracks imported"),
+                        left_out_notice(true, 0).unwrap_or_default()
+                    )),
                     Err(error) => self.notify(&format!(
                         "{} {error}",
                         i18n(
@@ -322,12 +322,18 @@ impl AudioShell {
             AudioShellInput::ConvertTrack => self.open_in_converter(&[]),
             AudioShellInput::ShowTrimExport => self.enter_trim_mode(),
             AudioShellInput::SleepTimerStart { minutes, action } => {
-                self.start_sleep_timer(sleep_timer_seconds(minutes), action, &sender);
+                let input = sender.input_sender().clone();
+                self.sleep_timer
+                    .start(minutes, action, self.mpv.as_deref(), move || {
+                        let _ = input.send(AudioShellInput::SleepTick);
+                    });
             }
-            AudioShellInput::SleepTimerCancel => {
-                self.cancel_sleep_timer();
+            AudioShellInput::SleepTimerCancel => self.sleep_timer.cancel(self.mpv.as_deref()),
+            AudioShellInput::SleepTick => {
+                if let Some(notice) = self.sleep_timer.tick(self.mpv.as_deref()) {
+                    self.notify(&notice);
+                }
             }
-            AudioShellInput::SleepTick => self.sleep_tick(),
             AudioShellInput::Notify(message) => self.notify(&message),
             AudioShellInput::Undo => self.undo_queue(&sender),
             AudioShellInput::Redo => self.redo_queue(&sender),
@@ -352,7 +358,7 @@ impl AudioShell {
 
 /// Lyrics paned split position: full height when only-lyrics is requested, else
 /// ~40% of the height with a 150px floor.
-fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
+pub(super) fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
     if only_lyrics {
         height
     } else {
@@ -373,11 +379,6 @@ fn drop_insert_base(insert_pos: usize, queue_len: usize) -> usize {
 /// Start playback for a drop only when nothing is currently playing.
 fn should_start_playback_on_drop(is_playing: bool, current_file_empty: bool) -> bool {
     !is_playing || current_file_empty
-}
-
-/// Sleep-timer countdown length converted to seconds.
-fn sleep_timer_seconds(minutes: u32) -> u32 {
-    minutes * 60
 }
 
 /// Guard a stale async result against the current now-playing generation.
@@ -408,7 +409,7 @@ mod tests {
     use super::{
         drop_insert_base, drop_insert_index, is_current_generation, lyrics_paned_position,
         lyrics_text_is_meaningful, next_shuffle_state, should_replace_queue_with,
-        should_start_playback_on_drop, sleep_timer_seconds,
+        should_start_playback_on_drop,
     };
 
     #[test]
@@ -449,13 +450,6 @@ mod tests {
         assert!(should_start_playback_on_drop(false, false)); // not playing
         assert!(should_start_playback_on_drop(true, true)); // no current file
         assert!(!should_start_playback_on_drop(true, false)); // actively playing
-    }
-
-    #[test]
-    fn sleep_timer_seconds_is_minutes_times_60() {
-        assert_eq!(sleep_timer_seconds(0), 0);
-        assert_eq!(sleep_timer_seconds(1), 60);
-        assert_eq!(sleep_timer_seconds(30), 1800);
     }
 
     #[test]

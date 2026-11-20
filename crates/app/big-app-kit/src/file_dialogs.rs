@@ -67,7 +67,8 @@ impl FilePicker {
         self
     }
 
-    /// Adds a filter named `name` matching glob patterns such as `"*.m3u"`.
+    /// Adds a filter named `name` matching glob patterns such as `"*"`. A
+    /// pattern is case-sensitive: match extensions with [`Self::filter`].
     pub fn pattern_filter(mut self, name: &str, patterns: &[&str]) -> Self {
         let filter = gtk::FileFilter::new();
         filter.set_name(Some(name));
@@ -78,6 +79,10 @@ impl FilePicker {
         self
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "FilePicker is the owner of gtk::FileDialog"
+    )]
     fn build_dialog(&self) -> gtk::FileDialog {
         let mut builder = gtk::FileDialog::builder().title(&self.title).modal(true);
         if let Some(ref label) = self.accept_label {

@@ -1,6 +1,5 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
-use super::dialogs::hold_theme;
-use super::input::{clear_shell_input, set_shell_input};
+use super::input::SHELL_INPUT;
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{
     FastRenderContextSlot, VideoRealizeOptions, VideoStart, wire_close, wire_realize,
@@ -10,11 +9,13 @@ use big_media_components::surface::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, MediaNotice, create_media_root,
     toggle_surface_fullscreened,
 };
+use big_relm4_components::feedback::tooltip;
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
     BigHamburgerMenuSpec, BigMenuActionItem, build_flat_action_popover_button,
 };
+use big_relm4_components::theme::CssSlot;
 
 impl Component for VideoShell {
     type Init = ();
@@ -67,7 +68,7 @@ impl Component for VideoShell {
         // OSD controls bar (app-local). The trim
         // bar rides inside it (transport ↔ trim stack).
         // Connected on first use (the TV page), never merely by starting.
-        let tv = crate::shared::tv_cast::TvLink::new();
+        let tv = big_media_runtime::cast::tv::TvLink::new();
         tv.subscribe(|| super::send_to_shell(VideoShellInput::TvChanged));
         let controls = VideoControlsBar::builder()
             .launch(VideoControlsBarInit {
@@ -117,19 +118,88 @@ impl Component for VideoShell {
             .build();
         media_stack.add_fallback_media_surface(&sw_picture);
 
+        // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
+        // via the compositor (KWin global shortcut, falling back to wmctrl). Both
+        // run as argv arrays with no shell and no untrusted input.
+        let keep_above_toggle_button = tooltip::icon_toggle_button(
+            "view-pin-symbolic",
+            &i18n("Keep Above"),
+            false,
+            &["osd-btn"],
+        );
+        keep_above_toggle_button.connect_toggled(|_button| toggle_keep_above());
+
+        // Open popover button: a real GtkButton exposes AT-SPI DoAction while
+        // the popover rows keep named, activatable file-opening actions.
+        let open_label = i18n("Open");
+        let open_popover_button = build_flat_action_popover_button(
+            &BigHamburgerMenuSpec::new(open_label)
+                .icon_name("document-open-symbolic")
+                .css_classes(["osd-btn"])
+                .items(open_menu_items()),
+        );
+        let open_menu_root = open_popover_button.root().clone();
+        let open_menu_popover = open_popover_button.popover().clone();
+
+        // Two separate sidebar entry points: Files (folder browser) and Playlist
+        // (the play queue). Each reveals the sidebar in its mode; clicking the
+        // active one hides it. Not a radio pair: both off hides the sidebar.
+        let files_sidebar_toggle_button =
+            tooltip::icon_toggle_button("folder-symbolic", &i18n("Files"), false, &["osd-btn"]);
+        let playlist_sidebar_toggle_button = tooltip::icon_toggle_button(
+            "view-list-symbolic",
+            &i18n("Playlist"),
+            false,
+            &["osd-btn"],
+        );
+        let sidebar_switch = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        sidebar_switch.append(&files_sidebar_toggle_button);
+        sidebar_switch.append(&playlist_sidebar_toggle_button);
+
+        // Guard so programmatic `set_active` doesn't re-enter the handlers.
+        let toggles_updating = Rc::new(Cell::new(false));
+        let active_sidebar_mode = Rc::new(Cell::new(SidebarMode::Files));
+        // The shell decides what the buttons show: a click only asks.
+        for (button, mode) in [
+            (&files_sidebar_toggle_button, SidebarMode::Files),
+            (&playlist_sidebar_toggle_button, SidebarMode::Playlist),
+        ] {
+            let sender = sender.clone();
+            let updating = toggles_updating.clone();
+            button.connect_toggled(move |_| {
+                if !updating.get() {
+                    sender.input(match mode {
+                        SidebarMode::Files => VideoShellInput::ToggleFilesSidebar,
+                        SidebarMode::Playlist => VideoShellInput::TogglePlaylistSidebar,
+                    });
+                }
+            });
+        }
+
         // The header's main button opens the settings panel, not a menu.
-        let settings_button = gtk::Button::builder()
-            .icon_name("open-menu-symbolic")
-            .action_name("win.settings")
-            .tooltip_text(i18n("Settings"))
-            .css_classes(["osd-btn"])
-            .build();
-        settings_button.update_property(&[gtk::accessible::Property::Label(&i18n("Settings"))]);
-        let chrome = BigMediaChrome::new(&settings_button, true);
+        let settings_button =
+            tooltip::icon_button("open-menu-symbolic", &i18n("Settings"), &["osd-btn"]);
+        settings_button.set_action_name(Some("win.settings"));
+        let header_buttons = HeaderButtons::new(
+            &keep_above_toggle_button,
+            &open_menu_root,
+            &sidebar_switch,
+            &settings_button,
+        );
+        header_buttons.apply_settings(&settings);
+        // The end zone takes the primary button's place, beside the window
+        // controls; the status pills pack on its left.
+        let chrome = BigMediaChrome::new(&header_buttons.end_zone, true);
+        chrome.add_header_start(&header_buttons.start_zone);
         // The OSD header floats over edge-to-edge video with the compositor's
         // native title buttons disabled, so the standalone window has to draw
         // its own minimize/maximize/close.
-        chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
+        chrome.show_end_window_controls(
+            &i18n("Minimize"),
+            &i18n("Maximize"),
+            &i18n("Restore"),
+            &i18n("Close"),
+        );
 
         // Beside the settings button, small pills say what is away from
         // normal and offer HDR for a grey picture, without covering video.
@@ -141,7 +211,7 @@ impl Component for VideoShell {
         let hdr_hint = gtk::Button::builder()
             .label(i18n("Use HDR?"))
             .tooltip_text(i18n(
-                "Does the picture look grey and washed out? Click to use HDR colours",
+                "Does the picture look grey and washed out? Click to use HDR colors",
             ))
             .css_classes(["header-pill", "hdr-hint"])
             .visible(false)
@@ -151,11 +221,11 @@ impl Component for VideoShell {
             move |hint| {
                 hint.set_visible(false);
                 sender.input(VideoShellInput::RestoreAdjustments(vec![
-                    super::adjustments::Adjustment::SourceColours(1),
+                    super::adjustments::Adjustment::SourceColors(1),
                 ]));
             }
         });
-        let tv_menu = crate::shared::tv_cast::TvCard::new("tv-menu", false, true, true, {
+        let tv_menu = big_media_runtime::cast::tv::TvCard::new("tv-menu", false, true, true, {
             let sender = sender.clone();
             move |action| sender.input(VideoShellInput::Tv(action))
         });
@@ -239,6 +309,7 @@ impl Component for VideoShell {
 
         // The playlist / folder browser floats over the video on the left.
         let playlist_panel = super::playlist_panel::PlaylistPanel::new(playlist.widget(), &sender);
+        playlist_panel.keep_clear(&main_overlay, &welcome);
         // Videos dropped on the panel join the list; dropped on the video
         // they replace it (the window's own drop target, below).
         {
@@ -257,67 +328,6 @@ impl Component for VideoShell {
         }
         let notice = MediaNotice::new();
 
-        // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
-        // via the compositor (KWin global shortcut, falling back to wmctrl). Both
-        // run as argv arrays with no shell and no untrusted input.
-        let keep_above_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("view-pin-symbolic")
-            .tooltip_text(i18n("Keep Above"))
-            .css_classes(["osd-btn"])
-            .build();
-        keep_above_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
-        keep_above_toggle_button.connect_toggled(|_button| toggle_keep_above());
-
-        // Open popover button: a real GtkButton exposes AT-SPI DoAction while
-        // the popover rows keep named, activatable file-opening actions.
-        let open_label = i18n("Open");
-        let open_popover_button = build_flat_action_popover_button(
-            &BigHamburgerMenuSpec::new(open_label)
-                .icon_name("document-open-symbolic")
-                .css_classes(["osd-btn"])
-                .items(open_menu_items()),
-        );
-        let open_menu_root = open_popover_button.root().clone();
-        let open_menu_popover = open_popover_button.popover().clone();
-
-        // Two separate sidebar entry points: Files (folder browser) and Playlist
-        // (the play queue). Each reveals the sidebar in its mode; clicking the
-        // active one hides it. Not a radio pair: both off hides the sidebar.
-        let files_sidebar_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("folder-symbolic")
-            .tooltip_text(i18n("Files"))
-            .css_classes(["osd-btn"])
-            .build();
-        files_sidebar_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Files"))]);
-        let playlist_sidebar_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("view-list-symbolic")
-            .tooltip_text(i18n("Playlist"))
-            .css_classes(["osd-btn"])
-            .build();
-        playlist_sidebar_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Playlist"))]);
-
-        // Guard so programmatic `set_active` doesn't re-enter the handlers.
-        let toggles_updating = Rc::new(Cell::new(false));
-        let active_sidebar_mode = Rc::new(Cell::new(SidebarMode::Files));
-        // The shell decides what the buttons show: a click only asks.
-        for (button, mode) in [
-            (&files_sidebar_toggle_button, SidebarMode::Files),
-            (&playlist_sidebar_toggle_button, SidebarMode::Playlist),
-        ] {
-            let sender = sender.clone();
-            let updating = toggles_updating.clone();
-            button.connect_toggled(move |_| {
-                if !updating.get() {
-                    sender.input(match mode {
-                        SidebarMode::Files => VideoShellInput::ToggleFilesSidebar,
-                        SidebarMode::Playlist => VideoShellInput::TogglePlaylistSidebar,
-                    });
-                }
-            });
-        }
         // Put away by Escape or a click on the video: release both buttons.
         playlist_panel.revealer.connect_reveal_child_notify({
             let files_sidebar_toggle_button = files_sidebar_toggle_button.downgrade();
@@ -337,15 +347,6 @@ impl Component for VideoShell {
                 updating.set(false);
             }
         });
-
-        // Shared media-viewer chrome (header + accessible primary menu + the
-        // OSD reveal); see big_media_components::surface. The video
-        // player keeps mpv/offload/welcome/buffering state app-local; shared
-        // chrome owns the repeatable header, bottom revealer, and sidebar split.
-        chrome.add_header_start(&keep_above_toggle_button);
-        chrome.add_header_start(&open_menu_root);
-        chrome.add_header_start(&files_sidebar_toggle_button);
-        chrome.add_header_start(&playlist_sidebar_toggle_button);
 
         let win_actions = install_window_actions(&root, &sender);
 
@@ -397,13 +398,16 @@ impl Component for VideoShell {
             super::menus::keep_focus_off_clicks(area);
         }
         wire_osd_autohide(&main_overlay, &osd);
+        let subtitle_lift =
+            SubtitleLift::wire(&main_overlay, chrome.bottom_revealer(), &mpv, &settings);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
         // Attached, the TV already plays what the player holds: no swap.
-        let tv_card = crate::shared::tv_cast::TvCard::new("settings-panel", false, false, true, {
-            let sender = sender.clone();
-            move |action| sender.input(VideoShellInput::Tv(action))
-        });
+        let tv_card =
+            big_media_runtime::cast::tv::TvCard::new("settings-panel", false, false, true, {
+                let sender = sender.clone();
+                move |action| sender.input(VideoShellInput::Tv(action))
+            });
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
         main_overlay.add_overlay(&panel.revealer);
@@ -440,7 +444,7 @@ impl Component for VideoShell {
         let idle_bg = Rc::new(IdleBackground {
             video_bg: video_bg.clone(),
             gl_area: gl_area.clone(),
-            provider: RefCell::new(None),
+            background: CssSlot::new(&video_bg, gtk::STYLE_PROVIDER_PRIORITY_USER + 2),
             blurred_path: RefCell::new(None),
             is_shown: Cell::new(false),
             tv_source: RefCell::new(None),
@@ -455,8 +459,8 @@ impl Component for VideoShell {
         // `FileLoaded` so the video surface becomes visible again. Kick off the
         // wallpaper detection + blur so the static gradient is replaced by the
         // blurred desktop wallpaper once it is cached.
-        if !opening_files && let Some(display) = gtk::gdk::Display::default() {
-            idle_bg.show(&display);
+        if !opening_files {
+            idle_bg.show();
         }
         super::idle_wallpaper::spawn_apply(idle_bg.clone());
 
@@ -469,7 +473,7 @@ impl Component for VideoShell {
             custom_mpv_options.push_str("gpu-dumb-mode=yes");
         }
         let audio_output = settings.get_string(keys::AUDIO_OUTPUT).clone();
-        let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+        let initial_volume = settings.video_volume_percent();
 
         let fast_render_context_slot: FastRenderContextSlot = Rc::new(RefCell::new(None));
         let video_backend: Rc<RefCell<Option<VideoBackend>>> = Rc::new(RefCell::new(None));
@@ -491,42 +495,25 @@ impl Component for VideoShell {
                 custom_mpv_options,
                 audio_output,
                 initial_volume,
-                volume_max: i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)),
+                volume_max: i64::from(settings.volume_max_percent()),
                 render_mode: settings.get_string(keys::RENDER_MODE).clone(),
                 settings: settings.clone(),
                 notice: notice.clone(),
             },
         );
 
-        // Publish the shell input so the application `open` handler can deliver
-        // files opened from the desktop / CLI.
-        // Unrealize clears it so a closed player gets nothing; a remount
-        // realizes the content again and must register it again.
-        let shell_input_token = Rc::new(Cell::new(Some(set_shell_input(
+        // Files opened from the desktop, the command line or a host reach this
+        // shell while its content is realized.
+        let shell_input = big_media_runtime::app::ShellInputSlot::bind(
+            &SHELL_INPUT,
+            &root,
             sender.input_sender().clone(),
-        ))));
-        root.connect_realize({
-            let token = shell_input_token.clone();
-            let input = sender.input_sender().clone();
-            move |_| {
-                if token.get().is_none() {
-                    token.set(Some(set_shell_input(input.clone())));
-                }
-            }
-        });
-        root.connect_unrealize({
-            let token = shell_input_token.clone();
-            move |_| {
-                if let Some(token) = token.take() {
-                    clear_shell_input(token);
-                }
-            }
-        });
+        );
 
-        // Apply the saved OSD palette + layout CSS now into the shared
-        // display-wide provider slot, released when the last player closes;
-        // the Appearance dialog re-applies live through the same slot.
-        hold_theme(&root, &settings);
+        // The OSD palette + layout CSS has display-wide rules (`popover > contents`,
+        // `windowcontrols button`), so in a host it must leave with this player.
+        let theme = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        crate::video::ui::appearance::apply_appearance(&settings, &theme);
 
         // Window aspect-ratio snap: resize the window to the video's aspect on
         // load and on manual resize (debounced), so no letterbox bars remain.
@@ -584,10 +571,12 @@ impl Component for VideoShell {
                 files_sidebar_button: files_sidebar_toggle_button,
                 playlist_sidebar_button: playlist_sidebar_toggle_button,
                 sidebar_toggle_updating: toggles_updating,
+                header_buttons,
                 iptv,
                 main_overlay,
                 welcome_overlay: RefCell::new(Some(welcome)),
                 playlist_paths: Vec::new(),
+                stored_urls: super::stored_urls::StoredUrls::default(),
                 shuffle_on_load: None,
                 open_generation: 0,
                 adjustments: Vec::new(),
@@ -606,9 +595,14 @@ impl Component for VideoShell {
                 tv_here: None,
                 playlist_second: -1,
                 mpv,
+                engine_failure: None,
                 video_start,
                 duration_secs: 0.0,
                 settings,
+                volume_save: big_relm4_components::input::debounce::BigDebouncedAction::new(
+                    render::VOLUME_SAVE_DELAY,
+                ),
+                theme,
                 video_transform,
                 osd,
                 idle_bg,
@@ -616,12 +610,10 @@ impl Component for VideoShell {
                 notice,
                 screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
-                sleep_timer_source: None,
-                sleep_timer_remaining: 0,
-                sleep_timer_action: String::new(),
-                sleep_timer_volume: 100.0,
+                sleep_timer: big_media_runtime::sleep_timer::SleepTimer::default(),
                 aspect_snap,
-                shell_input_token,
+                subtitle_lift,
+                _shell_input: shell_input,
                 trim,
                 trim_play_selection: Rc::new(Cell::new(false)),
                 trim_ranges: Rc::new(RefCell::new(Vec::new())),
@@ -630,6 +622,7 @@ impl Component for VideoShell {
                 mpris_state,
                 mpris_track_seq: 0,
                 playing: false,
+                ended: false,
                 screen_inhibit: None,
             },
             widgets: (),
@@ -656,6 +649,10 @@ impl Component for VideoShell {
                     // playlist), so MPRIS sees the final position.
                     self.on_player_event(event.clone(), window_ref);
                     self.mirror_mpris(&event);
+                }
+                VideoShellInput::EngineFailed(message) => {
+                    self.notify(&message);
+                    self.engine_failure = Some(message);
                 }
                 VideoShellInput::Mpris(command) => {
                     self.handle_mpris_command(command, &sender, gtk_window_ref);
@@ -731,6 +728,11 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::PreferencesClosed => self.sync_screen_inhibit(window_ref),
+                VideoShellInput::VolumeMaxChanged => {
+                    let maximum = f64::from(self.settings.volume_max_percent());
+                    self.controls
+                        .emit(VideoControlsBarInput::SetMaxVolume(maximum));
+                }
                 VideoShellInput::ShowAppearance => {
                     if let Some(root) = window_ref {
                         self.show_appearance(root);
@@ -741,33 +743,33 @@ impl Component for VideoShell {
                         Self::show_restore_defaults_dialog(root, || {});
                     }
                 }
-                // A restart picks up the new values: mpv is configured at startup.
-                VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
+                VideoShellInput::RestoreDefaultsConfirmed => self.restore_defaults(window_ref),
                 VideoShellInput::OpenFiles(paths) => self.open_files(&paths, &sender),
-                VideoShellInput::PlaylistResolved {
-                    entries,
-                    start,
-                    folder,
-                    generation,
-                } => {
+                VideoShellInput::PlaylistResolved { list, generation } => {
                     if generation == self.open_generation {
-                        self.apply_open(entries, start, folder);
+                        self.apply_open(list);
                     }
                 }
                 VideoShellInput::ShowGotoTime => {
                     if let Some(root) = window_ref {
-                        Self::show_goto_time_dialog(root);
+                        self.show_goto_time_dialog(root);
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
-                VideoShellInput::ScreenshotQueueFailed => self.notify(&i18n("Screenshot failed")),
+                VideoShellInput::ScreenshotFailed(message) => self.notify(&message),
                 VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
                 VideoShellInput::SleepTimerStart { minutes, action } => {
-                    self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);
+                    let input = sender.input_sender().clone();
+                    let mpv = self.mpv.borrow().clone();
+                    self.sleep_timer
+                        .start(minutes, action, mpv.as_deref(), move || {
+                            let _ = input.send(VideoShellInput::SleepTick);
+                        });
                     self.refresh_adjustments(&sender);
                 }
                 VideoShellInput::SleepTimerCancel => {
-                    self.cancel_sleep_timer();
+                    let mpv = self.mpv.borrow().clone();
+                    self.sleep_timer.cancel(mpv.as_deref());
                     self.refresh_adjustments(&sender);
                     self.refresh_panel_home(&sender);
                 }
@@ -793,13 +795,17 @@ impl Component for VideoShell {
                 VideoShellInput::RestoreAdjustments(adjustments) => {
                     self.restore_adjustments(&adjustments, &sender);
                 }
-                VideoShellInput::SleepTick => self.sleep_tick(),
+                VideoShellInput::SleepTick => {
+                    let mpv = self.mpv.borrow().clone();
+                    if let Some(notice) = self.sleep_timer.tick(mpv.as_deref()) {
+                        self.notify(&notice);
+                    }
+                }
                 VideoShellInput::TogglePlayback => {
-                    if let Some(state) = self.tv.attached() {
-                        self.tv
-                            .control(if state.paused { "play" } else { "pause" }, 0.0);
+                    if self.tv.attached().is_some() {
+                        self.tv.toggle_pause();
                     } else if let Some(mpv) = self.mpv.borrow().as_ref() {
-                        mpv.toggle_pause();
+                        super::playback::toggle_play(mpv, &self.settings);
                     }
                 }
                 VideoShellInput::TvChanged => self.on_tv_changed(),
@@ -848,30 +854,19 @@ impl Component for VideoShell {
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
             }
-            if let Some(mpris) = &self.mpris {
-                mpris.sync();
-            }
+            self.mpris.sync();
         });
     }
 }
 
 impl Drop for VideoShell {
-    /// Remove the armed sleep-timer countdown source so it does not outlive the
-    /// shell (no leaked `glib::timeout`) and clear the global input broker.
-    ///
     /// Do not force-drop the live mpv backend here: GTK widgets still own
     /// render-context callbacks during unrealize/finalize, and those callbacks
     /// must release their mpv render context before the shared mpv handle is
     /// destroyed.
     fn drop(&mut self) {
-        if let Some(token) = self.shell_input_token.take() {
-            clear_shell_input(token);
-        }
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
-        if let Some(source) = self.sleep_timer_source.take() {
-            big_gtk_kit::source::remove(source);
-        }
         if let Some(cookie) = self.screen_inhibit.take()
             && let Some(app) = gtk::gio::Application::default().and_downcast::<gtk::Application>()
         {

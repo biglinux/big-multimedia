@@ -2,8 +2,8 @@
 
 //! Atomic file persistence primitives for BigLinux apps.
 //!
-//! [`atomic_write`](crate::storage::atomic_write) and
-//! [`atomic_write_private`](crate::storage::atomic_write_private) write through a
+//! [`atomic_write`] and
+//! [`atomic_write_private`] write through a
 //! `.big-state.tmp.<pid>.<seq>` sibling file and then rename into place.
 //! `rename(2)` is atomic on the same filesystem; partial writes from a crash
 //! are bound to the temp file and visible only after a successful rename.
@@ -21,15 +21,27 @@ use std::io::Write;
 mod transaction;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
+pub use transaction::{
+    CommitOutcome, StagedFile, WriteLock, open_regular_read, read_regular_limited,
+    remove_stale_staging, rename_no_replace, staging_prefix, sync_parent,
+};
 
 static TEMP_SEQ: AtomicU64 = AtomicU64::new(0);
+const ATOMIC_TEMP_PREFIX: &str = ".big-state.tmp.";
+
+/// Whether `name` is a write in progress of this module, which a media
+/// scanner must not import.
+pub fn is_staging_name(name: &std::ffi::OsStr) -> bool {
+    let name = name.as_encoded_bytes();
+    name.starts_with(transaction::STAGING_PREFIX.as_bytes())
+        || name.starts_with(ATOMIC_TEMP_PREFIX.as_bytes())
+}
 
 fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
     let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
     let pid = std::process::id();
     let parent = target.parent().unwrap_or_else(|| Path::new("."));
-    parent.join(format!(".big-state.tmp.{pid}.{seq}"))
+    parent.join(format!("{ATOMIC_TEMP_PREFIX}{pid}.{seq}"))
 }
 
 /// Atomically write `bytes` to `path`: write a uniquely-named sibling temp file,
@@ -72,17 +84,9 @@ fn create_sibling_file(path: &Path, private: bool) -> std::io::Result<fs::File> 
     let mut options = fs::OpenOptions::new();
     // O_EXCL: never truncate or follow an existing (including dangling) symlink.
     options.write(true).create_new(true);
-    #[cfg(unix)]
     if private {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
-    }
-    #[cfg(not(unix))]
-    if private {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "private atomic files are not implemented on this platform",
-        ));
     }
     options.open(path)
 }
@@ -127,6 +131,17 @@ pub fn atomic_write_private_synced(path: &Path, bytes: &[u8]) -> std::io::Result
     atomic_replace(path, true, true, |file| file.write_all(bytes))
 }
 
+/// When `path` was last modified, in whole seconds since the Unix epoch;
+/// `None` when it cannot be read or predates the epoch.
+#[must_use]
+pub fn modified_secs(path: impl AsRef<Path>) -> Option<u64> {
+    let modified = fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .ok()?;
+    let since_epoch = modified.duration_since(std::time::UNIX_EPOCH).ok()?;
+    Some(since_epoch.as_secs())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -137,6 +152,33 @@ mod tests {
         let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
         p.push(format!("big-os-kit-storage-test-{pid}-{seq}-{name}.json"));
         p
+    }
+
+    #[test]
+    fn staging_names_recognized() {
+        for (name, staging) in [
+            (".big-media-1-2.tmp", true),
+            (".big-state.tmp.7", true),
+            ("song.mp3", false),
+            (".big-other", false),
+        ] {
+            assert_eq!(
+                is_staging_name(std::ffi::OsStr::new(name)),
+                staging,
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn modified_secs_reads_whole_seconds() {
+        let path = storage_test_path("modified-secs");
+        let file = fs::File::create(&path).unwrap();
+        let stamp = std::time::UNIX_EPOCH + std::time::Duration::from_millis(1_700_000_000_900);
+        file.set_modified(stamp).unwrap();
+        assert_eq!(modified_secs(&path), Some(1_700_000_000));
+        let _ = fs::remove_file(&path);
+        assert_eq!(modified_secs(&path), None);
     }
 
     #[test]

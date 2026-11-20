@@ -7,7 +7,7 @@ mod grid_view;
 mod list_view;
 mod model;
 mod queue_view;
-mod shared;
+mod rows;
 
 pub(super) use grid_view::build_grid_view;
 pub(super) use list_view::build_list_view;

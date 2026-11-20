@@ -12,16 +12,19 @@ impl MpvBackend {
     /// Profiles: `"default"` (lean/fast: bilinear, audio sync),
     /// `"balanced"` (lanczos, correct-downscaling),
     /// `"high-quality"` (ewa_lanczossharp, display-resample, interpolation).
+    /// The ids [`Self::apply_render_profile`] knows, lightest first.
+    pub const RENDER_PROFILES: [&str; 3] = big_mpv_render::RENDER_PROFILE_IDS;
+
     pub fn apply_render_profile(&self, profile: &str) {
         info!("Applying render profile: {profile}");
         self.with_mpv(|m| {
             for property in render_profile_properties(profile) {
                 match property.value {
                     MpvPropertyValue::Text(value) => {
-                        let _ = m.set_property(property.name, value.to_string());
+                        m.set_property_logged(property.name, value.to_string());
                     }
                     MpvPropertyValue::Bool(value) => {
-                        let _ = m.set_property(property.name, value);
+                        m.set_property_logged(property.name, value);
                     }
                 }
             }
@@ -46,7 +49,7 @@ impl MpvBackend {
             } else {
                 mode.to_string()
             };
-            let _ = m.set_property("hwdec", effective);
+            m.set_property_logged("hwdec", effective);
         });
     }
 
@@ -65,44 +68,60 @@ impl MpvBackend {
 
     pub fn set_ytdl_format(&self, format: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("ytdl-format", format.to_string());
+            m.set_property_logged("ytdl-format", format.to_string());
         });
+    }
+
+    pub fn sharpen(&self) -> f64 {
+        self.get_property_f64("sharpen")
     }
 
     pub fn set_sharpen(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sharpen", val);
+            m.set_property_logged("sharpen", val);
         });
+    }
+
+    pub fn deband(&self) -> bool {
+        self.get_property_bool("deband")
     }
 
     pub fn set_deband(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("deband", if enable { "yes" } else { "no" });
+            m.set_property_logged("deband", if enable { "yes" } else { "no" });
         });
+    }
+
+    pub fn sigmoid_upscaling(&self) -> bool {
+        self.get_property_bool("sigmoid-upscaling")
     }
 
     pub fn set_sigmoid_upscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sigmoid-upscaling", if enable { "yes" } else { "no" });
+            m.set_property_logged("sigmoid-upscaling", if enable { "yes" } else { "no" });
         });
+    }
+
+    pub fn correct_downscaling(&self) -> bool {
+        self.get_property_bool("correct-downscaling")
     }
 
     pub fn set_correct_downscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("correct-downscaling", if enable { "yes" } else { "no" });
+            m.set_property_logged("correct-downscaling", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_icc_profile(&self, path: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("icc-profile", path.to_string());
+            m.set_property_logged("icc-profile", path.to_string());
         });
     }
 
     pub fn set_icc_intent(&self, intent: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("icc-3dlut-size", "64x64x64".to_string());
-            let _ = m.set_property("icc-intent", intent);
+            m.set_property_logged("icc-3dlut-size", "64x64x64".to_string());
+            m.set_property_logged("icc-intent", intent);
         });
     }
 
@@ -120,11 +139,15 @@ impl MpvBackend {
         advanced_control: bool,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
         // SAFETY: the caller has the creation GL context current.
-        let (vendor, renderer) = unsafe { super::fast_render::current_gl_driver() };
-        let interop = hwdec_interop_for(&vendor, &renderer);
-        info!("video: GL {vendor} / {renderer}, hwdec interop {interop}");
+        let driver = unsafe { super::fast_render::current_gl_driver() };
+        let interop = hwdec_interop_for(&driver.vendor, &driver.renderer);
+        // One line per render context: the driver a bug report needs.
+        info!(
+            "video: GL {} / {}, hwdec interop {interop}",
+            driver.vendor, driver.renderer
+        );
         self.with_mpv(|m| {
-            let _ = m.set_property("gpu-hwdec-interop", interop.to_string());
+            m.set_property_logged("gpu-hwdec-interop", interop.to_string());
         });
         if interop == "no" {
             self.software_gl.store(true, Ordering::Relaxed);

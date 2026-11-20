@@ -1,7 +1,7 @@
 use super::metadata::build_metadata;
 use super::types::{
-    CommandCallback, MprisCommand as C, PlaybackStatus, PlayerState, StateCallback, micros, rate,
-    volume,
+    CommandCallback, LoopStatus, MprisCommand as C, PlaybackStatus, PlayerState, StateCallback,
+    micros, rate, volume,
 };
 use glib::Variant;
 use glib::variant::{ObjectPath, ToVariant};
@@ -36,14 +36,7 @@ pub(super) fn player_property(prop: &str, s: &PlayerState) -> Option<Variant> {
         "CanSeek" => Some(s.can_seek.to_variant()),
         "CanGoNext" => Some(s.can_next.to_variant()),
         "CanGoPrevious" => Some(s.can_prev.to_variant()),
-        "LoopStatus" => Some(
-            (match s.loop_status.as_str() {
-                "Track" => "Track",
-                "Playlist" => "Playlist",
-                _ => "None",
-            })
-            .to_variant(),
-        ),
+        "LoopStatus" => Some(s.loop_status.as_str().to_variant()),
         "Shuffle" => Some(s.shuffle.to_variant()),
         _ => None,
     }
@@ -142,7 +135,12 @@ fn method_command(
         "OpenUri" => {
             let (uri,) = params.get::<(String,)>().ok_or("InvalidArgs")?;
             let scheme = big_os_kit::url::uri_scheme(&uri).ok_or("InvalidArgs")?;
-            if ["file", "http", "https"]
+            if scheme.eq_ignore_ascii_case("file") {
+                let path = big_os_kit::url::file_uri_path(&uri)
+                    .and_then(|path| path.into_os_string().into_string().ok())
+                    .ok_or("InvalidArgs")?;
+                Ok(Some(C::OpenUri(path)))
+            } else if ["http", "https"]
                 .iter()
                 .any(|s| scheme.eq_ignore_ascii_case(s))
             {
@@ -196,7 +194,7 @@ pub(super) fn set_player_property(
         }),
         "LoopStatus" => value
             .get::<String>()
-            .filter(|s| matches!(s.as_str(), "None" | "Track" | "Playlist"))
+            .and_then(|s| LoopStatus::from_bus(&s))
             .map(C::SetLoopStatus),
         "Shuffle" => value.get::<bool>().map(C::SetShuffle),
         _ => None,
@@ -211,6 +209,15 @@ pub(super) fn set_player_property(
 #[cfg(test)]
 mod tests {
     use super::*;
+    /// Oracle: MPRIS positions are non-negative microseconds in an i64.
+    #[test]
+    fn seconds_become_whole_microseconds() {
+        assert_eq!(micros(1.5), 1_500_000);
+        assert_eq!(micros(0.000_000_6), 1);
+        assert_eq!(micros(-3.0), 0);
+        assert_eq!(micros(f64::NAN), 0);
+        assert_eq!(micros(f64::MAX), i64::MAX);
+    }
     #[test]
     fn stale_set_position_is_ignored() {
         let state = PlayerState {
@@ -228,7 +235,126 @@ mod tests {
             method_command("SetPosition", &args("/br/com/biglinux/Track/2"), &state),
             Ok(Some(C::SetPosition { position_us: 2, .. }))
         ));
+        let past_end = (
+            ObjectPath::try_from("/br/com/biglinux/Track/2").unwrap(),
+            10_000_001_i64,
+        );
+        assert_eq!(
+            method_command("SetPosition", &past_end.to_variant(), &state),
+            Ok(None)
+        );
     }
+    /// Oracle: the MPRIS spec. A negative volume means 0.0, a rate of 0.0 means
+    /// Pause, and a rate outside MinimumRate..MaximumRate (0.25..4.0) is refused.
+    #[test]
+    fn volume_and_rate_writes_are_bounded() {
+        let cases = [
+            ("Volume", f64::NAN, true, None),
+            ("Volume", f64::INFINITY, true, None),
+            ("Volume", f64::NEG_INFINITY, true, None),
+            ("Volume", -0.5, true, Some(C::SetVolume(0.0))),
+            ("Volume", 0.5, true, Some(C::SetVolume(0.5))),
+            ("Rate", f64::NAN, true, None),
+            ("Rate", f64::INFINITY, true, None),
+            ("Rate", 0.1, true, None),
+            ("Rate", 4.5, true, None),
+            ("Rate", -1.0, true, None),
+            ("Rate", 0.25, true, Some(C::SetRate(0.25))),
+            ("Rate", 4.0, true, Some(C::SetRate(4.0))),
+            ("Rate", 0.0, true, Some(C::Pause)),
+            ("Rate", 0.0, false, None),
+        ];
+        for (property, value, can_pause, expected) in cases {
+            let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let sink = std::sync::Arc::clone(&sent);
+            let command: CommandCallback = Box::new(move |request| {
+                sink.lock().unwrap().push(request);
+            });
+            let state: StateCallback = Box::new(move || PlayerState {
+                can_pause,
+                ..Default::default()
+            });
+            let accepted = set_player_property(property, &value.to_variant(), &command, &state);
+            assert_eq!(
+                *sent.lock().unwrap(),
+                Vec::from_iter(expected.clone()),
+                "{property} {value}"
+            );
+            assert_eq!(accepted, expected.is_some(), "{property} {value}");
+        }
+        let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = std::sync::Arc::clone(&sent);
+        let command: CommandCallback = Box::new(move |request| sink.lock().unwrap().push(request));
+        let state: StateCallback = Box::new(PlayerState::default);
+        assert!(set_player_property(
+            "Shuffle",
+            &true.to_variant(),
+            &command,
+            &state
+        ));
+        assert_eq!(*sent.lock().unwrap(), [C::SetShuffle(true)]);
+    }
+
+    /// Oracle: the MPRIS spec's three LoopStatus values, case-sensitive.
+    #[test]
+    fn loop_status_writes_take_only_mpris_values() {
+        let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = std::sync::Arc::clone(&sent);
+        let command: CommandCallback = Box::new(move |request| {
+            sink.lock().unwrap().push(request);
+        });
+        let state: StateCallback = Box::new(PlayerState::default);
+        for value in ["None", "Track", "Playlist", "track", ""] {
+            set_player_property("LoopStatus", &value.to_variant(), &command, &state);
+        }
+        assert_eq!(
+            *sent.lock().unwrap(),
+            [
+                C::SetLoopStatus(LoopStatus::None),
+                C::SetLoopStatus(LoopStatus::Track),
+                C::SetLoopStatus(LoopStatus::Playlist),
+            ]
+        );
+        for status in [LoopStatus::None, LoopStatus::Track, LoopStatus::Playlist] {
+            let shown = PlayerState {
+                loop_status: status,
+                ..Default::default()
+            };
+            assert_eq!(
+                player_property("LoopStatus", &shown)
+                    .unwrap()
+                    .get::<String>(),
+                Some(status.as_str().to_owned())
+            );
+        }
+    }
+
+    #[test]
+    fn open_uri_resolves_local_files() {
+        let state = PlayerState::default();
+        let open = |uri: &str| method_command("OpenUri", &(uri,).to_variant(), &state);
+        for (uri, expected) in [
+            (
+                "file:///home/u/a%20b.mp3",
+                Ok(Some(C::OpenUri("/home/u/a b.mp3".into()))),
+            ),
+            (
+                "file://localhost/x.mp3",
+                Ok(Some(C::OpenUri("/x.mp3".into()))),
+            ),
+            ("file://server/x.mp3", Err("InvalidArgs")),
+            ("file:///x%FF.mp3", Err("InvalidArgs")),
+            (
+                "https://e.example/a.mp3",
+                Ok(Some(C::OpenUri("https://e.example/a.mp3".into()))),
+            ),
+            ("smb://server/x.mp3", Err("NotSupported")),
+            ("", Err("InvalidArgs")),
+        ] {
+            assert_eq!(open(uri), expected, "{uri}");
+        }
+    }
+
     #[test]
     fn unknown_method_is_an_error() {
         let state = PlayerState::default();
@@ -253,5 +379,130 @@ mod tests {
         );
         assert!(!CHANGING.contains(&"Position"));
         assert!(!CHANGING.contains(&"CanControl"));
+    }
+
+    /// Oracle: the MPRIS Player interface. A method the state cannot honor is
+    /// accepted and ignored; arguments on an argument-less method are refused.
+    #[test]
+    fn methods_follow_capabilities() {
+        let able = PlayerState {
+            can_play: true,
+            can_pause: true,
+            can_next: true,
+            can_prev: true,
+            ..Default::default()
+        };
+        let playing = PlayerState {
+            status: PlaybackStatus::Playing,
+            ..able.clone()
+        };
+        let unable = PlayerState::default();
+        let none = ().to_variant();
+        for (method, state, expected) in [
+            ("Play", &able, Some(C::Play)),
+            ("Play", &unable, None),
+            ("Pause", &able, Some(C::Pause)),
+            ("Pause", &unable, None),
+            ("PlayPause", &able, Some(C::Play)),
+            ("PlayPause", &playing, Some(C::Pause)),
+            ("Stop", &unable, Some(C::Stop)),
+            ("Next", &able, Some(C::Next)),
+            ("Next", &unable, None),
+            ("Previous", &able, Some(C::Previous)),
+            ("Previous", &unable, None),
+        ] {
+            assert_eq!(
+                method_command(method, &none, state),
+                Ok(expected),
+                "{method}"
+            );
+        }
+        assert_eq!(
+            method_command("Play", &(1_i64,).to_variant(), &able),
+            Err("InvalidArgs")
+        );
+        let seekable = PlayerState {
+            track_id: Some("/br/com/biglinux/Track/2".into()),
+            can_seek: true,
+            ..Default::default()
+        };
+        assert!(matches!(
+            method_command("Seek", &(5_i64,).to_variant(), &seekable),
+            Ok(Some(C::Seek { offset_us: 5, .. }))
+        ));
+        assert_eq!(
+            method_command("Seek", &(5_i64,).to_variant(), &unable),
+            Ok(None)
+        );
+    }
+
+    /// Oracle: the MPRIS spec's property names, value types and units.
+    #[test]
+    fn properties_report_state() {
+        let state = PlayerState {
+            status: PlaybackStatus::Paused,
+            volume_pct: 50.0,
+            rate: 8.0,
+            can_seek: true,
+            loop_status: LoopStatus::Playlist,
+            shuffle: true,
+            ..Default::default()
+        };
+        let read = |prop: &str| player_property(prop, &state).unwrap();
+        assert_eq!(read("PlaybackStatus").get::<String>().unwrap(), "Paused");
+        assert_eq!(read("LoopStatus").get::<String>().unwrap(), "Playlist");
+        assert_eq!(read("Volume").get::<f64>(), Some(0.5));
+        assert_eq!(read("Rate").get::<f64>(), Some(4.0));
+        assert_eq!(read("MinimumRate").get::<f64>(), Some(0.25));
+        assert_eq!(read("MaximumRate").get::<f64>(), Some(4.0));
+        assert_eq!(read("Shuffle").get::<bool>(), Some(true));
+        assert_eq!(read("CanSeek").get::<bool>(), Some(true));
+        assert_eq!(read("CanControl").get::<bool>(), Some(true));
+        for prop in [
+            "Metadata",
+            "CanPlay",
+            "CanPause",
+            "CanGoNext",
+            "CanGoPrevious",
+        ] {
+            assert!(player_property(prop, &state).is_some(), "{prop}");
+        }
+        let stopped = player_property("PlaybackStatus", &PlayerState::default()).unwrap();
+        assert_eq!(stopped.get::<String>().unwrap(), "Stopped");
+        let unset = PlayerState::default();
+        assert_eq!(
+            player_property("Rate", &unset).unwrap().get::<f64>(),
+            Some(1.0)
+        );
+        assert_eq!(player_property("Nope", &state), None);
+    }
+
+    #[test]
+    fn root_properties_name_the_player() {
+        let read = |prop: &str, desktop: &str| get_root_property(prop, desktop).unwrap();
+        let identity = |desktop: &str| read("Identity", desktop).get::<String>().unwrap();
+        assert_eq!(
+            identity("br.com.biglinux.BigAudioPlayer"),
+            "Big Audio Player"
+        );
+        assert_eq!(
+            identity("br.com.biglinux.BigVideoPlayer"),
+            "Big Video Player"
+        );
+        let types = |desktop: &str| {
+            read("SupportedMimeTypes", desktop)
+                .get::<Vec<String>>()
+                .unwrap()
+        };
+        assert!(types("br.com.biglinux.BigVideoPlayer").contains(&"video/webm".to_owned()));
+        assert!(types("br.com.biglinux.BigAudioPlayer").contains(&"audio/flac".to_owned()));
+        assert_eq!(read("DesktopEntry", "x").get::<String>().unwrap(), "x");
+        assert_eq!(read("CanRaise", "x").get::<bool>(), Some(true));
+        assert_eq!(read("Fullscreen", "x").get::<bool>(), Some(false));
+        let schemes = read("SupportedUriSchemes", "x")
+            .get::<Vec<String>>()
+            .unwrap();
+        assert!(schemes.contains(&"https".to_owned()));
+        assert_eq!(get_root_property("Nope", "x"), None);
     }
 }

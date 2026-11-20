@@ -1,5 +1,7 @@
 use super::*;
 use big_media_components::surface::BigMediaImmersionController;
+use big_relm4_components::task::spawn_blocking_result;
+use big_relm4_components::theme::CssSlot;
 
 use std::path::{Path, PathBuf};
 
@@ -126,6 +128,109 @@ fn should_keep_osd_visible(welcome: bool, paused: bool, trim: bool) -> bool {
     welcome || paused || trim
 }
 
+/// mpv scales the subtitle margin to the shown video's height: one unit is
+/// 1/720 of it.
+const SUBTITLE_MARGIN_UNITS: f64 = 720.0;
+
+/// The controls bar's height without the gradient look's fade above it.
+pub(super) fn controls_bar_height(controls_revealer: &gtk::Revealer, settings: &Settings) -> i32 {
+    let natural = controls_revealer
+        .child()
+        .map_or(0, |child| child.measure(gtk::Orientation::Vertical, -1).1);
+    let fade = if settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
+        crate::video::ui::appearance::GRADIENT_FADE_PX
+    } else {
+        0
+    };
+    natural - fade
+}
+
+/// Keeps text subtitles above the controls bar while it shows, on top of the
+/// person's own distance from the bottom.
+pub(super) struct SubtitleLift {
+    overlay: glib::WeakRef<gtk::Overlay>,
+    controls_revealer: glib::WeakRef<gtk::Revealer>,
+    mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    settings: Settings,
+}
+
+impl SubtitleLift {
+    /// Follow the controls showing and hiding and the video area's size.
+    pub(super) fn wire(
+        main_overlay: &gtk::Overlay,
+        controls_revealer: &gtk::Revealer,
+        mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
+        settings: &Settings,
+    ) -> Rc<Self> {
+        let lift = Rc::new(Self {
+            overlay: main_overlay.downgrade(),
+            controls_revealer: controls_revealer.downgrade(),
+            mpv: mpv.clone(),
+            settings: settings.clone(),
+        });
+        controls_revealer.connect_reveal_child_notify({
+            let lift = Rc::downgrade(&lift);
+            move |_| {
+                if let Some(lift) = lift.upgrade() {
+                    lift.apply();
+                }
+            }
+        });
+        // An overlay has no resize signal; this empty area fills it and has one.
+        let probe = gtk::DrawingArea::builder()
+            .can_target(false)
+            .hexpand(true)
+            .vexpand(true)
+            .accessible_role(gtk::AccessibleRole::Presentation)
+            .build();
+        probe.connect_resize({
+            let lift = Rc::downgrade(&lift);
+            move |_, _, _| {
+                if let Some(lift) = lift.upgrade() {
+                    lift.apply();
+                }
+            }
+        });
+        main_overlay.add_overlay(&probe);
+        lift
+    }
+
+    pub(super) fn apply(&self) {
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        let (Some(overlay), Some(controls_revealer)) =
+            (self.overlay.upgrade(), self.controls_revealer.upgrade())
+        else {
+            return;
+        };
+        let lift = if controls_revealer.reveals_child() {
+            subtitle_lift(
+                controls_bar_height(&controls_revealer, &self.settings),
+                overlay.width(),
+                overlay.height(),
+                mpv.get_video_dimensions(),
+            )
+        } else {
+            0
+        };
+        mpv.set_sub_margin_lift(lift);
+    }
+}
+
+/// The subtitle margin, in mpv's units, that clears `controls` pixels at the
+/// bottom of a `width` × `height` area showing a `video` (width, height)
+/// letterboxed in it; without known video dimensions it fills the area.
+fn subtitle_lift(controls: i32, width: i32, height: i32, video: Option<(i64, i64)>) -> i64 {
+    if controls <= 0 || width <= 0 || height <= 0 {
+        return 0;
+    }
+    let shown_height = video.map_or(f64::from(height), |(video_width, video_height)| {
+        f64::from(height).min(f64::from(width) * video_height as f64 / video_width as f64)
+    });
+    (f64::from(controls) * SUBTITLE_MARGIN_UNITS / shown_height).ceil() as i64
+}
+
 /// Static idle background behind the welcome screen (no video loaded). The gl
 /// surface is hidden (opacity 0) so the `.idle-bg` box shows through. The base
 /// `.idle-bg` gradient (style.css) is the immediate look; once the desktop
@@ -137,9 +242,9 @@ pub(super) struct IdleBackground {
     pub(super) video_bg: gtk::Box,
     /// The visible video surface (GLArea), hidden while idle.
     pub(super) gl_area: gtk::GLArea,
-    /// User-priority provider holding the blurred-wallpaper CSS; `None` = the
-    /// base `.idle-bg` gradient fallback.
-    pub(super) provider: RefCell<Option<gtk::CssProvider>>,
+    /// User-priority blurred-wallpaper CSS; empty leaves the base `.idle-bg`
+    /// gradient.
+    pub(super) background: CssSlot,
     /// Cached blurred-wallpaper path; `None` until detection succeeds (or never,
     /// if no desktop wallpaper resolves).
     pub(super) blurred_path: RefCell<Option<PathBuf>>,
@@ -156,17 +261,17 @@ impl IdleBackground {
     /// Show the idle background: hide the gl surface, add the `.idle-bg` class,
     /// and apply the current background (blurred wallpaper if known, else the
     /// base gradient).
-    pub(super) fn show(&self, display: &gtk::gdk::Display) {
+    pub(super) fn show(&self) {
         self.is_shown.set(true);
-        self.refresh(display);
+        self.refresh();
     }
 
     /// Hide the idle background: restore the gl surface opacity, drop the class,
-    /// and remove the wallpaper provider. Without the gl opacity restore, video
+    /// and clear the wallpaper CSS. Without the gl opacity restore, video
     /// stays invisible.
-    pub(super) fn hide(&self, display: &gtk::gdk::Display) {
+    pub(super) fn hide(&self) {
         self.is_shown.set(false);
-        self.refresh(display);
+        self.refresh();
     }
 
     /// While only the TV plays `source`: cover the frozen frame with that
@@ -178,102 +283,63 @@ impl IdleBackground {
         }
         self.tv_picture.take();
         self.tv_source.replace(source.clone());
-        if let Some(display) = gtk::gdk::Display::default() {
-            self.refresh(&display);
-        }
+        self.refresh();
         let Some(source) = source.filter(|source| !super::playback::is_remote_uri(source)) else {
             return;
         };
         // An ffmpeg run: off the main loop.
-        let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
         let wanted = source.clone();
-        let spawned = std::thread::Builder::new()
-            .name("tv-background".into())
-            .spawn(move || {
-                if let Some(picture) = super::idle_wallpaper::tv_backdrop(&wanted, seconds) {
-                    let _ = sender.send_blocking(picture);
-                }
-            });
-        if spawned.is_err() {
-            return;
-        }
         let this = Rc::downgrade(self);
-        glib::spawn_future_local(async move {
-            let (Ok(picture), Some(this)) = (receiver.recv().await, this.upgrade()) else {
-                return;
-            };
-            if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
-                this.tv_picture.replace(Some(picture));
-                if let Some(display) = gtk::gdk::Display::default() {
-                    this.refresh(&display);
+        spawn_blocking_result(
+            move || super::idle_wallpaper::tv_backdrop(&wanted, seconds),
+            move |picture| {
+                let (Some(picture), Some(this)) = (picture, this.upgrade()) else {
+                    return;
+                };
+                if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
+                    this.tv_picture.replace(Some(picture));
+                    this.refresh();
                 }
-            }
-        });
+            },
+        );
     }
 
     /// Cover the surface while the welcome screen is up or only the TV plays;
     /// otherwise restore it. Without the gl opacity restore, video stays
     /// invisible.
-    fn refresh(&self, display: &gtk::gdk::Display) {
+    fn refresh(&self) {
         let covered = self.is_shown.get() || self.tv_source.borrow().is_some();
         self.gl_area.set_opacity(if covered { 0.0 } else { 1.0 });
         if covered {
             self.video_bg.add_css_class("idle-bg");
-            self.apply_background(display);
+            self.apply_background();
         } else {
             self.video_bg.remove_css_class("idle-bg");
-            self.clear_provider(display);
+            self.background.set("");
         }
     }
 
     /// Record the detected blurred wallpaper and apply it if idle is shown now.
     /// Called from the wallpaper worker once the blurred image is cached.
-    pub(super) fn set_blurred_wallpaper(&self, path: &Path, display: &gtk::gdk::Display) {
+    pub(super) fn set_blurred_wallpaper(&self, path: &Path) {
         self.blurred_path.replace(Some(path.to_path_buf()));
         if self.is_shown.get() {
-            self.refresh(display);
+            self.refresh();
         }
     }
 
     /// (Re)apply the background: the TV's video picture while only the TV
-    /// plays, else the blurred wallpaper when known (static image provider),
+    /// plays, else the blurred wallpaper when known,
     /// else nothing, so the base `.idle-bg` gradient shows through.
-    fn apply_background(&self, display: &gtk::gdk::Display) {
-        self.clear_provider(display);
+    fn apply_background(&self) {
         let tv = self.tv_source.borrow().is_some();
         let path = if tv {
             self.tv_picture.borrow().clone()
         } else {
             self.blurred_path.borrow().clone()
         };
-        let Some(path) = path else {
-            return;
-        };
-        let provider = gtk::CssProvider::new();
-        provider.load_from_string(&idle_bg_image_css(&path, tv));
-        gtk::style_context_add_provider_for_display(
-            display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_USER + 2,
-        );
-        self.provider.replace(Some(provider));
-    }
-
-    /// Remove the wallpaper provider from `display` if one is installed.
-    fn clear_provider(&self, display: &gtk::gdk::Display) {
-        if let Some(provider) = self.provider.borrow_mut().take() {
-            gtk::style_context_remove_provider_for_display(display, &provider);
-        }
-    }
-}
-
-impl Drop for IdleBackground {
-    fn drop(&mut self) {
-        if let Some(provider) = self.provider.borrow_mut().take()
-            && let Some(display) = gtk::gdk::Display::default()
-        {
-            gtk::style_context_remove_provider_for_display(&display, &provider);
-        }
+        let css = path.map_or_else(String::new, |path| idle_bg_image_css(&path, tv));
+        self.background.set(&css);
     }
 }
 
@@ -426,7 +492,27 @@ fn aspect_snap_target(w: i32, h: i32, aspect: f64) -> Option<(i32, i32)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{aspect_snap_target, focus_out_should_hide, should_keep_osd_visible};
+    use super::{
+        aspect_snap_target, focus_out_should_hide, should_keep_osd_visible, subtitle_lift,
+    };
+
+    #[test]
+    fn subtitle_lift_scales_to_the_shown_video() {
+        // Video filling a 720 px tall area: one unit per pixel.
+        assert_eq!(subtitle_lift(100, 1280, 720, Some((1280, 720))), 100);
+        // The same 16:9 video letterboxed in a square area is 360 px tall.
+        assert_eq!(subtitle_lift(100, 640, 640, Some((1280, 720))), 200);
+        // A square video pillarboxed in a wide area keeps the full height.
+        assert_eq!(subtitle_lift(90, 1600, 900, Some((720, 720))), 72);
+        assert_eq!(subtitle_lift(101, 1280, 720, None), 101);
+    }
+
+    #[test]
+    fn no_subtitle_lift_without_controls_or_area() {
+        assert_eq!(subtitle_lift(0, 1280, 720, None), 0);
+        assert_eq!(subtitle_lift(-80, 1280, 720, None), 0);
+        assert_eq!(subtitle_lift(100, 0, 0, None), 0);
+    }
 
     #[test]
     fn focus_out_hides_only_when_unpinned() {

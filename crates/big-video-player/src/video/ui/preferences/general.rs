@@ -2,6 +2,8 @@
 //! lock, screenshots, and the reset-everything action.
 
 use adw::prelude::*;
+use big_app_kit::file_dialogs::FilePicker;
+use big_relm4_components::feedback::tooltip;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -9,6 +11,14 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
 
 use super::{add_combo_row, add_switch_row, live, live_str};
+
+/// The `loop-mode` setting's values, in the order every repeat menu lists them.
+pub(crate) const LOOP_MODE_VALUES: &[&str] = &["no", "file", "playlist"];
+
+/// Names of [`LOOP_MODE_VALUES`], in the same order.
+pub(crate) fn loop_mode_labels() -> [String; 3] {
+    [i18n("Off"), i18n("Current video"), i18n("Whole playlist")]
+}
 
 pub(super) fn page(
     settings: &Settings,
@@ -27,7 +37,7 @@ pub(super) fn page(
         &playback,
         &i18n("Resume Where You Left Off"),
         &i18n("Reopen files at the point where you stopped watching"),
-        "resume-playback",
+        keys::RESUME_PLAYBACK,
         settings,
         live(mpv, MpvBackend::set_save_position),
     );
@@ -35,13 +45,9 @@ pub(super) fn page(
         &playback,
         &i18n("Repeat"),
         "",
-        &[
-            &i18n("Off"),
-            &i18n("Current video"),
-            &i18n("Whole playlist"),
-        ],
-        &["no", "file", "playlist"],
-        keys::LOOP_MODE.0,
+        &loop_mode_labels().each_ref().map(String::as_str),
+        LOOP_MODE_VALUES,
+        keys::LOOP_MODE,
         settings,
         live_str(mpv, MpvBackend::set_loop_mode),
     );
@@ -63,7 +69,7 @@ pub(super) fn page(
             &i18n("Close the video"),
         ],
         &["yes", "always", "no"],
-        "keep-open",
+        keys::KEEP_OPEN,
         settings,
         live_str(mpv, MpvBackend::set_keep_open),
     );
@@ -78,7 +84,7 @@ pub(super) fn page(
             &i18n("Close after one playlist"),
         ],
         &["yes", "no", "once"],
-        keys::IDLE_MODE.0,
+        keys::IDLE_MODE,
         settings,
         move |value| {
             // Applied now only with a file loaded; otherwise at the next load
@@ -107,7 +113,7 @@ pub(super) fn page(
         &i18n("Stops the screen from dimming or locking"),
         &[&i18n("During playback"), &i18n("Always"), &i18n("Never")],
         &["yes", "always", "no"],
-        "stop-screensaver",
+        keys::STOP_SCREENSAVER,
         settings,
         // The video shell holds the inhibitor; it re-reads this on every
         // play, pause and end of file, and when the preferences close.
@@ -117,7 +123,7 @@ pub(super) fn page(
         &window,
         &i18n("Fit Window to Video"),
         &i18n("Keeps the window in the video's proportions, without black bars"),
-        keys::AUTO_WINDOW_RESIZE.0,
+        keys::AUTO_WINDOW_RESIZE,
         settings,
         // Read by the video shell's aspect snap, not by mpv.
         |_| {},
@@ -126,7 +132,7 @@ pub(super) fn page(
         &window,
         &i18n("Preview While Seeking"),
         &i18n("Show a thumbnail of the video when pointing at the progress bar"),
-        keys::SEEKBAR_THUMBNAIL.0,
+        keys::SEEKBAR_THUMBNAIL,
         settings,
         |_| {},
     );
@@ -157,26 +163,24 @@ fn screenshot_group(settings: &Settings) -> adw::PreferencesGroup {
     group
 }
 
-const SCREENSHOT_DIRECTORY: &str = "screenshot-directory";
-
 /// Folder row: shows where screenshots go and opens the folder chooser.
 fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
     let row = adw::ActionRow::builder()
         .title(i18n("Save To"))
         .subtitle_selectable(true)
         .build();
-    let choose = gtk::Button::builder()
-        .icon_name("folder-open-symbolic")
-        .tooltip_text(i18n("Choose Folder"))
-        .valign(gtk::Align::Center)
-        .build();
-    let reset = gtk::Button::builder()
-        .icon_name("edit-undo-symbolic")
-        .tooltip_text(i18n("Use the Pictures Folder"))
-        .valign(gtk::Align::Center)
-        .build();
-    choose.add_css_class("flat");
-    reset.add_css_class("flat");
+    let choose = tooltip::icon_button(
+        "folder-open-symbolic",
+        &i18n("Choose Folder"),
+        &["image-button", "flat"],
+    );
+    let reset = tooltip::icon_button(
+        "edit-undo-symbolic",
+        &i18n("Use the Pictures Folder"),
+        &["image-button", "flat"],
+    );
+    choose.set_valign(gtk::Align::Center);
+    reset.set_valign(gtk::Align::Center);
     row.add_suffix(&reset);
     row.add_suffix(&choose);
     row.set_activatable_widget(Some(&choose));
@@ -197,13 +201,13 @@ fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
             }
         }
     };
-    show(&settings.string(SCREENSHOT_DIRECTORY));
+    show(&settings.get_string(keys::SCREENSHOT_DIRECTORY));
 
     // Read by `take_screenshot` for each capture, so nothing to apply live.
     let save = {
         let settings = settings.clone();
         move |folder: &str| {
-            let _ = settings.set_string(SCREENSHOT_DIRECTORY, folder);
+            let _ = settings.put_string(keys::SCREENSHOT_DIRECTORY, folder);
             show(folder);
         }
     };
@@ -213,19 +217,12 @@ fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
         reset.connect_clicked(move |_| save(""));
     }
     choose.connect_clicked(move |button| {
-        let dialog = gtk::FileDialog::builder()
-            .title(i18n("Screenshot Folder"))
-            .modal(true)
-            .build();
         let parent = button.root().and_downcast::<gtk::Window>();
         let save = save.clone();
-        dialog.select_folder(
+        FilePicker::open_folder(i18n("Screenshot Folder")).select_folder_optional(
             parent.as_ref(),
-            gtk::gio::Cancellable::NONE,
-            move |result| {
-                if let Some(path) = result.ok().and_then(|folder| folder.path())
-                    && let Some(folder) = path.to_str()
-                {
+            move |path| {
+                if let Some(folder) = path.to_str() {
                     save(folder);
                 }
             },

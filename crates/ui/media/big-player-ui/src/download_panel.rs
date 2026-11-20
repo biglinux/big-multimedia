@@ -18,15 +18,25 @@ use big_media_components::bytes;
 use big_relm4_components::feedback::tooltip;
 use relm4::{Component, ComponentParts, ComponentSender};
 
-use crate::download::transfer::download_file;
+use crate::download::transfer::{ExistingDestination, download_file};
 use crate::download::{DownloadProgress, DownloadStatus, DownloadTask};
 use big_media_data::i18n::i18n;
 
 /// Messages accepted by [`DownloadQueuePanel`].
 #[derive(Debug)]
 pub enum DownloadQueueInput {
-    /// Start downloading `url` (display name `title`) to `dest`.
+    /// Start downloading `url` (display name `title`) to `dest`, replacing a
+    /// file there: the person confirmed it in a save dialog.
     Enqueue {
+        /// Source URL.
+        url: String,
+        /// Display title for the row.
+        title: String,
+        /// Destination file path.
+        dest: PathBuf,
+    },
+    /// Like `Enqueue`, but the download fails instead of replacing a file at `dest`.
+    EnqueueNoReplace {
         /// Source URL.
         url: String,
         /// Display title for the row.
@@ -157,7 +167,10 @@ impl Component for DownloadQueuePanel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             DownloadQueueInput::Enqueue { url, title, dest } => {
-                self.enqueue(&url, &title, &dest, &sender);
+                self.enqueue(&url, &title, &dest, ExistingDestination::Replace, &sender);
+            }
+            DownloadQueueInput::EnqueueNoReplace { url, title, dest } => {
+                self.enqueue(&url, &title, &dest, ExistingDestination::Keep, &sender);
             }
             DownloadQueueInput::Tick => {
                 if self.tick_downloads()
@@ -172,64 +185,76 @@ impl Component for DownloadQueuePanel {
     }
 }
 
+/// The row of one download, its cancel button wired to `progress`.
+fn download_task(title: &str, progress: &Arc<DownloadProgress>) -> DownloadTask {
+    let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    row_box.set_margin_top(4);
+    row_box.set_margin_bottom(4);
+    row_box.add_css_class("download-panel-row");
+
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    let title_label = gtk::Label::builder()
+        .label(title)
+        .ellipsize(gtk::pango::EllipsizeMode::End)
+        .max_width_chars(40)
+        .xalign(0.0)
+        .hexpand(true)
+        .css_classes(["caption-heading"])
+        .build();
+    let cancel_button = tooltip::icon_button(
+        "process-stop-symbolic",
+        &i18n("Cancel download"),
+        &["circular"],
+    );
+    header.append(&title_label);
+    header.append(&cancel_button);
+
+    let progress_bar = gtk::ProgressBar::new();
+    progress_bar.set_show_text(false);
+
+    let status_label = gtk::Label::builder()
+        .label(i18n("Starting…"))
+        .xalign(0.0)
+        .css_classes(["caption", "dim-label"])
+        .build();
+
+    row_box.append(&header);
+    row_box.append(&progress_bar);
+    row_box.append(&status_label);
+
+    let prog_ref = Arc::clone(progress);
+    cancel_button.connect_clicked(move |button| {
+        if !prog_ref.finished.load(Ordering::Relaxed) {
+            prog_ref.cancelled.store(true, Ordering::Relaxed);
+            button.set_sensitive(false);
+        }
+    });
+
+    DownloadTask {
+        title: title.to_string(),
+        progress: Arc::clone(progress),
+        status: Cell::new(DownloadStatus::Downloading),
+        row_box,
+        progress_bar,
+        status_label,
+        cancel_button,
+    }
+}
+
 impl DownloadQueuePanel {
     /// Build a progress row, register the task, reveal the panel, and spawn the
     /// streamed HTTP download on a worker thread.
-    fn enqueue(&mut self, url: &str, title: &str, dest: &Path, sender: &ComponentSender<Self>) {
+    fn enqueue(
+        &mut self,
+        url: &str,
+        title: &str,
+        dest: &Path,
+        existing: ExistingDestination,
+        sender: &ComponentSender<Self>,
+    ) {
         let progress = Arc::new(DownloadProgress::default());
-
-        let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
-        row_box.set_margin_top(4);
-        row_box.set_margin_bottom(4);
-        row_box.add_css_class("download-panel-row");
-
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        let title_label = gtk::Label::builder()
-            .label(title)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .max_width_chars(40)
-            .xalign(0.0)
-            .hexpand(true)
-            .css_classes(["caption-heading"])
-            .build();
-        let cancel_button = tooltip::icon_button(
-            "process-stop-symbolic",
-            &i18n("Cancel download"),
-            &["circular"],
-        );
-        header.append(&title_label);
-        header.append(&cancel_button);
-
-        let progress_bar = gtk::ProgressBar::new();
-        progress_bar.set_show_text(false);
-
-        let status_label = gtk::Label::builder()
-            .label(i18n("Starting…"))
-            .xalign(0.0)
-            .css_classes(["caption", "dim-label"])
-            .build();
-
-        row_box.append(&header);
-        row_box.append(&progress_bar);
-        row_box.append(&status_label);
-
-        let prog_ref = Arc::clone(&progress);
-        cancel_button.connect_clicked(move |button| {
-            if !prog_ref.finished.load(Ordering::Relaxed) {
-                prog_ref.cancelled.store(true, Ordering::Relaxed);
-                button.set_sensitive(false);
-            }
-        });
-
-        let task = Rc::new(DownloadTask {
-            title: title.to_string(),
-            progress: Arc::clone(&progress),
-            status: Cell::new(DownloadStatus::Downloading),
-            row_box: row_box.clone(),
-            progress_bar,
-            status_label,
-            cancel_button,
-        });
+        let task = Rc::new(download_task(title, &progress));
+        let row_box = task.row_box.clone();
 
         self.list_box.append(&row_box);
         self.tasks.push(Rc::clone(&task));
@@ -240,7 +265,7 @@ impl DownloadQueuePanel {
         let dest = dest.to_path_buf();
         let progress_cb = Arc::clone(&progress);
         big_media_components::player_chrome::spawn_blocking_result(
-            move || download_file(&url, &dest, &progress),
+            move || download_file(&url, &dest, existing, &progress),
             move |result| {
                 if result.is_ok() {
                     // Publication completed before a late click reached the main loop.

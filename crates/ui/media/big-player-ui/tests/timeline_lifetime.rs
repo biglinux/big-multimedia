@@ -1,3 +1,4 @@
+use big_media_components::playback::cut_timeline::CutTimeline;
 use big_player_ui::cut_timeline::wire_cut_timeline_interaction;
 use gtk::prelude::*;
 use std::cell::{Cell, RefCell};
@@ -16,7 +17,7 @@ fn timeline_finalizes_with_its_controllers() {
     for size in [0, 5, 25] {
         let finalized = Rc::new(Cell::new(0));
         for _ in 0..25 {
-            let area = gtk::DrawingArea::new();
+            let area = CutTimeline::new("Cut timeline");
             // SAFETY: this test owns the key and never reads or replaces its data.
             // Qdata is released at finalization, unlike dispose notifications.
             unsafe {
