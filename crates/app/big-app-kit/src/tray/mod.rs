@@ -553,12 +553,13 @@ pub(crate) mod tests {
         let host = glib::MainContext::default()
             .block_on(crate::mpris::private_session_bus())
             .unwrap();
-        let registered = Rc::new(RefCell::new(None::<(String, String)>));
+        let registered = Rc::new(RefCell::new(Vec::<(String, String)>::new()));
         let slot = registered.clone();
         host.register_object("/StatusNotifierWatcher", &interface(WATCHER_XML).unwrap())
             .method_call(move |_, sender, _, _, _, params, invocation| {
                 let (service,) = params.get::<(String,)>().unwrap();
-                *slot.borrow_mut() = Some((sender.unwrap_or_default().to_owned(), service));
+                slot.borrow_mut()
+                    .push((sender.unwrap_or_default().to_owned(), service));
                 invocation.return_value(None);
             })
             .build()
@@ -582,8 +583,8 @@ pub(crate) mod tests {
         // Dropped while still connecting: it never reaches the host.
         drop(Tray::new(spec(), Rc::new(|_| {})));
         let tray = Tray::new(spec(), command);
-        iterate_until(|| registered.borrow().is_some());
-        let (item, path) = registered.borrow().clone().unwrap();
+        iterate_until(|| !registered.borrow().is_empty());
+        let (item, path) = registered.borrow()[0].clone();
         assert_eq!(path, ITEM_PATH);
         iterate_until(|| tray.is_shown());
 
@@ -628,6 +629,9 @@ pub(crate) mod tests {
             *sent.borrow(),
             [TrayCommand::Menu("quit".into()), TrayCommand::Activate]
         );
+        // Every registration is kept, so a cancelled tray that still reached
+        // the host shows up here.
+        assert_eq!(registered.borrow().len(), 1);
 
         drop(tray);
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
