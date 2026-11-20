@@ -1,5 +1,7 @@
 //! The trim-mode cut timeline as a slider over the playback position.
 
+use std::cell::RefCell;
+
 use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -10,7 +12,10 @@ mod imp {
     use super::*;
 
     #[derive(Default)]
-    pub struct CutTimeline;
+    pub struct CutTimeline {
+        /// Called with the position, in seconds, that assistive technology set.
+        pub(super) seek: RefCell<Option<Box<dyn Fn(f64)>>>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for CutTimeline {
@@ -55,7 +60,17 @@ mod imp {
     }
     impl DrawingAreaImpl for CutTimeline {}
     impl AccessibleImpl for CutTimeline {}
-    impl AccessibleRangeImpl for CutTimeline {}
+    impl AccessibleRangeImpl for CutTimeline {
+        fn set_current_value(&self, value: f64) -> bool {
+            match self.seek.borrow().as_ref() {
+                Some(seek) => {
+                    seek(value);
+                    true
+                }
+                None => false,
+            }
+        }
+    }
 }
 
 glib::wrapper! {
@@ -84,6 +99,13 @@ impl CutTimeline {
         timeline
     }
 
+    /// Seek to the position, in seconds, that assistive technology sets on
+    /// the slider. Positions the player reports go to [`Self::set_position`]
+    /// and never reach `seek`.
+    pub fn connect_seek_requested(&self, seek: impl Fn(f64) + 'static) {
+        self.imp().seek.replace(Some(Box::new(seek)));
+    }
+
     /// Expose the playhead at `position_secs` of `duration_secs`; the value
     /// text reads the position as a time.
     pub fn set_position(&self, position_secs: f64, duration_secs: f64) {
@@ -94,5 +116,28 @@ impl CutTimeline {
             gtk::accessible::Property::ValueNow(position),
             gtk::accessible::Property::ValueText(&playback_time(position)),
         ]);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    /// A value set through the AT-SPI Value interface seeks; without a
+    /// handler the slider refuses it instead of claiming the change.
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn accessible_value_requests_seek() {
+        use gtk::subclass::prelude::AccessibleRangeImpl;
+        gtk::init().expect("isolated GTK session");
+        let timeline = CutTimeline::new("Cut timeline");
+        assert!(!timeline.imp().set_current_value(30.0));
+        let requested = Rc::new(Cell::new(None));
+        let seen = requested.clone();
+        timeline.connect_seek_requested(move |secs| seen.set(Some(secs)));
+        assert!(timeline.imp().set_current_value(30.0));
+        assert_eq!(requested.get(), Some(30.0));
     }
 }

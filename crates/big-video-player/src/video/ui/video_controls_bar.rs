@@ -304,7 +304,7 @@ impl Component for VideoControlsBar {
         let seek_sender = sender.clone();
         let segment_sender = sender.clone();
         wire_cut_timeline_interaction(
-            cut_timeline.upcast_ref(),
+            &cut_timeline,
             &cut_segments,
             &duration_secs,
             move |fraction| {
