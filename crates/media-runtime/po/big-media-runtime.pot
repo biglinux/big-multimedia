@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -688,8 +688,9 @@ msgid ""
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4574,36 +4575,26 @@ msgstr ""
 msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
 msgstr ""
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr ""
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr ""
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
-msgstr ""
-
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
 msgstr ""
 
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 
 #: crates/media-runtime/src/settings/saving.rs:135

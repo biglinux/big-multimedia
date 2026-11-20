@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -716,8 +716,9 @@ msgstr ""
 "coda salvata in precedenza è stata mantenuta."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "Riprova a salvare"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4771,43 +4772,31 @@ msgstr ""
 "Le modifiche sono state applicate, ma l’archiviazione sicura non è "
 "confermata. Riprova a salvare."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Le modifiche funzionano per questa sessione ma non è stato possibile "
-"salvarle. Controlla la memoria o chiudi le altre istanze, quindi riprova."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 "Non trovato — selezionalo solo se vuoi dimenticare questo record della "
 "libreria"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Gli elementi remoti non vengono controllati come file locali"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Salvataggio delle modifiche…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Questa posizione non è un normale file multimediale"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Riprova a salvare"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Le modifiche funzionano per ora ma non è stato possibile salvarle. Controlla "
-"lo spazio libero su disco o chiudi gli altri lettori, quindi riprova."
+"lo spazio libero su disco, quindi riprova."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5536,6 +5525,16 @@ msgstr "Telecomando web interrotto: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Impossibile avviare il server"
+
+#~ msgid "Retry saving"
+#~ msgstr "Riprova a salvare"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Le modifiche funzionano per questa sessione ma non è stato possibile "
+#~ "salvarle. Controlla la memoria o chiudi le altre istanze, quindi riprova."
 
 #~ msgid "No episodes found"
 #~ msgstr "Nessun episodio trovato"

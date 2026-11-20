@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -703,8 +703,9 @@ msgstr ""
 "지되었습니다."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "다시 저장"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4673,41 +4674,29 @@ msgstr ""
 "변경 사항은 적용되었지만 안전한 저장을 확인할 수 없습니다. 다시 저장해 보세"
 "요."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"변경 사항은 이번 세션에서는 적용되지만 저장하지 못했습니다. 저장소를 확인하거"
-"나 다른 인스턴스를 닫은 뒤 다시 시도하세요."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr "찾을 수 없음 — 이 라이브러리 레코드를 삭제하려는 경우에만 선택하세요"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "원격 항목은 로컬 파일로 확인되지 않습니다"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "변경 사항을 저장하는 중…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "이 위치는 일반 미디어 파일이 아닙니다"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "다시 저장"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
-"변경 사항은 지금은 적용되지만 저장하지 못했습니다. 디스크 여유 공간을 확인하"
-"거나 다른 플레이어를 닫은 뒤 다시 시도하세요."
+"변경 사항은 지금은 적용되지만 저장하지 못했습니다. 디스크 여유 공간을 확인한 "
+"뒤 다시 시도하세요."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5426,6 +5415,16 @@ msgstr "웹 리모컨이 중지되었습니다: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "서버를 시작할 수 없습니다"
+
+#~ msgid "Retry saving"
+#~ msgstr "다시 저장"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "변경 사항은 이번 세션에서는 적용되지만 저장하지 못했습니다. 저장소를 확인"
+#~ "하거나 다른 인스턴스를 닫은 뒤 다시 시도하세요."
 
 #~ msgid "No episodes found"
 #~ msgstr "에피소드를 찾을 수 없습니다"

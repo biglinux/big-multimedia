@@ -54,23 +54,58 @@ fn invalid_values_leave_state_unchanged() {
 }
 
 #[test]
-fn shared_handles_keep_external_edits() {
+fn shared_handles_share_one_store() {
     let path = std::env::temp_dir().join(format!("settings-shared-{}.conf", std::process::id()));
     let _ = std::fs::remove_file(&path);
     let a = Settings::from_path(path.clone());
     let b = Settings::from_path(path.clone());
     a.put_double(keys::VOLUME, 0.0);
     assert_eq!(b.get_double(keys::VOLUME), 0.0);
-    b.try_flush().unwrap();
-    std::fs::write(&path, b"volume=21\n").unwrap();
-    a.put_double(keys::VOLUME, 30.0);
-    assert!(a.try_flush().is_err());
-    assert_eq!(std::fs::read(&path).unwrap(), b"volume=21\n");
-    assert_eq!(a.get_double(keys::VOLUME), 30.0);
     let _ = std::fs::remove_file(&path);
     let _ = std::fs::remove_file(
         path.with_file_name(format!("settings-shared-{}.conf.lock", std::process::id())),
     );
+}
+
+/// Another process (a second window) saves between this one's saves: each
+/// keeps the keys the other changed, and this one's changed keys win.
+#[test]
+fn saves_keep_another_process_keys() {
+    let name = format!("settings-merge-{}.conf", std::process::id());
+    let path = std::env::temp_dir().join(&name);
+    let _ = std::fs::remove_file(&path);
+    let settings = Settings::from_path(path.clone());
+    settings.put_double(keys::VOLUME, 30.0);
+    settings.try_flush().unwrap();
+
+    let mut other = store::parse(&std::fs::read(&path).unwrap()).unwrap();
+    other.insert("hwdec".into(), "vaapi".into());
+    other.insert("volume".into(), "21".into());
+    std::fs::write(&path, store::serialize(&other).unwrap()).unwrap();
+
+    settings.put_string(keys::SUB_FONT, "Serif");
+    settings.try_flush().unwrap();
+    let saved = store::parse(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(saved["hwdec"], "vaapi");
+    assert_eq!(saved["sub-font"], "Serif");
+    // Volume was saved before the other write; the other process's value stands.
+    assert_eq!(saved["volume"], "21");
+    assert_eq!(settings.get_string(keys::HWDEC), "vaapi");
+
+    settings.put_double(keys::VOLUME, 40.0);
+    settings.try_flush().unwrap();
+    let saved = store::parse(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(
+        (saved["volume"].as_str(), saved["hwdec"].as_str()),
+        ("40", "vaapi")
+    );
+
+    std::fs::write(&path, b"not a settings line\n").unwrap();
+    settings.put_double(keys::VOLUME, 50.0);
+    assert!(settings.try_flush().is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), b"not a settings line\n");
+    let _ = std::fs::remove_file(&path);
+    let _ = std::fs::remove_file(path.with_file_name(format!("{name}.lock")));
 }
 
 #[test]

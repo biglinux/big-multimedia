@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -706,9 +706,10 @@ msgstr ""
 "køen ble beholdt."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
-msgstr "Prøv å lagre igjen"
+msgid "Retry Saving"
+msgstr "Prøv å lagre på nytt"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
 msgid "A library scan is already running. Cancel it or wait for its result."
@@ -4723,41 +4724,29 @@ msgstr ""
 "Endringene ble brukt, men trygg lagring er ikke bekreftet. Prøv å lagre på "
 "nytt."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Endringene fungerer i denne økten, men kunne ikke lagres. Sjekk lagringen "
-"eller lukk andre forekomster, og prøv igjen."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr "Ikke funnet – velg bare hvis du vil glemme denne bibliotekoppføringen"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Eksterne elementer sjekkes ikke som lokale filer"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Lagrer endringene dine …"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Denne plasseringen er ikke en vanlig mediefil"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Prøv å lagre på nytt"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Endringene dine fungerer for øyeblikket, men kunne ikke lagres. Sjekk ledig "
-"diskplass eller lukk andre avspillere, og prøv igjen."
+"diskplass, og prøv igjen."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5475,6 +5464,16 @@ msgstr "Nettfjernkontrollen stoppet: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Kunne ikke starte tjeneren"
+
+#~ msgid "Retry saving"
+#~ msgstr "Prøv å lagre igjen"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Endringene fungerer i denne økten, men kunne ikke lagres. Sjekk lagringen "
+#~ "eller lukk andre forekomster, og prøv igjen."
 
 #~ msgid "No episodes found"
 #~ msgstr "Ingen episoder funnet"

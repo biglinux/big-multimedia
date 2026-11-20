@@ -8,7 +8,7 @@ use super::{Inner, keys};
 
 const LIMIT: usize = 1024 * 1024;
 use big_os_kit::storage;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::sync::{Mutex, OnceLock, Weak};
 
@@ -122,7 +122,7 @@ impl Settings {
             settings_values: keys::defaults(),
             path: PathBuf::new(),
             dirty: false,
-            disk_bytes: None,
+            changed: HashSet::new(),
             load_error: None,
             revision: 0,
             persisted_revision: 0,
@@ -153,16 +153,13 @@ impl Settings {
         }
         let loaded = storage::read_regular_limited(&path, LIMIT);
         let mut values = keys::defaults();
-        let (disk_bytes, load_error) = match loaded {
-            Ok(Some(bytes)) => match parse(&bytes) {
-                Ok(saved) => {
-                    values.extend(saved);
-                    (Some(bytes), None)
-                }
-                Err(error) => (Some(bytes), Some(error.to_string())),
-            },
-            Ok(None) => (None, None),
-            Err(error) => (None, Some(error.to_string())),
+        let load_error = match loaded.and_then(|bytes| bytes.map(|bytes| parse(&bytes)).transpose())
+        {
+            Ok(saved) => {
+                values.extend(saved.unwrap_or_default());
+                None
+            }
+            Err(error) => Some(error.to_string()),
         };
         let phase = if load_error.is_some() {
             SavePhase::Failed
@@ -174,7 +171,7 @@ impl Settings {
             settings_values: values,
             path: path.clone(),
             dirty: false,
-            disk_bytes,
+            changed: HashSet::new(),
             load_error,
             revision: 0,
             persisted_revision: 0,
@@ -280,6 +277,7 @@ impl Settings {
             return true;
         }
         inner.settings_values.insert(key.into(), value.into());
+        inner.changed.insert(key.into());
         inner.dirty = true;
         inner.revision = inner.revision.wrapping_add(1);
         inner.phase = SavePhase::Pending;
@@ -471,8 +469,10 @@ impl Settings {
 
     /// Worker-only save transaction (atomic, not fsynced: the kernel writes it
     /// back in its own time). Snapshot/commit/finalize separates the disk lock
-    /// from the fast memory lock. The generation check preserves edits made while
-    /// an older generation was on disk.
+    /// from the fast memory lock. Another process (a second window) may have
+    /// saved meanwhile: the file as it is now keeps every key this process did
+    /// not change, and this process takes those values in memory. A file that
+    /// no longer parses is left as it is.
     pub fn try_flush(&self) -> io::Result<()> {
         let disk_lock = self
             .inner
@@ -483,7 +483,7 @@ impl Settings {
         let _transaction = disk_lock
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let (path, expected, values, revision) = {
+        let (path, values, changed, revision) = {
             let mut inner = self
                 .inner
                 .write()
@@ -501,33 +501,46 @@ impl Settings {
             inner.phase = SavePhase::Saving;
             (
                 inner.path.clone(),
-                inner.disk_bytes.clone(),
                 inner.settings_values.clone(),
+                inner.changed.clone(),
                 inner.revision,
             )
         };
-        let result = (|| {
+        let result = (|| -> io::Result<HashMap<String, String>> {
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent)?;
             }
             let _file_lock = storage::WriteLock::try_acquire(&path)?;
-            if storage::read_regular_limited(&path, LIMIT)? != expected {
-                return Err(io::Error::new(
-                    io::ErrorKind::AlreadyExists,
-                    "settings changed in another process; reopen before saving",
-                ));
+            let mut merged = keys::defaults();
+            if let Some(bytes) = storage::read_regular_limited(&path, LIMIT)? {
+                merged.extend(parse(&bytes)?);
             }
-            let bytes = serialize(&values)?;
-            storage::atomic_write_private(&path, &bytes)?;
-            Ok(bytes)
+            for key in &changed {
+                if let Some(value) = values.get(key) {
+                    merged.insert(key.clone(), value.clone());
+                }
+            }
+            storage::atomic_write_private(&path, &serialize(&merged)?)?;
+            Ok(merged)
         })();
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         match result {
-            Ok(bytes) => {
-                inner.disk_bytes = Some(bytes);
+            Ok(written) => {
+                let Inner {
+                    changed,
+                    settings_values,
+                    ..
+                } = &mut *inner;
+                // A key set again while the file was written stays changed.
+                changed.retain(|key| settings_values.get(key) != written.get(key));
+                for (key, value) in written {
+                    if !changed.contains(&key) {
+                        settings_values.insert(key, value);
+                    }
+                }
                 inner.persisted_revision = revision;
                 inner.dirty = inner.revision != revision;
                 inner.phase = if inner.dirty {
@@ -588,6 +601,7 @@ impl Settings {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         for (key, value) in keys::defaults() {
             if !Self::KEPT_ON_RESTORE.contains(&key.as_str()) {
+                inner.changed.insert(key.clone());
                 inner.settings_values.insert(key, value);
             }
         }

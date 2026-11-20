@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -711,8 +711,9 @@ msgstr ""
 "spremljeni red je sačuvan."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "Pokušaj ponovno spremiti"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4749,42 +4750,30 @@ msgstr ""
 "Promjene su primijenjene, ali sigurna pohrana nije potvrđena. Pokušajte "
 "ponovno spremiti."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Promjene rade u ovoj sesiji, ali ih nije bilo moguće spremiti. Provjerite "
-"pohranu ili zatvorite druge instance pa pokušajte ponovno."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 "Nije pronađeno — odaberite samo ako želite zaboraviti ovaj zapis biblioteke"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Udaljene stavke ne provjeravaju se kao lokalne datoteke"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Spremanje promjena…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Ova lokacija nije obična medijska datoteka"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Pokušaj ponovno spremiti"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Vaše promjene za sada rade, ali ih nije bilo moguće spremiti. Provjerite "
-"slobodan prostor na disku ili zatvorite druge playere pa pokušajte ponovno."
+"slobodan prostor na disku pa pokušajte ponovno."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5508,6 +5497,16 @@ msgstr "Web daljinski upravljač zaustavljen je: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Poslužitelj nije bilo moguće pokrenuti"
+
+#~ msgid "Retry saving"
+#~ msgstr "Pokušaj ponovno spremiti"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Promjene rade u ovoj sesiji, ali ih nije bilo moguće spremiti. Provjerite "
+#~ "pohranu ili zatvorite druge instance pa pokušajte ponovno."
 
 #~ msgid "No episodes found"
 #~ msgstr "Nisu pronađene epizode"

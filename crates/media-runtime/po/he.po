@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -697,8 +697,9 @@ msgid ""
 msgstr "לא ניתן היה לשמור או לשחזר את תור הניגון. התור השמור הקודם שלכם נשמר."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "ניסיון נוסף לשמירה"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4685,41 +4686,29 @@ msgstr "השינויים נשמרו."
 msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
 msgstr "השינויים הוחלו, אך האחסון הבטוח לא אומת. נסו לשמור שוב."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"השינויים פועלים בהפעלה זו אך לא ניתן היה לשמור אותם. בדקו את האחסון או סגרו "
-"מופעים אחרים ונסו שוב."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr "לא נמצא — בחרו רק אם ברצונכם לשכוח רשומת ספרייה זו"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "פריטים מרוחקים אינם נבדקים כקבצים מקומיים"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "שומר את השינויים שלכם…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "מיקום זה אינו קובץ מדיה רגיל"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "ניסיון נוסף לשמירה"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "השינויים שלכם פועלים לעת עתה אך לא ניתן היה לשמור אותם. בדקו שטח פנוי בדיסק "
-"או סגרו נגנים אחרים ונסו שוב."
+"ונסו שוב."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5434,6 +5423,16 @@ msgstr "השלט הרחוק באינטרנט נעצר: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "לא ניתן היה להפעיל את השרת"
+
+#~ msgid "Retry saving"
+#~ msgstr "ניסיון נוסף לשמירה"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "השינויים פועלים בהפעלה זו אך לא ניתן היה לשמור אותם. בדקו את האחסון או "
+#~ "סגרו מופעים אחרים ונסו שוב."
 
 #~ msgid "No episodes found"
 #~ msgstr "לא נמצאו פרקים"

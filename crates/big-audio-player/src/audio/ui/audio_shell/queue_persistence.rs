@@ -59,7 +59,7 @@ impl QueuePersistence {
                     banner.set_title(&i18n(
                         "The playback queue could not be saved or restored. Your previous saved queue was kept.",
                     ));
-                    banner.set_button_label(Some(&i18n("Retry saving")));
+                    banner.set_button_label(Some(&i18n("Retry Saving")));
                 }
                 banner.set_revealed(state.failed);
             }

@@ -9,9 +9,6 @@ const _: &[&str] = &[
     gettext_noop("Cancellation requested. Finishing the current safe step…"),
     gettext_noop("Changes are saved."),
     gettext_noop("Changes were applied, but safe storage is not confirmed. Retry saving."),
-    gettext_noop(
-        "Changes work for this session but could not be saved. Check storage or close other instances, then retry.",
-    ),
     gettext_noop("Not found — select only if you want to forget this library record"),
     gettext_noop("Remote items are not checked as local files"),
     gettext_noop("Saving your changes…"),

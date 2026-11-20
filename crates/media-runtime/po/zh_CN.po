@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -693,8 +693,9 @@ msgid ""
 msgstr "无法保存或恢复播放队列。已保留之前保存的队列。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "重试保存"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4602,39 +4603,27 @@ msgstr "更改已保存。"
 msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
 msgstr "更改已应用，但尚未确认已安全存储。请重试保存。"
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"更改在本次会话中有效，但无法保存。请检查存储空间或关闭其他实例，然后重试。"
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr "未找到——仅当您想忘记此资料库记录时才选择"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "远程项目不会作为本地文件检查"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "正在保存您的更改…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "此位置不是常规媒体文件"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "重试保存"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
-msgstr ""
-"您的更改暂时有效，但无法保存。请检查可用磁盘空间或关闭其他播放器，然后重试。"
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
+msgstr "您的更改暂时有效，但无法保存。请检查可用磁盘空间，然后重试。"
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5346,6 +5335,15 @@ msgstr "网页遥控已停止：{error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "无法启动服务器"
+
+#~ msgid "Retry saving"
+#~ msgstr "重试保存"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "更改在本次会话中有效，但无法保存。请检查存储空间或关闭其他实例，然后重试。"
 
 #~ msgid "No episodes found"
 #~ msgstr "未找到单集"

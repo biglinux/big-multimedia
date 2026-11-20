@@ -52,14 +52,38 @@ impl IptvFavorites {
                 .ok()
                 .filter(|favorites| favorites.urls.len() <= MAX_FAVORITES)
         });
-        favorites.persistence = Some(writer);
+        favorites.persistence = Some(writer.merging(Self::merge_saved));
         favorites
+    }
+    /// The favorites a second window saved meanwhile, with this window's stars
+    /// and unstars applied over them.
+    fn merge_saved(base: Option<&[u8]>, ours: &[u8], theirs: Option<&[u8]>) -> Option<Vec<u8>> {
+        let urls = |bytes: Option<&[u8]>| match bytes {
+            None => Some(BTreeSet::new()),
+            Some(bytes) => serde_json::from_slice::<Self>(bytes)
+                .ok()
+                .map(|saved| saved.urls),
+        };
+        let (base, ours, mut urls) = (urls(base)?, urls(Some(ours))?, urls(theirs)?);
+        urls.extend(ours.difference(&base).cloned());
+        urls.retain(|url| ours.contains(url) || !base.contains(url));
+        if urls.len() > MAX_FAVORITES {
+            return None;
+        }
+        serde_json::to_vec_pretty(&Self {
+            urls,
+            persistence: None,
+        })
+        .ok()
     }
     /// Admission is not disk success. See save_status for acknowledgement.
     pub fn save(&mut self) {
         let writer = self
             .persistence
-            .get_or_insert_with(|| big_os_kit::deferred::Document::reviewed(Self::path(), None))
+            .get_or_insert_with(|| {
+                big_os_kit::deferred::Document::reviewed(Self::path(), None)
+                    .merging(Self::merge_saved)
+            })
             .clone();
         if self.urls.len() > MAX_FAVORITES {
             writer.reject_update();
@@ -190,6 +214,28 @@ mod tests {
         assert!(!loaded.contains("http://srv/0.ts"));
         loaded.toggle("http://srv/0.ts");
         assert_eq!(std::fs::read(&path).unwrap(), oversized);
+    }
+
+    #[test]
+    fn merge_keeps_both_windows_stars() {
+        let saved = |urls: &[&str]| {
+            let mut favorites = IptvFavorites::default();
+            for url in urls {
+                favorites.toggle_in_memory(url);
+            }
+            serde_json::to_vec(&favorites).unwrap()
+        };
+        let base = saved(&["http://a", "http://b"]);
+        // This window starred c and unstarred a; the other one starred d.
+        let ours = saved(&["http://b", "http://c"]);
+        let theirs = saved(&["http://a", "http://b", "http://d"]);
+        let merged = IptvFavorites::merge_saved(Some(&base), &ours, Some(&theirs)).unwrap();
+        let merged: IptvFavorites = serde_json::from_slice(&merged).unwrap();
+        assert_eq!(
+            merged.urls.iter().map(String::as_str).collect::<Vec<_>>(),
+            ["http://b", "http://c", "http://d"]
+        );
+        assert!(IptvFavorites::merge_saved(Some(&base), &ours, Some(b"{")).is_none());
     }
 
     #[test]

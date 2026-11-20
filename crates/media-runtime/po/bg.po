@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -711,8 +711,9 @@ msgstr ""
 "запазена опашка беше запазена."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "Нов опит за запазване"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4763,43 +4764,31 @@ msgstr ""
 "Промените бяха приложени, но безопасното съхранение не е потвърдено. "
 "Опитайте да запазите отново."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Промените работят за тази сесия, но не можаха да бъдат запазени. Проверете "
-"хранилището или затворете други екземпляри и опитайте отново."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 "Не е намерено — изберете само ако искате да забравите този запис във "
 "фонотеката"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Отдалечените елементи не се проверяват като локални файлове"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Запазване на промените…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Това местоположение не е обикновен медиен файл"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Нов опит за запазване"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Промените ви работят засега, но не можаха да бъдат запазени. Проверете "
-"свободното място на диска или затворете други плейъри и опитайте отново."
+"свободното място на диска и опитайте отново."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5525,6 +5514,16 @@ msgstr "Уеб дистанционното е спряно: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Сървърът не можа да бъде стартиран"
+
+#~ msgid "Retry saving"
+#~ msgstr "Нов опит за запазване"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Промените работят за тази сесия, но не можаха да бъдат запазени. "
+#~ "Проверете хранилището или затворете други екземпляри и опитайте отново."
 
 #~ msgid "No episodes found"
 #~ msgstr "Не са намерени епизоди"

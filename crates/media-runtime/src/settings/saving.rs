@@ -30,7 +30,7 @@ pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Setting
         if last.as_ref() != Some(&status) {
             let problem = match status.phase {
                 SavePhase::Failed => Some(i18n(
-                    "Your changes work for now but could not be saved. Check free disk space or close other players, then retry.",
+                    "Your changes work for now but could not be saved. Check free disk space, then retry.",
                 )),
                 SavePhase::Saved | SavePhase::Pending | SavePhase::Saving => None,
             };
@@ -237,7 +237,7 @@ pub fn document_status(
     label.set_wrap(true);
     label.set_xalign(0.0);
     label.set_hexpand(true);
-    let button = gtk::Button::with_label(&i18n("Retry saving"));
+    let button = gtk::Button::with_label(&i18n("Retry Saving"));
     button.set_valign(gtk::Align::Center);
     root.append(&label);
     root.append(&button);
@@ -257,7 +257,7 @@ pub fn document_status(
                 None | Some(Phase::Saved) => "Changes are saved.",
                 Some(Phase::Pending | Phase::Saving) => "Saving your changes…",
                 Some(Phase::Failed) => {
-                    "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
+                    "Your changes work for now but could not be saved. Check free disk space, then retry."
                 }
             }));
             button.set_sensitive(matches!(phase, Some(Phase::Failed)));

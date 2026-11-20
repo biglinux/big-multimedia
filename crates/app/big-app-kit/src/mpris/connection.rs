@@ -1,7 +1,7 @@
 use glib::variant::ToVariant;
 use gtk::{gio, glib};
 use log::warn;
-use std::cell::{Cell, OnceCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -9,6 +9,8 @@ use super::properties::{
     get_player_property, get_root_property, handle_player_method, set_player_property,
 };
 use super::sync::Publisher;
+#[cfg(test)]
+use super::types::PlayerState;
 use super::types::{CommandCallback, MprisCommand, StateCallback};
 use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE, PLAYER_XML, ROOT_XML};
 
@@ -111,8 +113,8 @@ pub struct Mpris {
 }
 
 struct ExportedPlayer {
-    /// Released in Drop before the connection closes.
-    owner_id: Option<gio::OwnerId>,
+    /// The bus names held, released in Drop before the connection closes.
+    owner_ids: Rc<RefCell<Vec<gio::OwnerId>>>,
     publisher: Rc<Publisher>,
 }
 
@@ -135,13 +137,34 @@ impl ExportedPlayer {
             connection.close(gio::Cancellable::NONE, |_| {});
             return Err(e);
         }
+        // Another window of the same player holds `bus_name`: MPRIS names each
+        // further instance `<bus_name>.instance<pid>`.
+        let owner_ids = Rc::new(RefCell::new(Vec::new()));
+        let instance_name = format!("{bus_name}.instance{}", std::process::id());
+        let held = Rc::downgrade(&owner_ids);
         let owner_id = gio::bus_own_name_on_connection(
             &connection,
             bus_name,
-            gio::BusNameOwnerFlags::NONE,
+            gio::BusNameOwnerFlags::DO_NOT_QUEUE,
             |_, _| {},
-            |_, _| {},
+            move |connection, _| {
+                let Some(held) = held.upgrade() else {
+                    return;
+                };
+                if held.borrow().len() > 1 {
+                    return;
+                }
+                let instance = gio::bus_own_name_on_connection(
+                    &connection,
+                    &instance_name,
+                    gio::BusNameOwnerFlags::DO_NOT_QUEUE,
+                    |_, _| {},
+                    |_, _| {},
+                );
+                held.borrow_mut().push(instance);
+            },
         );
+        owner_ids.borrow_mut().push(owner_id);
         let publisher = Rc::new(Publisher::new(
             connection,
             state_cb,
@@ -150,7 +173,7 @@ impl ExportedPlayer {
         ));
         publisher.sync();
         Ok(Self {
-            owner_id: Some(owner_id),
+            owner_ids,
             publisher,
         })
     }
@@ -252,11 +275,65 @@ impl Drop for ExportedPlayer {
         }
         // Unown before closing: a closed connection fires name-lost with a
         // NULL connection, which aborts in gio's closure trampoline.
-        if let Some(owner_id) = self.owner_id.take() {
+        for owner_id in self.owner_ids.borrow_mut().drain(..) {
             gio::bus_unown_name(owner_id);
         }
         self.publisher
             .connection
             .close(gio::Cancellable::NONE, |_| {});
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tray::tests::{call, iterate_until};
+
+    fn has_owner(host: &gio::DBusConnection, name: &str) -> bool {
+        call(
+            host,
+            "org.freedesktop.DBus",
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            "NameHasOwner",
+            (name,).to_variant(),
+        )
+        .child_value(0)
+        .get::<bool>()
+        .unwrap()
+    }
+
+    /// A second window of the same player takes the MPRIS instance name.
+    #[test]
+    #[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit mpris -- --ignored"]
+    fn second_player_takes_instance_name() {
+        let host = glib::MainContext::default()
+            .block_on(private_session_bus())
+            .unwrap();
+        let name = "org.mpris.MediaPlayer2.BigTestPlayer";
+        let instance = format!("{name}.instance{}", std::process::id());
+        let player = || {
+            Mpris::new(
+                name,
+                "br.com.biglinux.TestPlayer",
+                Box::new(|_| {}),
+                Box::new(PlayerState::default),
+                false,
+            )
+        };
+        let first = player();
+        iterate_until(|| has_owner(&host, name));
+        let second = player();
+        iterate_until(|| has_owner(&host, &instance));
+        drop(second);
+        iterate_until(|| !has_owner(&host, &instance));
+        assert!(has_owner(&host, name));
+        drop(first);
+        iterate_until(|| !has_owner(&host, name));
+        let _ = host.close_sync(gio::Cancellable::NONE);
+        let context = glib::MainContext::default();
+        while context.pending() {
+            context.iteration(false);
+        }
     }
 }

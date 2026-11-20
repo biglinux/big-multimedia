@@ -211,14 +211,58 @@ impl IptvProviderStore {
                     .ok()
                     .filter(|store| store.providers.len() <= MAX_PROVIDERS)
             });
-        store.persistence = Some(writer);
+        store.persistence = Some(writer.merging(Self::merge_saved));
         store
+    }
+
+    /// The providers a second window saved meanwhile, without the ones this
+    /// window removed or replaced, then this window's new or edited ones.
+    fn merge_saved(base: Option<&[u8]>, ours: &[u8], theirs: Option<&[u8]>) -> Option<Vec<u8>> {
+        // `order` is reassigned on every save, so records compare without it.
+        let providers = |bytes: Option<&[u8]>| -> Option<Vec<IptvProvider>> {
+            let Some(bytes) = bytes else {
+                return Some(Vec::new());
+            };
+            let store: Self = toml::from_str(std::str::from_utf8(bytes).ok()?).ok()?;
+            Some(
+                store
+                    .providers
+                    .into_iter()
+                    .map(|provider| IptvProvider {
+                        order: 0,
+                        ..provider
+                    })
+                    .collect(),
+            )
+        };
+        let (base, ours, theirs) = (providers(base)?, providers(Some(ours))?, providers(theirs)?);
+        let mut merged: Vec<IptvProvider> = theirs
+            .into_iter()
+            .filter(|provider| ours.contains(provider) || !base.contains(provider))
+            .collect();
+        for provider in ours {
+            if !base.contains(&provider) && !merged.contains(&provider) {
+                merged.push(provider);
+            }
+        }
+        if merged.len() > MAX_PROVIDERS {
+            return None;
+        }
+        let mut store = Self {
+            providers: merged,
+            persistence: None,
+        };
+        for (order, provider) in store.providers.iter_mut().enumerate() {
+            provider.order = u32::try_from(order).ok()?;
+        }
+        toml::to_string_pretty(&store).ok().map(String::into_bytes)
     }
 
     /// Save admission only. Acknowledged disk state is exposed by `save_status`.
     pub fn save(&mut self) {
         let writer = self.persistence.get_or_insert_with(|| {
             big_os_kit::deferred::Document::reviewed(Self::config_path(), None)
+                .merging(Self::merge_saved)
         });
         if self.providers.len() > MAX_PROVIDERS {
             writer.reject_update();
@@ -370,6 +414,38 @@ mod tests {
             let back: IptvProviderStore = toml::from_str(&text).expect("deserialize");
             proptest::prop_assert_eq!(back.providers, store.providers);
         }
+    }
+
+    #[test]
+    fn merge_keeps_both_windows_providers() {
+        let saved = |providers: &[&IptvProvider]| {
+            let store = IptvProviderStore {
+                providers: providers.iter().map(|p| (*p).clone()).collect(),
+                ..IptvProviderStore::default()
+            };
+            toml::to_string_pretty(&store).unwrap().into_bytes()
+        };
+        let (a, b, c, d) = (
+            m3u_url_provider("A", "https://a.example/list.m3u"),
+            m3u_url_provider("B", "https://b.example/list.m3u"),
+            m3u_url_provider("C", "https://c.example/list.m3u"),
+            m3u_url_provider("D", "https://d.example/list.m3u"),
+        );
+        let renamed_b = m3u_url_provider("B2", "https://b.example/list.m3u");
+        let base = saved(&[&a, &b]);
+        // This window removed A, renamed B and added C; the other one added D.
+        let ours = saved(&[&renamed_b, &c]);
+        let theirs = saved(&[&a, &b, &d]);
+        let merged = IptvProviderStore::merge_saved(Some(&base), &ours, Some(&theirs)).unwrap();
+        let merged: IptvProviderStore =
+            toml::from_str(std::str::from_utf8(&merged).unwrap()).unwrap();
+        let names: Vec<_> = merged
+            .providers
+            .iter()
+            .map(|p| (p.name.as_str(), p.order))
+            .collect();
+        assert_eq!(names, [("D", 0), ("B2", 1), ("C", 2)]);
+        assert!(IptvProviderStore::merge_saved(Some(&base), &ours, Some(b"[[")).is_none());
     }
 
     /// The file a user keeps between versions: its `type` tags and field names

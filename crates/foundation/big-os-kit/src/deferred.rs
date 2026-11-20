@@ -42,11 +42,18 @@ struct State {
     invalid_update: bool,
     phase: Phase,
 }
+/// Combines this process's change with another process's save, for a
+/// document two windows may edit: `(base, ours, theirs)`, where `base` is what
+/// this process's state derives from, `ours` the state to save and `theirs`
+/// the file as it is now (`None`: no file). `None` refuses the save.
+pub type Merge = fn(Option<&[u8]>, &[u8], Option<&[u8]>) -> Option<Vec<u8>>;
+
 /// Shared persistence owner. Workers retain it until completion, independent of widgets.
 #[derive(Clone)]
 pub struct Document {
     path: Arc<PathBuf>,
     state: Arc<Mutex<State>>,
+    merge: Option<Merge>,
 }
 impl std::fmt::Debug for Document {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -77,6 +84,7 @@ impl Document {
     pub fn reviewed(path: PathBuf, expected: Option<Vec<u8>>) -> Self {
         let blocked = !path.is_absolute() || expected.as_ref().is_some_and(|v| v.len() > MAX_BYTES);
         let document = Self {
+            merge: None,
             path: Arc::new(path),
             state: Arc::new(Mutex::new(State {
                 desired: expected.clone(),
@@ -110,6 +118,13 @@ impl Document {
             },
             Err(_) => (T::default(), Self::blocked(path)),
         }
+    }
+    /// Combine a save with another process's change to the file through
+    /// `merge`, instead of refusing it.
+    #[must_use]
+    pub fn merging(mut self, merge: Merge) -> Self {
+        self.merge = Some(merge);
+        self
     }
     /// Invalid/unreadable source: edits are session-only until the application reloads
     /// and explicitly resolves the conflict. Never silently overwrite malformed state.
@@ -168,8 +183,8 @@ impl Document {
         crate::background::changed();
     }
 
-    /// Retry a failed save. Never rebases onto an external writer's content:
-    /// a conflict needs an explicit reload.
+    /// Retry a failed save. Never rebases onto an external writer's content
+    /// without a [`Merge`]: a conflict then needs an explicit reload.
     pub fn retry(&self) -> io::Result<()> {
         let settled = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
@@ -240,20 +255,28 @@ impl Document {
             .ok_or_else(|| io::Error::other("missing private directory"))?;
         std::fs::create_dir_all(parent)?;
         let _lock = storage::WriteLock::try_acquire(&self.path)?;
-        if storage::read_regular_limited(&self.path, MAX_BYTES)? != expected {
-            return Err(io::Error::other(
-                "state changed in another instance; reload before saving",
-            ));
-        }
         if desired != expected {
-            let bytes = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
+            let ours = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
+            let theirs = storage::read_regular_limited(&self.path, MAX_BYTES)?;
+            let bytes = if theirs == expected {
+                ours.clone()
+            } else {
+                let merge = self.merge.ok_or_else(|| {
+                    io::Error::other("state changed in another instance; reload before saving")
+                })?;
+                merge(expected.as_deref(), &ours, theirs.as_deref()).ok_or_else(|| {
+                    io::Error::other("state changed in another instance and could not be combined")
+                })?
+            };
             storage::atomic_write_private(&self.path, &bytes)?;
-            // Merge only publication state, not desired values that may have
-            // changed during I/O. This short lock is never held around a syscall.
+            // `expected` is what this process's state derives from: after a
+            // merge the file also holds the other process's change, and the
+            // next save merges again. Publication state only, not desired
+            // values that may have changed during I/O; never held around a syscall.
             self.state
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
-                .expected = Some(bytes);
+                .expected = Some(ours);
         }
         let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         s.saved_revision = revision;
@@ -314,6 +337,45 @@ mod tests {
         drain(&doc);
         assert_eq!(doc.status().phase, Phase::Failed);
         assert_eq!(std::fs::read(&p).unwrap(), b"external");
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    /// A merge that keeps every line of both sides, enough to see what reaches it.
+    fn union(base: Option<&[u8]>, ours: &[u8], theirs: Option<&[u8]>) -> Option<Vec<u8>> {
+        let lines = |bytes: Option<&[u8]>| {
+            std::str::from_utf8(bytes.unwrap_or_default())
+                .ok()
+                .map(|text| {
+                    text.lines()
+                        .map(str::to_owned)
+                        .collect::<std::collections::BTreeSet<_>>()
+                })
+        };
+        let (base, ours, mut merged) = (lines(base)?, lines(Some(ours))?, lines(theirs)?);
+        merged.extend(ours.difference(&base).cloned());
+        merged.retain(|line| ours.contains(line) || !base.contains(line));
+        Some(
+            merged
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("\n")
+                .into_bytes(),
+        )
+    }
+    #[test]
+    fn merge_combines_another_instance_save() {
+        let p = path("prefs.txt");
+        std::fs::write(&p, b"a").unwrap();
+        let doc = Document::reviewed(p.clone(), Some(b"a".to_vec())).merging(union);
+        std::fs::write(&p, b"a\nb").unwrap();
+        doc.replace(b"a\nc".to_vec()).unwrap();
+        drain(&doc);
+        assert_eq!(doc.status().phase, Phase::Saved);
+        assert_eq!(std::fs::read(&p).unwrap(), b"a\nb\nc");
+        // The next save starts from this process's own state, so the other
+        // instance's line stays and this one's removal reaches the file.
+        doc.replace(b"c".to_vec()).unwrap();
+        drain(&doc);
+        assert_eq!(std::fs::read(&p).unwrap(), b"b\nc");
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]

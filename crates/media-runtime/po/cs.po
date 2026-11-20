@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -706,8 +706,9 @@ msgstr ""
 "byla zachována."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "Zkusit uložit znovu"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4737,42 +4738,30 @@ msgstr ""
 "Změny byly použity, ale bezpečné úložiště není potvrzeno. Zkuste uložení "
 "znovu."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Změny fungují v této relaci, ale nepodařilo se je uložit. Zkontrolujte "
-"úložiště nebo zavřete jiné instance a zkuste to znovu."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 "Nenalezeno — vyberte, pouze pokud chcete tento záznam knihovny zapomenout"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Vzdálené položky se nekontrolují jako místní soubory"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Ukládání změn…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Toto umístění není běžný mediální soubor"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Zkusit uložit znovu"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Vaše změny zatím fungují, ale nepodařilo se je uložit. Zkontrolujte volné "
-"místo na disku nebo zavřete jiné přehrávače a zkuste to znovu."
+"místo na disku a zkuste to znovu."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5492,6 +5481,16 @@ msgstr "Webové dálkové ovládání bylo zastaveno: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Server se nepodařilo spustit"
+
+#~ msgid "Retry saving"
+#~ msgstr "Zkusit uložit znovu"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Změny fungují v této relaci, ale nepodařilo se je uložit. Zkontrolujte "
+#~ "úložiště nebo zavřete jiné instance a zkuste to znovu."
 
 #~ msgid "No episodes found"
 #~ msgstr "Nebyly nalezeny žádné epizody"

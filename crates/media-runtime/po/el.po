@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 06:10-0300\n"
+"POT-Creation-Date: 2026-11-19 21:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -714,8 +714,9 @@ msgstr ""
 "Διατηρήθηκε η προηγούμενη αποθηκευμένη ουρά."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:14
 #: crates/media-runtime/src/settings/saving.rs:240
-msgid "Retry saving"
+msgid "Retry Saving"
 msgstr "Επανάληψη αποθήκευσης"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
@@ -4818,45 +4819,31 @@ msgstr ""
 "Οι αλλαγές εφαρμόστηκαν, αλλά η ασφαλής αποθήκευση δεν επιβεβαιώνεται. "
 "Δοκιμάστε ξανά την αποθήκευση."
 
-#: crates/media-runtime/src/settings/messages.rs:13
-msgid ""
-"Changes work for this session but could not be saved. Check storage or close "
-"other instances, then retry."
-msgstr ""
-"Οι αλλαγές ισχύουν για αυτήν τη συνεδρία αλλά δεν ήταν δυνατό να "
-"αποθηκευτούν. Ελέγξτε τον αποθηκευτικό χώρο ή κλείστε άλλες εμφανίσεις και "
-"δοκιμάστε ξανά."
-
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Not found — select only if you want to forget this library record"
 msgstr ""
 "Δεν βρέθηκε — επιλέξτε μόνο αν θέλετε να ξεχάσετε αυτήν την εγγραφή "
 "βιβλιοθήκης"
 
-#: crates/media-runtime/src/settings/messages.rs:16
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "Remote items are not checked as local files"
 msgstr "Τα απομακρυσμένα στοιχεία δεν ελέγχονται ως τοπικά αρχεία"
 
-#: crates/media-runtime/src/settings/messages.rs:17
+#: crates/media-runtime/src/settings/messages.rs:14
 msgid "Saving your changes…"
 msgstr "Αποθήκευση των αλλαγών σας…"
 
-#: crates/media-runtime/src/settings/messages.rs:18
+#: crates/media-runtime/src/settings/messages.rs:15
 msgid "This location is not a regular media file"
 msgstr "Αυτή η τοποθεσία δεν είναι κανονικό αρχείο πολυμέσων"
 
-#: crates/media-runtime/src/settings/saving.rs:14
-msgid "Retry Saving"
-msgstr "Επανάληψη αποθήκευσης"
-
 #: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
-"Your changes work for now but could not be saved. Check free disk space or "
-"close other players, then retry."
+"Your changes work for now but could not be saved. Check free disk space, "
+"then retry."
 msgstr ""
 "Οι αλλαγές σας ισχύουν προς το παρόν αλλά δεν ήταν δυνατό να αποθηκευτούν. "
-"Ελέγξτε τον ελεύθερο χώρο στον δίσκο ή κλείστε άλλες εφαρμογές αναπαραγωγής "
-"και δοκιμάστε ξανά."
+"Ελέγξτε τον ελεύθερο χώρο στον δίσκο και δοκιμάστε ξανά."
 
 #: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
@@ -5586,6 +5573,17 @@ msgstr "Ο απομακρυσμένος έλεγχος μέσω web σταμάτ
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "Δεν ήταν δυνατή η εκκίνηση του διακομιστή"
+
+#~ msgid "Retry saving"
+#~ msgstr "Επανάληψη αποθήκευσης"
+
+#~ msgid ""
+#~ "Changes work for this session but could not be saved. Check storage or "
+#~ "close other instances, then retry."
+#~ msgstr ""
+#~ "Οι αλλαγές ισχύουν για αυτήν τη συνεδρία αλλά δεν ήταν δυνατό να "
+#~ "αποθηκευτούν. Ελέγξτε τον αποθηκευτικό χώρο ή κλείστε άλλες εμφανίσεις "
+#~ "και δοκιμάστε ξανά."
 
 #~ msgid "No episodes found"
 #~ msgstr "Δεν βρέθηκαν επεισόδια"

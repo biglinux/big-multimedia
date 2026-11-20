@@ -387,7 +387,7 @@ impl Drop for TrayService {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::cell::RefCell;
 
@@ -510,7 +510,7 @@ mod tests {
         <method name='RegisterStatusNotifierItem'><arg type='s' direction='in'/></method>\
         </interface></node>";
 
-    fn iterate_until(done: impl Fn() -> bool) {
+    pub(crate) fn iterate_until(done: impl Fn() -> bool) {
         let context = glib::MainContext::default();
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         while !done() {
@@ -519,7 +519,7 @@ mod tests {
         }
     }
 
-    fn call(
+    pub(crate) fn call(
         connection: &gio::DBusConnection,
         dest: &str,
         path: &str,
