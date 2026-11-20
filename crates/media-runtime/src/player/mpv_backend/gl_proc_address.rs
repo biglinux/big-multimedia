@@ -1,4 +1,6 @@
-//! EGL and GL entry points for every GL path of the players.
+//! EGL and GL entry points for every GL path of the players, and the other
+//! system libraries the offload path resolves at run time (libwayland-client,
+//! libgbm).
 //!
 //! GL functions come from `eglGetProcAddress`, as in mpv's own EGL backends.
 //! Under libglvnd it returns the shared dispatch stubs for core and extension
@@ -20,33 +22,60 @@ unsafe impl Send for Library {}
 // SAFETY: as above; the handle is only read.
 unsafe impl Sync for Library {}
 
-/// `libEGL.so.1`, opened once and never closed so resolved functions stay valid.
+/// A system library the players resolve symbols from, opened once and never
+/// closed so resolved functions stay valid.
+#[derive(Clone, Copy)]
+pub(crate) enum SystemLibrary {
+    Egl,
+    /// The Wayland client GTK already loaded, for protocols GDK does not expose.
+    WaylandClient,
+    Gbm,
+}
+
 #[expect(clippy::disallowed_methods, reason = "this module owns symbol lookup")]
-fn egl_library() -> Option<&'static Library> {
-    static LIBRARY: OnceLock<Option<Library>> = OnceLock::new();
-    LIBRARY
-        .get_or_init(|| {
-            // SAFETY: a constant library name; dlopen returns the instance GTK
-            // already loaded, or null.
-            let handle = unsafe {
-                libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL)
-            };
-            NonNull::new(handle).map(Library)
-        })
-        .as_ref()
+fn open(library: SystemLibrary) -> Option<&'static Library> {
+    static EGL: OnceLock<Option<Library>> = OnceLock::new();
+    static WAYLAND_CLIENT: OnceLock<Option<Library>> = OnceLock::new();
+    static GBM: OnceLock<Option<Library>> = OnceLock::new();
+    let (cell, name) = match library {
+        SystemLibrary::Egl => (&EGL, c"libEGL.so.1"),
+        SystemLibrary::WaylandClient => (&WAYLAND_CLIENT, c"libwayland-client.so.0"),
+        SystemLibrary::Gbm => (&GBM, c"libgbm.so.1"),
+    };
+    cell.get_or_init(|| {
+        // SAFETY: a constant library name; dlopen returns the instance already
+        // loaded, or loads it, or returns null.
+        let handle = unsafe { libc::dlopen(name.as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL) };
+        NonNull::new(handle).map(Library)
+    })
+    .as_ref()
+}
+
+/// The address of `name` in `library`, null when either is missing.
+#[expect(clippy::disallowed_methods, reason = "this module owns symbol lookup")]
+pub(crate) fn library_symbol(library: SystemLibrary, name: &CStr) -> *mut c_void {
+    open(library).map_or(std::ptr::null_mut(), |library| {
+        // SAFETY: the handle is live for the process and `name` is NUL-terminated.
+        unsafe { libc::dlsym(library.0.as_ptr(), name.as_ptr()) }
+    })
+}
+
+/// The function `name` exported by `library`.
+///
+/// # Safety
+/// `F` must be the `unsafe extern "C" fn` type of `name`.
+pub(crate) unsafe fn library_function<F: Copy>(library: SystemLibrary, name: &CStr) -> Option<F> {
+    // SAFETY: the caller names `F` as the type of `name`.
+    unsafe { function_at(library_symbol(library, name)) }
 }
 
 /// The EGL function `name` exported by `libEGL.so.1`.
 ///
 /// # Safety
 /// `F` must be the `unsafe extern "C" fn` type of `name`.
-#[expect(clippy::disallowed_methods, reason = "this module owns symbol lookup")]
 pub(crate) unsafe fn egl_function<F: Copy>(name: &CStr) -> Option<F> {
-    let library = egl_library()?;
-    // SAFETY: the handle is live for the process; `name` is NUL-terminated.
-    let address = unsafe { libc::dlsym(library.0.as_ptr(), name.as_ptr()) };
-    // SAFETY: the caller names `F` as the type of `name`.
-    unsafe { function_at(address) }
+    // SAFETY: forwarded from the caller.
+    unsafe { library_function(SystemLibrary::Egl, name) }
 }
 
 /// Address of the GL function or EGL extension function `name`, null when no

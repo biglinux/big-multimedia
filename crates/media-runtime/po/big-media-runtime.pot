@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-20 12:30-0300\n"
+"POT-Creation-Date: 2026-11-20 14:29-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1575,8 +1575,12 @@ msgstr ""
 msgid "Big Video Player"
 msgstr ""
 
-#: crates/big-video-player/src/video/app.rs:128
+#: crates/big-video-player/src/video/app.rs:129
 msgid "Open a separate player window instead of using the running one"
+msgstr ""
+
+#: crates/big-video-player/src/video/app.rs:139
+msgid "Open the player window maximized"
 msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:50

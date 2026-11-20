@@ -70,7 +70,7 @@ Shortcuts, in the main menu, lists every shortcut and changes it.
 ## Command line
 
 ```sh
-big-video-player [--new-window] [FILE|URI...]
+big-video-player [--new-window] [--maximized] [FILE|URI...]
 ```
 
 - One local file plays and puts its folder in the sidebar; playback continues
@@ -81,6 +81,8 @@ big-video-player [--new-window] [FILE|URI...]
 - Several arguments play the media files among them, in the order given.
 - Without `--new-window`, a second launch hands its files to the window already
   open, or raises it, and exits. `--new-window` starts a separate player instead.
+- `--maximized` opens the window maximized. A launch handed to the running
+  player leaves that window's size as it is.
 
 `--help` lists the options; `--help-gapplication` adds GLib's
 `--gapplication-service`, which only D-Bus activation uses.

@@ -1655,10 +1655,14 @@ msgstr ""
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
-#: crates/big-video-player/src/video/app.rs:128
+#: crates/big-video-player/src/video/app.rs:129
 msgid "Open a separate player window instead of using the running one"
 msgstr ""
 "Abrir outra janela do reprodutor em vez de usar o que já está em execução"
+
+#: crates/big-video-player/src/video/app.rs:139
+msgid "Open the player window maximized"
+msgstr "Abrir a janela do reprodutor maximizada"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"

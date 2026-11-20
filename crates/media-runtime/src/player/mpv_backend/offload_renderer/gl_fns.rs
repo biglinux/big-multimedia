@@ -27,6 +27,7 @@ pub(super) type GlCheckFramebufferStatusFn = unsafe extern "C" fn(u32) -> u32;
 pub(super) type GlViewportFn = unsafe extern "C" fn(i32, i32, i32, i32);
 pub(super) type GlFlushFn = unsafe extern "C" fn();
 pub(super) type GlFinishFn = unsafe extern "C" fn();
+pub(super) type GlGetErrorFn = unsafe extern "C" fn() -> u32;
 
 #[derive(Clone, Copy)]
 pub(super) struct GlFns {
@@ -43,6 +44,7 @@ pub(super) struct GlFns {
     pub(super) viewport: GlViewportFn,
     pub(super) flush: GlFlushFn,
     pub(super) finish: GlFinishFn,
+    pub(super) get_error: GlGetErrorFn,
     pub(super) fence_sync: Option<unsafe extern "C" fn(u32, u32) -> *mut std::ffi::c_void>,
     pub(super) delete_sync: Option<unsafe extern "C" fn(*mut std::ffi::c_void)>,
 }
@@ -65,6 +67,7 @@ impl GlFns {
                 viewport: gl_function(c"glViewport")?,
                 flush: gl_function(c"glFlush")?,
                 finish: gl_function(c"glFinish")?,
+                get_error: gl_function(c"glGetError")?,
                 fence_sync: gl_function(c"glFenceSync"),
                 delete_sync: gl_function(c"glDeleteSync"),
             })
