@@ -333,6 +333,25 @@ fn admit_client(
         {
             return Accepted::More;
         }
+        // A network error already pending on the new socket ends only that
+        // client (accept(2), "Error handling"). EOPNOTSUPP is left out: it
+        // also means the socket cannot accept, which no retry fixes.
+        Err(e)
+            if matches!(
+                e.raw_os_error(),
+                Some(
+                    libc::ENETDOWN
+                        | libc::EPROTO
+                        | libc::ENOPROTOOPT
+                        | libc::EHOSTDOWN
+                        | libc::ENONET
+                        | libc::EHOSTUNREACH
+                        | libc::ENETUNREACH
+                )
+            ) =>
+        {
+            return Accepted::More;
+        }
         Err(e)
             if matches!(
                 e.raw_os_error(),
@@ -574,6 +593,20 @@ mod tests {
             admit_client(invalid, &mut clients),
             Accepted::Failed(_)
         ));
+    }
+
+    /// accept(2) lists the TCP errors pending on the new socket that a server
+    /// treats like EAGAIN; values from Linux errno.h.
+    #[test]
+    fn pending_network_error_keeps_accepting() {
+        let mut clients = Vec::new();
+        for errno in [100, 71, 92, 112, 64, 113, 101] {
+            let result = Err(std::io::Error::from_raw_os_error(errno));
+            assert!(
+                matches!(admit_client(result, &mut clients), Accepted::More),
+                "errno {errno}"
+            );
+        }
     }
 
     #[test]
