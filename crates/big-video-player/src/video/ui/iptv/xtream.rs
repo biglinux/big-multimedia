@@ -179,7 +179,7 @@ struct FirstEntries<T> {
     keep: fn(&T) -> bool,
 }
 
-impl<'de, T: Deserialize<'de>> DeserializeSeed<'de> for FirstEntries<T> {
+impl<'de, T: DeserializeOwned> DeserializeSeed<'de> for FirstEntries<T> {
     type Value = Vec<T>;
 
     fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Vec<T>, D::Error> {
@@ -188,7 +188,7 @@ impl<'de, T: Deserialize<'de>> DeserializeSeed<'de> for FirstEntries<T> {
 }
 
 /// A panel with nothing to list may answer an object or `null`.
-impl<'de, T: Deserialize<'de>> Visitor<'de> for FirstEntries<T> {
+impl<'de, T: DeserializeOwned> Visitor<'de> for FirstEntries<T> {
     type Value = Vec<T>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -207,10 +207,13 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for FirstEntries<T> {
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Vec<T>, A::Error> {
         let mut entries = Vec::new();
         while entries.len() <= MAX_PLAYLIST_ENTRIES {
-            let Some(entry) = seq.next_element::<T>()? else {
+            // Read whole, so a record of another shape is skipped alone.
+            let Some(value) = seq.next_element::<serde_json::Value>()? else {
                 return Ok(entries);
             };
-            if (self.keep)(&entry) {
+            if let Ok(entry) = T::deserialize(value)
+                && (self.keep)(&entry)
+            {
                 entries.push(entry);
             }
         }
@@ -432,6 +435,13 @@ mod tests {
                 "http://srv/live/u%40x/p/202.m3u8"
             ]
         );
+    }
+
+    #[test]
+    fn invalid_records_skip_alone() {
+        let streams = live_streams(r#"[null, 5, "x", {"name": "News", "stream_id": 7}]"#).unwrap();
+        assert_eq!(streams.len(), 1);
+        assert!(live_streams("[{").is_err());
     }
 
     #[test]
