@@ -75,16 +75,16 @@ impl AudioShell {
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner) = 0.0;
         } else if let Some(mpv) = &self.mpv {
-            // The music queue keeps entries of imported playlists, saved
-            // queues included, so every queue load passes the list check.
-            let (profile, origin) = if self.podcast_mode {
-                (AudioCacheProfile::Podcast, ListOrigin::Network)
+            // Either queue mixes files the person opened with list entries;
+            // a feed's entries were checked as a network list when parsed.
+            let profile = if self.podcast_mode {
+                AudioCacheProfile::Podcast
             } else {
-                (AudioCacheProfile::Music, ListOrigin::LocalFile)
+                AudioCacheProfile::Music
             };
             mpv.load_audio_paused(
                 &path,
-                TargetSource::List(origin),
+                TargetSource::List(ListOrigin::LocalFile),
                 profile,
                 status == PlaybackStatus::Paused,
             );
