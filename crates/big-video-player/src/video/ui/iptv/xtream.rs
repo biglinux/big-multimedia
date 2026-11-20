@@ -71,29 +71,31 @@ fn without_credentials(m3u: &str, username: &str, password: &str) -> String {
     let m3u = m3u
         .replace(&raw, CREDENTIALS)
         .replace(&encoded, CREDENTIALS);
+    let encoded_lower = encoded_password.to_ascii_lowercase();
+    // Within a query only: a short password would match stream ids in paths.
     let in_query = |line: &str| {
-        line.split_once('?').is_some_and(|(_, query)| {
-            query.split(['&', '#']).any(|field| {
-                field.split_once('=').is_some_and(|(_, value)| {
-                    !password.is_empty() && (value == password || value == encoded_password)
-                })
+        !password.is_empty()
+            && line.split_once('?').is_some_and(|(_, query)| {
+                query.contains(password) || query.to_ascii_lowercase().contains(&encoded_lower)
             })
-        })
     };
     let mut kept = String::with_capacity(m3u.len());
     let mut described = String::new();
+    let mut described_shows = false;
     for line in m3u.lines() {
         if line.starts_with("#EXTINF") || (line.starts_with('#') && !described.is_empty()) {
+            described_shows |= in_query(line);
             described.push_str(line);
             described.push('\n');
             continue;
         }
-        if line.starts_with('#') || !in_query(line) {
+        if line.starts_with('#') || !(described_shows || in_query(line)) {
             kept.push_str(&described);
             kept.push_str(line);
             kept.push('\n');
         }
         described.clear();
+        described_shows = false;
     }
     kept.push_str(&described);
     kept
@@ -449,7 +451,7 @@ mod tests {
         let streams = live_streams(r#"[{"name": "One", "stream_id": 1}]"#).unwrap();
         let json_api = live_m3u("http://srv", "ts", &[], &streams);
         let export = without_credentials(
-            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n#EXTINF:-1,Three\nhttp://srv/live.php?username=joe&password=s3cr%3Ft&stream=3\n",
+            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n#EXTINF:-1,Three\nhttp://srv/live.php?username=joe&password=s3cr%3Ft&stream=3\n#EXTINF:-1 tvg-logo=\"http://srv/l.png?k=s3cr%3ft\",Four\nhttp://srv/4.ts\n",
             "joe",
             "s3cr?t",
         );
