@@ -36,7 +36,6 @@ impl CommitOutcome {
 pub fn open_regular_read(path: &Path) -> io::Result<File> {
     let mut options = OpenOptions::new();
     options.read(true);
-    #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
         #[expect(clippy::disallowed_methods, reason = "the owner of no-follow reads")]
@@ -88,7 +87,6 @@ impl WriteLock {
             .to_os_string();
         name.push(".lock");
         let path = target.with_file_name(name);
-        #[cfg(unix)]
         {
             use std::os::fd::AsRawFd;
             use std::os::unix::fs::OpenOptionsExt;
@@ -123,31 +121,12 @@ impl WriteLock {
             }
             Ok(Self { _file: file })
         }
-        #[cfg(not(unix))]
-        {
-            let _ = path;
-            Err(io::Error::new(
-                io::ErrorKind::Unsupported,
-                "settings lock unsupported",
-            ))
-        }
     }
 }
 
 /// Synchronize the containing directory after publication (no rewrite).
 pub fn sync_parent(path: &Path) -> io::Result<()> {
-    #[cfg(unix)]
-    {
-        File::open(parent(path))?.sync_all()
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = path;
-        Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "directory sync unsupported",
-        ))
-    }
+    File::open(parent(path))?.sync_all()
 }
 fn parent(path: &Path) -> &Path {
     path.parent()
@@ -268,17 +247,9 @@ impl StagedFile {
         let hex = crate::random::random_hex_id()?;
         let directory = parent.join(format!("{}{hex}", staging_prefix()));
         let mut builder = fs::DirBuilder::new();
-        #[cfg(unix)]
         {
             use std::os::unix::fs::DirBuilderExt;
             builder.mode(0o700);
-        }
-        #[cfg(not(unix))]
-        {
-            return Err(io::Error::new(
-                io::ErrorKind::Unsupported,
-                "private staging unsupported",
-            ));
         }
         builder.create(&directory)?;
         let stage = Self {
@@ -467,7 +438,6 @@ mod tests {
     }
     /// A published file is as readable as any file the user creates, so media
     /// servers and other accounts can read downloads and exports.
-    #[cfg(unix)]
     #[test]
     fn published_file_follows_umask() {
         use std::os::unix::fs::PermissionsExt;
@@ -600,7 +570,6 @@ mod tests {
         assert_eq!(read_regular_limited(&target, 4).unwrap().unwrap(), b"four");
         fs::remove_dir_all(dir).unwrap();
     }
-    #[cfg(unix)]
     #[test]
     fn no_symlink_read_and_nonblocking_writer_lock() {
         let dir = directory();
@@ -614,7 +583,6 @@ mod tests {
         assert!(WriteLock::try_acquire(&target).is_ok());
         fs::remove_dir_all(dir).unwrap();
     }
-    #[cfg(unix)]
     #[test]
     fn regular_open_refuses_special_files() {
         use std::os::unix::ffi::OsStrExt;
