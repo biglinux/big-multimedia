@@ -256,7 +256,7 @@ mod tests {
     }
 
     #[test]
-    fn late_open_failure_after_open_is_stale() {
+    fn late_open_failure_ignored() {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         db::schema::run_migrations(&conn).unwrap();
         let (mut owner, _updates) = QueuePersistence::new();

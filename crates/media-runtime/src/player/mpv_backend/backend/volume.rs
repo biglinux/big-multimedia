@@ -173,10 +173,7 @@ impl VolumeControl {
     }
 
     /// A copy of the state to sync from, or `None` when there is nothing to
-    /// do. Its requests stay in place, so readers see them until `sync`
-    /// publishes the applied state. mpv does not notify changes made in the
-    /// sound server's mixer, so `refresh_mixer` re-reads it at most twice a
-    /// second.
+    /// do; readers keep seeing its requests until `sync` publishes them.
     fn requests(&self, changed: bool, refresh_mixer: bool) -> Option<State> {
         let shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         let refresh = refresh_mixer
