@@ -54,8 +54,9 @@ fn remove_legacy_files(dir: &Path) {
             .extension()
             .is_some_and(|extension| extension == "m3u")
             && !is_cache_file_name(&name);
+        // The legacy name can hold the credentials: it stays out of the log.
         if legacy && let Err(error) = fs::remove_file(entry.path()) {
-            log::warn!("iptv cache cleanup {}: {error}", redact_path(entry.path()));
+            log::warn!("iptv cache cleanup of a legacy list: {error}");
         }
     }
 }
