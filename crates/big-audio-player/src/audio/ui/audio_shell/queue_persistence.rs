@@ -91,8 +91,12 @@ impl QueuePersistence {
     /// `restored` says whether the saved queue was read; until it is, saves are
     /// refused so they cannot replace a queue the person has not seen.
     pub(super) fn loaded(&mut self, writer: DbHandle, restored: bool) {
-        self.db = Some(writer);
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        // A second attempt that read nothing does not undo one that did.
+        if state.loaded && !restored {
+            return;
+        }
+        self.db = Some(writer);
         state.loaded = restored;
         state.failed = !restored;
         state.open_failure = None;
@@ -262,6 +266,9 @@ mod tests {
         let (mut owner, _updates) = QueuePersistence::new();
         owner.loaded(Arc::new(Mutex::new(conn)), true);
         owner.open_failed("database is locked".into());
+        assert_eq!(owner.status().phase, Phase::Saved);
+        let unread = rusqlite::Connection::open_in_memory().unwrap();
+        owner.loaded(Arc::new(Mutex::new(unread)), false);
         assert_eq!(owner.status().phase, Phase::Saved);
     }
 
