@@ -52,16 +52,15 @@ Dependencies point one way: this crate uses `big-media-data`,
 
 ## Subprocesses
 
-All go through `big_os_kit::subprocess::BigSubprocessSpec` (argv arrays, no
-shell).
+All but the converters go through `big_os_kit::subprocess::BigSubprocessSpec`
+(argv arrays, no shell). The converters start through `gio::AppInfo`, so the
+compositor gets an activation token and raises their window.
 
 | Site | Program |
 |---|---|
 | `player/thumbnail.rs`, `media/thumbnail.rs` | `ffmpeg`, `ffprobe` |
-| `player/mpv_backend/backend/` | `ffmpeg`, `pactl` |
-| `media/metadata_cache/` | `ffprobe` |
-| `media/playlist_scan/scan.rs` | `fd` |
-| `media/playlist_scan/display.rs` | `gio trash` |
+| `media/metadata_cache/` | `ffprobe`, through `big_media_data::media_probe` |
+| `media/playlist_scan/scan.rs` | `fd`, with a walker of its own when `fd` is missing |
 | `converter_handoff.rs` | `big-{video,audio}-converter-gui` |
 
 Program names are fixed strings. User paths are passed as separate argv
