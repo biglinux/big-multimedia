@@ -13,7 +13,8 @@
 # dbus-broker does not, so there they document the calls the program makes.
 #
 # Complain mode logs what the profile would refuse without refusing it; the
-# release after the logs come back clean switches to enforce. Package upgrades
+# release after the logs come back clean switches to enforce. image_loader
+# already enforces: it runs glycin's loaders without bwrap. Package upgrades
 # replace this file: local additions go in /etc/apparmor.d/local/big-audio-player.
 
 abi <abi/4.0>,

@@ -158,7 +158,7 @@ impl ExportedPlayer {
     }
 }
 
-/// Asks the bus for `name` without queueing; true when this connection owns
+/// Asks the bus for `name` without queuing; true when this connection owns
 /// it. Closing the connection releases it, so nothing is left to unown: gio's
 /// name-owning callbacks abort when the bus closes under them.
 async fn request_name(connection: &gio::DBusConnection, name: &str) -> Result<bool, glib::Error> {
