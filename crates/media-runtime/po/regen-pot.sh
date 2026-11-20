@@ -40,7 +40,10 @@ candidates="$(mktemp)"
 trap 'rm -f "$candidates"' EXIT
 find "${SOURCES[@]}" -name '*.rs' -not -path '*/target/*' | LC_ALL=C sort > "$candidates"
 
+# File names without lines: a line reference moves on every edit of its file
+# and rewrites all the catalogs.
 xgettext \
+  --add-location=file \
   --language=Rust \
   --keyword=i18n \
   --keyword=ni18n:1,2 \

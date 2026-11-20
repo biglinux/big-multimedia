@@ -206,7 +206,9 @@ sudo apparmor_parser -r /etc/apparmor.d/big-video-player
 ```
 
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
-regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
+regenerate the template with `crates/media-runtime/po/regen-pot.sh` and merge
+each catalog with `msgmerge --add-location=file`, so no line number moves the
+catalogs on an unrelated edit.
 
 `clippy.toml` bans GTK, libadwaita and gtk-rs calls that leak or misbehave in
 the pinned versions, each with its replacement. `docs/native-library-limits.md`
