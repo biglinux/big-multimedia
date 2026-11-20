@@ -615,25 +615,12 @@ impl BigMediaImmersionController {
         self.should_hide_cursor_when_idle.set(should_hide);
     }
 
-    /// Hide `revealer` when the media surface becomes idle. Focus inside the
-    /// revealer does not pin it open: a media OSD must fade a few seconds after
-    /// the pointer stops even though a transport control keeps keyboard focus
-    /// after a click (which is the normal state). The pointer resting on it
-    /// does: someone reading a control is about to click it, and a click
-    /// landing after the fade would hit the video instead.
+    /// Hide `revealer` when the media surface becomes idle. Neither keyboard
+    /// focus nor the pointer resting on it pins it open, as in mpv and VLC:
+    /// while it shows, the video cannot go to a hardware plane. The app pins it
+    /// with a hide guard while a control is in use.
     pub fn register_revealer(&self, revealer: &gtk::Revealer) {
         self.reveal_targets.borrow_mut().push(revealer.downgrade());
-        // Moving off the chrome re-arms the fade through the media surface's
-        // own motion/leave handlers, so no leave handler here: one would also
-        // fire when the fade itself unmaps the chrome and reveal it again.
-        let hover = gtk::EventControllerMotion::new();
-        revealer.add_controller(hover.clone());
-        let hover = hover.downgrade();
-        self.register_hide_guard(move || {
-            hover
-                .upgrade()
-                .is_some_and(|hover| hover.contains_pointer())
-        });
     }
 
     /// Keep chrome visible while `should_keep_visible` returns `true`.
@@ -715,6 +702,7 @@ impl BigMediaImmersionController {
             .iter()
             .filter_map(gtk::glib::WeakRef::upgrade)
         {
+            revealer.set_can_target(true);
             revealer.set_reveal_child(true);
         }
         if self.should_hide_cursor_when_idle.get()
@@ -742,6 +730,9 @@ impl BigMediaImmersionController {
             .iter()
             .filter_map(gtk::glib::WeakRef::upgrade)
         {
+            // A fading bar slides under a resting pointer: its hover popovers
+            // and tooltips must not wake it up again.
+            revealer.set_can_target(false);
             revealer.set_reveal_child(false);
         }
         if self.should_hide_cursor_when_idle.get()
