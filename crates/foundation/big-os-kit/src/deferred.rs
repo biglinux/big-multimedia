@@ -268,6 +268,11 @@ impl Document {
                     io::Error::other("state changed in another instance and could not be combined")
                 })?
             };
+            if bytes.len() > MAX_BYTES {
+                return Err(io::Error::other(
+                    "state changed in another instance and the combination exceeds its limit",
+                ));
+            }
             storage::atomic_write_private(&self.path, &bytes)?;
             // `expected` is what this process's state derives from: after a
             // merge the file also holds the other process's change, and the
@@ -376,6 +381,20 @@ mod tests {
         doc.replace(b"c".to_vec()).unwrap();
         drain(&doc);
         assert_eq!(std::fs::read(&p).unwrap(), b"b\nc");
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    #[test]
+    fn oversized_merge_leaves_file() {
+        let p = path("prefs.txt");
+        std::fs::write(&p, b"a").unwrap();
+        let doc = Document::reviewed(p.clone(), Some(b"a".to_vec())).merging(union);
+        let theirs = format!("a\n{}", "t".repeat(MAX_BYTES / 2 + 1));
+        std::fs::write(&p, &theirs).unwrap();
+        doc.replace(format!("a\n{}", "o".repeat(MAX_BYTES / 2 + 1)).into_bytes())
+            .unwrap();
+        drain(&doc);
+        assert_eq!(doc.status().phase, Phase::Failed);
+        assert_eq!(std::fs::read(&p).unwrap(), theirs.as_bytes());
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]
