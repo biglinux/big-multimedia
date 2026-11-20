@@ -14,8 +14,9 @@
 //! which GLib ≥ 2.86 issues through `g_free_sized`; glibc's versions of both
 //! simply jump to `free`, which lands here and handles NULL.
 //!
-//! The executable must export these symbols (`--export-dynamic-symbol`, see the
-//! players' `build.rs`) so libraries loaded with `dlopen` bind to them too.
+//! The executable must export these symbols (`--export-dynamic-symbol`) so
+//! libraries loaded with `dlopen` bind to them too; this crate's `build.rs`
+//! lists them for the players' build scripts, and a new one goes there.
 
 use std::ffi::{c_int, c_void};
 

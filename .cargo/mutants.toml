@@ -4,6 +4,10 @@
 # where `/tmp` is noexec.
 test_tool = "nextest"
 
+# Test modules split into their own file; some sit behind
+# `cfg(all(test, not(miri)))`, which cargo-mutants does not read as test-only.
+exclude_globs = ["**/tests.rs"]
+
 # Mutation debt is tracked for production behavior. Helpers compiled only inside
 # `#[cfg(test)] mod tests` are fixtures, not shipped logic, and mutating them
 # creates false debt that does not represent application behavior.
@@ -29,13 +33,10 @@ exclude_re = [
     # GTK accelerator installation mutates a live application. Resolved action
     # names and single-key filtering are unit-tested.
     'crates/big-audio-player/src/audio/app\.rs:.*replace install_audio_accels with \(\)',
-    # Audio preferences page/window construction is live GTK/libadwaita. Page
-    # chrome, adjustment ranges, saved geometry keys, and effect mapping are
-    # covered by display-free preferences tests.
+    # The Music page and the dialog are live GTK/libadwaita, and the actions
+    # call a live MpvBackend through libmpv. No display-free test reaches them.
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace create_music_page -> adw::PreferencesPage with Default::default\(\)',
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace show_audio_preferences with \(\)',
-    # These bridge the generic preference page to a live MpvBackend. Backend
-    # presence and PlayerAudioEffects -> AudioEffectsSnapshot mapping are tested.
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace audio_preference_actions -> Option<PlayerAudioPreferenceActions> with None',
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace apply_player_audio_effects with \(\)',
     # Appearance dialog/page construction is live GTK/libadwaita. Window
@@ -126,7 +127,6 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_generate_group -> adw::PreferencesGroup with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_playlist_row -> adw::ActionRow with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace suffix_button -> gtk::Button with Default::default\(\)',
-    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace prompt_name with \(\)',
     'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace confirm_delete with \(\)',
     # PlaylistPanel methods bridge tested queue contracts into live GIO stores,
     # GTK labels/images/scrolling, reusable ToolbarView roots, and Relm4 update
@@ -142,8 +142,8 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace <impl Component for PlaylistPanel>::init_root -> Self::Root with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace <impl Component for PlaylistPanel>::update with \(\)',
     # Library IO launches live file pickers and GTK/libadwaita folder dialogs.
-    # M3U8 rendering, home-path abbreviation, playlist-name normalization, and
-    # name-entry dialog chrome/focus selection are covered by display-free tests.
+    # Home-path abbreviation is covered by display-free tests; the rest needs a
+    # live window.
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace export_detail_m3u8 with \(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace import_playlist with \(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace save_tracks_as_playlist with \(\)',
@@ -151,15 +151,15 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_card -> gtk::Box with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_list -> gtk::ListBox with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folder_buttons -> gtk::Box with Default::default\(\)',
-    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace present_name_entry_dialog with \(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_remove_button -> gtk::Button with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_intro_label -> gtk::Label with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_tips_card -> gtk::Box with Default::default\(\)',
     # The remaining audio shell source methods are live orchestration:
     # asynchronous DB queries, mpv stream control, Relm4 messages, GIO blocking
     # workers, GTK toasts/dialogs, and tab/queue state bridges. The pure
-    # recording path/content contracts are tested in this module; the live
-    # behavior needs a live window and session bus.
+    # recording path/content contracts are tested in this module, episode ids
+    # and the queue stash/restore in queue_state; the live behavior needs a
+    # live window and session bus.
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_files with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::scan_folder with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::remove_watch_folder with \(\)',
@@ -172,12 +172,7 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::stop_radio_recording',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_podcast with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::enter_podcast_mode with \(\)',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::enter_podcast_mode',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete - in AudioShell::enter_podcast_mode',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace \+ with [-*] in AudioShell::enter_podcast_mode',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_tab_changed with \(\)',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace == with != in AudioShell::handle_tab_changed',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::handle_tab_changed',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::load_radio_stations with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace present_recording_saved_dialog with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace recording_saved_field -> gtk::Box with Default::default\(\)',

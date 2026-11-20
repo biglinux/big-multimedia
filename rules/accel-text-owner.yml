@@ -1,0 +1,14 @@
+id: accel-text-owner
+language: rust
+severity: error
+message: Build accelerator text with big_app_kit_core::keybindings::accel_text or canonical_accel
+note: crates/app/big-app-kit-core/src/keybindings.rs owns the modifier order that shortcut lookups match.
+rule:
+  any:
+    - pattern: $TEXT.push_str($MODIFIER)
+    - pattern: format!($MODIFIER, $$$ARGS)
+constraints:
+  MODIFIER:
+    regex: '^"[^"]*<(?i)(ctrl|control|primary|shift|alt|mod1)>'
+ignores:
+  - crates/app/big-app-kit-core/src/keybindings.rs

@@ -1,0 +1,29 @@
+id: no-shell-invocation
+language: rust
+severity: error
+message: Start the program with an argv array, not through a shell
+note: A shell would parse file names and URLs from outside as shell syntax.
+rule:
+  kind: string_literal
+  regex: '^"(/usr)?(/bin/)?(ba|da)?sh"$'
+  any:
+    - inside:
+        kind: arguments
+        inside:
+          kind: call_expression
+          has:
+            field: function
+            regex: '(\.program|Command::new)$'
+    - precedes:
+        regex: '^"-c"$'
+        stopBy: end
+  not:
+    inside:
+      kind: mod_item
+      stopBy: end
+      has:
+        field: name
+        regex: '^tests$'
+ignores:
+  - "**/tests.rs"
+  - "**/tests/**"

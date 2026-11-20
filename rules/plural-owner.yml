@@ -1,0 +1,10 @@
+id: plural-owner
+language: rust
+severity: error
+message: Pick a plural form with ni18n("{count} item", "{count} items", count)
+note: >-
+  An English `== 1` rule gives Russian, Polish, Ukrainian and Czech the wrong
+  form; crates/foundation/big-media-data/src/i18n.rs `ni18n` lets the catalog's
+  Plural-Forms choose, with the count inside the msgid.
+rule:
+  pattern: if $N == 1 { i18n($A) } else { i18n($B) }

@@ -1,8 +1,16 @@
 [default]
+locale = "en-us"
+# Translated text: AppStream elements with xml:lang and desktop Key[lang]= lines.
+extend-ignore-re = [
+    '<[a-z]+ xml:lang="[^"]+">.*',
+    '(?m)^[A-Za-z-]+\[[A-Za-z_@]+\]=.*$',
+]
 extend-ignore-identifiers-re = [
     # GTK / libadwaita / Relm4 acronyms
     "Adw",
     "adw",
+    # gtk::AccessibleRelation::LabelledBy keeps GTK's British spelling.
+    "LabelledBy",
     # libmpv / FFmpeg domain words
     "mpv",
     "vaapi",
@@ -18,6 +26,8 @@ extend-ignore-identifiers-re = [
 
 [default.extend-words]
 # Portuguese / locale tokens in user-facing strings + doc comments.
+Controle = "Controle"
+Progresso = "Progresso"
 componentes = "componentes"
 controles = "controles"
 conver = "conver"
@@ -28,12 +38,18 @@ Relm = "Relm"
 flate = "flate"
 unparented = "unparented"   # GTK: widget removed from its parent.
 seeked = "seeked"           # MPRIS spec "Seeked" D-Bus signal.
+caf = "caf"                 # Percent-encoded "café" in tests.
+ABD = "ABD"                 # Sort-order test input.
 
 [files]
 extend-exclude = [
     "target/**",
+    # Vendored upstream source, spelled as upstream keeps it.
+    "third_party/**",
     "**/po/*.po",
     "**/po/*.pot",
+    # Translation glossaries: target-language terms.
+    "**/po/glossary/*.tsv",
     "crates/media-runtime/data/shaders/**",
     "build-locale/**",
     "*.mo",

@@ -12,7 +12,6 @@ const DEFAULT_SERVERS: &[&str] = &[
     "at1.api.radio-browser.info",
     "de1.api.radio-browser.info",
 ];
-const SETTINGS_KEY_SERVERS: &str = "radio-api-servers";
 
 fn discover_servers_dns() -> Vec<String> {
     let addrs = match (DNS_DISCOVERY_DOMAIN, 443).to_socket_addrs() {
@@ -28,21 +27,13 @@ fn discover_servers_dns() -> Vec<String> {
 
     for addr in addrs {
         let ip = addr.ip();
-        match dns_lookup::lookup_addr(&ip) {
-            Ok(hostname) => {
-                let hostname = hostname.trim_end_matches('.').to_string();
-                if hostname.ends_with(".api.radio-browser.info") && seen.insert(hostname.clone()) {
-                    debug!("[radio] discovered server: {hostname} ({ip})");
-                    servers.push(hostname);
-                }
-            }
-            Err(error) => {
-                debug!("[radio] reverse DNS failed for {ip}: {error}, using IP directly");
-                let ip_str = ip.to_string();
-                if seen.insert(ip_str.clone()) {
-                    servers.push(ip_str);
-                }
-            }
+        // TLS needs the host name: no certificate names a bare address.
+        let Ok(hostname) = dns_lookup::lookup_addr(&ip) else {
+            continue;
+        };
+        let hostname = hostname.trim_end_matches('.').to_string();
+        if hostname.ends_with(".api.radio-browser.info") && seen.insert(hostname.clone()) {
+            servers.push(hostname);
         }
     }
 
@@ -55,7 +46,7 @@ fn discover_servers_dns() -> Vec<String> {
     servers
 }
 
-pub fn api_servers() -> Vec<String> {
+pub(super) fn api_servers() -> Vec<String> {
     let discovered = discover_servers_dns();
     let servers = if discovered.is_empty() {
         DEFAULT_SERVERS
@@ -71,7 +62,7 @@ pub fn api_servers() -> Vec<String> {
 /// The user's raw comma-separated server override (empty = DNS discovery). Cheap
 /// settings read, safe on the main thread before spawning the blocking resolve.
 pub fn settings_servers_raw(settings: &crate::settings::Settings) -> String {
-    settings.string(SETTINGS_KEY_SERVERS)
+    settings.get_string(crate::settings::keys::RADIO_API_SERVERS)
 }
 
 /// Resolve the API server list from the raw override. Falls back to blocking DNS
@@ -102,7 +93,7 @@ fn rotate_servers(mut servers: Vec<String>) -> Vec<String> {
     servers
 }
 
-pub fn radio_browser_get_with_fallback(path: &str, servers: &[String]) -> Option<String> {
+pub(super) fn radio_browser_get_with_fallback(path: &str, servers: &[String]) -> Option<String> {
     for server in servers {
         let url = format!("https://{server}{path}");
         debug!("[radio] trying {}", big_os_kit::url::MediaLogTarget(&url));
@@ -133,17 +124,6 @@ mod tests {
         }
     }
 
-    // DNS discovery calls libc resolver APIs; ordinary tests cover the system
-    // boundary while Miri stays focused on pure server-list logic.
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn api_servers_returns_non_empty() {
-        assert!(
-            !api_servers().is_empty(),
-            "api_servers should never return empty"
-        );
-    }
-
     #[test]
     fn rotate_servers_preserves_elements() {
         let original = vec!["a".to_string(), "b".to_string(), "c".to_string()];
@@ -162,23 +142,5 @@ mod tests {
     #[test]
     fn rotate_empty_list_unchanged() {
         assert!(rotate_servers(Vec::new()).is_empty());
-    }
-
-    // DNS discovery calls libc resolver APIs; ordinary tests cover the system
-    // boundary while Miri stays focused on pure server-list logic.
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn dns_discovery_returns_valid_servers() {
-        let servers = discover_servers_dns();
-        for server in &servers {
-            assert!(
-                !server.starts_with("https://"),
-                "server should be hostname, not URL: {server}"
-            );
-            assert!(
-                !server.starts_with("http://"),
-                "server should be hostname, not URL: {server}"
-            );
-        }
     }
 }

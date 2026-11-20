@@ -8,7 +8,7 @@ use big_os_kit::url::encode_query_value as urlencoding_encode;
 
 use super::super::RadioExploreEntry;
 use super::discovery::radio_browser_get_with_fallback;
-use super::parse::{parse_stations_json, parse_stations_json_filtered};
+use big_media_engines::radio_browser::{parse_stations_json, parse_stations_json_filtered};
 
 pub fn search_radio_browser_api(query: &str, servers: &[String]) -> Option<Vec<RadioExploreEntry>> {
     let path = format!(

@@ -1,8 +1,11 @@
 //! RSS 2.0 podcast feed parser (`<enclosure>` audio items).
 
 use crate::error::Result;
+use big_os_kit::deferred::Document;
 use big_os_kit::http_client::http_get_with_retry;
-use roxmltree::{Document, Node};
+use big_os_kit::url::ListOrigin;
+use roxmltree::Node;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct PodcastFeed {
@@ -10,6 +13,8 @@ pub struct PodcastFeed {
     pub description: String,
     pub image_url: Option<String>,
     pub episodes: Vec<PodcastEpisode>,
+    /// Episodes left out because their audio address is not a stream URI.
+    pub skipped: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -28,24 +33,26 @@ pub fn fetch_feed(feed_url: &str) -> Option<PodcastFeed> {
 }
 
 pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
-    let doc = Document::parse(xml).ok()?;
+    let doc = roxmltree::Document::parse(xml).ok()?;
     let channel = doc.descendants().find(|n| n.has_tag_name("channel"))?;
 
     let title = child_text(&channel, "title").unwrap_or_default();
     let description = child_text(&channel, "description").unwrap_or_default();
 
     // RSS spec image first, then itunes:image href fallback.
-    let image_url = channel
-        .children()
-        .find(|n| n.has_tag_name("image"))
+    let image_url = rss_child(&channel, "image")
         .and_then(|img| child_text(&img, "url"))
         .or_else(|| {
             channel
                 .children()
-                .find(|n| n.tag_name().name() == "image")
+                .find(|n| {
+                    n.tag_name().name() == "image"
+                        && n.tag_name().namespace() != channel.tag_name().namespace()
+                })
                 .and_then(|n| n.attribute("href").map(String::from))
         });
 
+    let mut skipped = 0;
     let episodes = channel
         .children()
         .filter(|n| n.has_tag_name("item"))
@@ -69,6 +76,10 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
                     None
                 }
             })?;
+            if !big_os_kit::url::accepts_list_entry(&audio_url, ListOrigin::Network) {
+                skipped += 1;
+                return None;
+            }
 
             Some(PodcastEpisode {
                 title: episode_title,
@@ -85,13 +96,22 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
         description,
         image_url,
         episodes,
+        skipped,
+    })
+}
+
+/// An RSS element of `parent`: one in its namespace, never an `itunes:` one
+/// of the same local name.
+fn rss_child<'a, 'input>(parent: &Node<'a, 'input>, tag_name: &str) -> Option<Node<'a, 'input>> {
+    parent.children().find(|n| {
+        n.is_element()
+            && n.tag_name().name() == tag_name
+            && n.tag_name().namespace() == parent.tag_name().namespace()
     })
 }
 
 fn child_text(parent: &Node, tag_name: &str) -> Option<String> {
-    parent
-        .children()
-        .find(|n| n.has_tag_name(tag_name))
+    rss_child(parent, tag_name)
         .and_then(|n| n.text().map(|t| t.trim().to_string()))
         .filter(|s| !s.is_empty())
 }
@@ -108,7 +128,7 @@ fn child_text_ns(parent: &Node, local_name: &str) -> Option<String> {
 /// Subscription list and title cache are small program state.
 const MAX_STATE_BYTES: usize = 1024 * 1024;
 
-fn state_path(name: &str) -> Option<std::path::PathBuf> {
+fn state_path(name: &str) -> Option<PathBuf> {
     big_os_kit::xdg_dirs::config_dir()
         .map(|dir| dir.join(crate::config::audio::CONFIG_DIR).join(name))
 }
@@ -119,33 +139,73 @@ fn read_state(name: &str) -> Option<String> {
     String::from_utf8(bytes).ok()
 }
 
-pub fn load_subscriptions() -> Vec<String> {
-    read_state("podcast-subscriptions.txt").map_or_else(Vec::new, |content| {
-        content
-            .lines()
-            .filter(|l| !l.is_empty())
-            .map(String::from)
-            .collect()
-    })
+const SUBSCRIPTIONS_FILE: &str = "podcast-subscriptions.txt";
+
+/// Subscribed feed URLs and the writer that publishes them. It exists only
+/// after a confirmed read, so a save never replaces a list that could not be read.
+#[derive(Debug)]
+pub struct Subscriptions {
+    pub urls: Vec<String>,
+    document: Document,
 }
 
-pub fn save_subscriptions(urls: &[String]) -> Result<()> {
-    let path = state_path("podcast-subscriptions.txt").ok_or_else(|| {
+impl Subscriptions {
+    /// Admit a save of [`Subscriptions::urls`]; saves run one at a time and the
+    /// latest list wins.
+    ///
+    /// # Errors
+    /// Returns the refusal of [`big_os_kit::deferred::Document::replace`]: an
+    /// earlier failed save or a full background lane.
+    pub fn save(&self) -> Result<()> {
+        self.document.replace(self.urls.join("\n").into_bytes())?;
+        Ok(())
+    }
+}
+
+/// A missing file is an empty list.
+///
+/// # Errors
+/// Returns an error when the configuration directory is unknown, or the file
+/// is unreadable, not a regular file, over 1 MiB or not UTF-8.
+pub fn load_subscriptions() -> Result<Subscriptions> {
+    let path = state_path(SUBSCRIPTIONS_FILE).ok_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "configuration directory unavailable",
         )
     })?;
-    big_os_kit::storage::atomic_write(&path, urls.join("\n").as_bytes())?;
-    Ok(())
+    load_subscriptions_from(path)
+}
+
+fn load_subscriptions_from(path: PathBuf) -> Result<Subscriptions> {
+    let bytes = big_os_kit::storage::read_regular_limited(&path, MAX_STATE_BYTES)?;
+    let urls = match &bytes {
+        Some(bytes) => std::str::from_utf8(bytes)?
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(String::from)
+            .collect(),
+        None => Vec::new(),
+    };
+    Ok(Subscriptions {
+        urls,
+        document: Document::reviewed(path, bytes),
+    })
+}
+
+const TITLE_CACHE_FILE: &str = "podcast-title-cache.json";
+
+/// `[feed_url, title]` pairs, oldest first.
+fn read_titles() -> Vec<(String, String)> {
+    read_state(TITLE_CACHE_FILE)
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
 }
 
 /// `{feed_url: title}` map cached so the sidebar shows the name before the
 /// feed has been re-fetched.
 pub fn load_title_cache() -> std::collections::HashMap<String, String> {
-    read_state("podcast-title-cache.json")
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_default()
+    read_titles().into_iter().collect()
 }
 
 /// Feeds resolve on parallel workers; the lock keeps one read-modify-write
@@ -155,15 +215,30 @@ pub fn cache_feed_title(feed_url: &str, title: &str) {
     let _update = UPDATE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let mut cache = load_title_cache();
-    cache.insert(feed_url.to_string(), title.to_string());
-    if let (Some(path), Ok(json)) = (
-        state_path("podcast-title-cache.json"),
-        serde_json::to_vec(&cache),
-    ) && let Err(error) = big_os_kit::storage::atomic_write(&path, &json)
+    let mut titles = read_titles();
+    titles.retain(|(url, _)| url != feed_url);
+    titles.push((feed_url.to_string(), title.to_string()));
+    if let (Some(path), Ok(json)) = (state_path(TITLE_CACHE_FILE), title_cache_json(&titles))
+        && let Err(error) = big_os_kit::storage::atomic_write(&path, &json)
     {
         log::warn!("podcast title cache not saved: {error}");
     }
+}
+
+/// The newest of `titles` that fit in [`MAX_STATE_BYTES`], so the file stays
+/// readable.
+fn title_cache_json(titles: &[(String, String)]) -> serde_json::Result<Vec<u8>> {
+    // `[` and `]`, then `["url","title"],` per pair; the last comma is not written.
+    let mut size = 1;
+    let mut first_kept = titles.len();
+    for (index, pair) in titles.iter().enumerate().rev() {
+        size += serde_json::to_vec(pair)?.len() + 1;
+        if size > MAX_STATE_BYTES {
+            break;
+        }
+        first_kept = index;
+    }
+    serde_json::to_vec(&titles[first_kept..])
 }
 
 #[derive(Debug, Clone)]
@@ -255,10 +330,23 @@ fn parse_podcast_search_result(
 mod tests {
     use super::*;
 
+    /// Oracle by hand: each pair is `["u000000","x…"]`, 1014 bytes plus a
+    /// comma, so 1 + 1015 * 1033 bytes is the most that fits in 1 MiB.
+    #[test]
+    fn title_cache_drops_oldest_past_cap() {
+        let titles: Vec<(String, String)> = (0..2000)
+            .map(|index| (format!("u{index:06}"), "x".repeat(1000)))
+            .collect();
+        let json = title_cache_json(&titles).unwrap();
+        assert_eq!(json.len(), 1 + 1015 * 1033);
+        let kept: Vec<(String, String)> = serde_json::from_slice(&json).unwrap();
+        assert_eq!(kept, titles[2000 - 1033..]);
+    }
+
     #[test]
     fn child_text_finds_tag() {
         let xml = r"<root><title>Hello</title></root>";
-        let doc = Document::parse(xml).unwrap();
+        let doc = roxmltree::Document::parse(xml).unwrap();
         let root = doc.root_element();
         assert_eq!(child_text(&root, "title"), Some("Hello".into()));
     }
@@ -266,7 +354,7 @@ mod tests {
     #[test]
     fn child_text_missing_returns_none() {
         let xml = r"<root><other>x</other></root>";
-        let doc = Document::parse(xml).unwrap();
+        let doc = roxmltree::Document::parse(xml).unwrap();
         let root = doc.root_element();
         assert_eq!(child_text(&root, "title"), None);
     }
@@ -290,6 +378,32 @@ mod tests {
         assert_eq!(feed.episodes.len(), 1);
         assert_eq!(feed.episodes[0].title, "Episode 1");
         assert_eq!(feed.episodes[0].audio_url, "https://example.com/ep1.mp3");
+    }
+
+    #[test]
+    fn enclosures_must_be_streams() {
+        let mut items = String::new();
+        for url in [
+            "av://lavfi:sine,ametadata=mode=print:file=/tmp/x",
+            "fdclose://0",
+            "/home/user/song.mp3",
+            "file:///etc/hostname",
+            "HTTPS://example.com/ep.mp3",
+            "rtsp://example.com/live",
+        ] {
+            items.push_str(&format!(
+                "<item><title>t</title><enclosure url=\"{url}\" type=\"audio/mpeg\"/></item>"
+            ));
+        }
+        let feed = parse_feed(&format!("<rss><channel>{items}</channel></rss>")).unwrap();
+        let urls: Vec<&str> = feed.episodes.iter().map(|e| e.audio_url.as_str()).collect();
+        assert_eq!(
+            (urls, feed.skipped),
+            (
+                vec!["HTTPS://example.com/ep.mp3", "rtsp://example.com/live"],
+                4
+            )
+        );
     }
 
     #[test]
@@ -331,6 +445,31 @@ mod tests {
         assert_eq!(
             feed.image_url,
             Some("https://img.example.com/art.jpg".into())
+        );
+    }
+
+    #[test]
+    fn rss_image_wins_over_itunes() {
+        let feed = |images: &str| {
+            let xml = format!(
+                r#"<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>
+<itunes:title>Show name for Apple</itunes:title>
+<title>T</title>
+{images}
+</channel></rss>"#
+            );
+            parse_feed(&xml).unwrap()
+        };
+        let itunes = r#"<itunes:image href="https://img.example.com/itunes.jpg"/>"#;
+        let rss = "<image><url>https://img.example.com/rss.jpg</url></image>";
+        let rss_image = Some("https://img.example.com/rss.jpg".to_owned());
+        assert_eq!(feed(&format!("{itunes}{rss}")).image_url, rss_image);
+        assert_eq!(feed(&format!("{rss}{itunes}")).image_url, rss_image);
+        assert_eq!(feed(&format!("{itunes}{rss}")).title, "T");
+        let empty_rss = "<image><title>Logo</title></image>";
+        assert_eq!(
+            feed(&format!("{empty_rss}{itunes}")).image_url,
+            Some("https://img.example.com/itunes.jpg".to_owned())
         );
     }
 
@@ -399,7 +538,7 @@ mod tests {
         let xml = r#"<root xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
 <itunes:summary>wrapped in ns</itunes:summary>
 </root>"#;
-        let doc = Document::parse(xml).unwrap();
+        let doc = roxmltree::Document::parse(xml).unwrap();
         let root = doc.root_element();
         assert_eq!(
             child_text_ns(&root, "summary"),
@@ -413,7 +552,7 @@ mod tests {
 <itunes:a>   </itunes:a>
 <itunes:b>  ok  </itunes:b>
 </root>"#;
-        let doc = Document::parse(xml).unwrap();
+        let doc = roxmltree::Document::parse(xml).unwrap();
         let root = doc.root_element();
         assert_eq!(child_text_ns(&root, "a"), None);
         assert_eq!(child_text_ns(&root, "b"), Some("ok".into()));
@@ -495,5 +634,50 @@ mod tests {
         assert_eq!(results[0].artwork_url, "");
         assert_eq!(results[0].genre, "");
         assert_eq!(results[0].episode_count, 0);
+    }
+
+    #[test]
+    fn unreadable_subscriptions_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let invalid_utf8 = dir.path().join("invalid-utf8");
+        std::fs::write(&invalid_utf8, b"https://a.test/feed\n\xff").unwrap();
+        let over_cap = dir.path().join("over-cap");
+        std::fs::write(&over_cap, vec![b'a'; MAX_STATE_BYTES + 1]).unwrap();
+        let directory = dir.path().join("directory");
+        std::fs::create_dir(&directory).unwrap();
+        let symlink = dir.path().join("symlink");
+        std::os::unix::fs::symlink(&invalid_utf8, &symlink).unwrap();
+
+        for path in [invalid_utf8, over_cap, directory, symlink] {
+            assert!(
+                load_subscriptions_from(path.clone()).is_err(),
+                "{} loaded",
+                path.display()
+            );
+        }
+        let missing = load_subscriptions_from(dir.path().join("missing")).unwrap();
+        assert!(missing.urls.is_empty());
+    }
+
+    #[test]
+    fn saves_publish_latest_list() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(SUBSCRIPTIONS_FILE);
+        std::fs::write(&path, "https://a.test/feed\n").unwrap();
+        let mut subscriptions = load_subscriptions_from(path.clone()).unwrap();
+        assert_eq!(subscriptions.urls, ["https://a.test/feed"]);
+
+        for url in ["https://b.test/feed", "https://c.test/feed"] {
+            subscriptions.urls.push(url.into());
+            subscriptions.save().unwrap();
+        }
+        let expected = "https://a.test/feed\nhttps://b.test/feed\nhttps://c.test/feed";
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while std::fs::read_to_string(&path).unwrap() != expected
+            && std::time::Instant::now() < until
+        {
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), expected);
     }
 }

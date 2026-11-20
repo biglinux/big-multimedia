@@ -1,0 +1,13 @@
+id: mpv-property-owner
+language: rust
+severity: error
+message: Set an mpv property whose failure has no recovery with MpvClient::set_property_logged
+note: >-
+  crates/media-runtime/src/player/mpv_backend/backend/client.rs logs a refused
+  property by name at the level its cause deserves, and never logs the value.
+rule:
+  any:
+    - pattern: let _ = $M.set_property($$$ARGS);
+    - pattern: $M.set_property($$$ARGS).ok();
+ignores:
+  - crates/media-runtime/src/player/mpv_backend/backend/client.rs

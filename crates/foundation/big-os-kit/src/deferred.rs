@@ -42,11 +42,18 @@ struct State {
     invalid_update: bool,
     phase: Phase,
 }
+/// Combines this process's change with another process's save, for a
+/// document two windows may edit: `(base, ours, theirs)`, where `base` is what
+/// this process's state derives from, `ours` the state to save and `theirs`
+/// the file as the save finds it (`None`: no file). `None` refuses the save.
+pub type Merge = fn(Option<&[u8]>, &[u8], Option<&[u8]>) -> Option<Vec<u8>>;
+
 /// Shared persistence owner. Workers retain it until completion, independent of widgets.
 #[derive(Clone)]
 pub struct Document {
     path: Arc<PathBuf>,
     state: Arc<Mutex<State>>,
+    merge: Option<Merge>,
 }
 impl std::fmt::Debug for Document {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -77,6 +84,7 @@ impl Document {
     pub fn reviewed(path: PathBuf, expected: Option<Vec<u8>>) -> Self {
         let blocked = !path.is_absolute() || expected.as_ref().is_some_and(|v| v.len() > MAX_BYTES);
         let document = Self {
+            merge: None,
             path: Arc::new(path),
             state: Arc::new(Mutex::new(State {
                 desired: expected.clone(),
@@ -97,9 +105,30 @@ impl Document {
         items.push(Arc::downgrade(&document.state));
         document
     }
+    /// Read the document at `path` with `decode`, which refuses bytes by returning
+    /// `None`. A missing file starts from `T::default()`; an unreadable or refused
+    /// one does too, with a blocked writer, so a corrupt file is never replaced by
+    /// an empty document.
+    pub fn load<T: Default>(path: PathBuf, decode: impl FnOnce(&[u8]) -> Option<T>) -> (T, Self) {
+        match storage::read_regular_limited(&path, MAX_BYTES) {
+            Ok(None) => (T::default(), Self::reviewed(path, None)),
+            Ok(Some(bytes)) => match decode(&bytes) {
+                Some(value) => (value, Self::reviewed(path, Some(bytes))),
+                None => (T::default(), Self::blocked(path)),
+            },
+            Err(_) => (T::default(), Self::blocked(path)),
+        }
+    }
+    /// Combine a save with another process's change to the file through
+    /// `merge`, instead of refusing it.
+    #[must_use]
+    pub fn merging(mut self, merge: Merge) -> Self {
+        self.merge = Some(merge);
+        self
+    }
     /// Invalid/unreadable source: edits are session-only until the application reloads
     /// and explicitly resolves the conflict. Never silently overwrite malformed state.
-    pub fn blocked(path: PathBuf) -> Self {
+    fn blocked(path: PathBuf) -> Self {
         let value = Self::reviewed(path, None);
         {
             let mut s = value.state.lock().unwrap_or_else(PoisonError::into_inner);
@@ -146,37 +175,43 @@ impl Document {
     /// Record a rejected serialization/validation attempt without claiming that
     /// the rejected in-memory content was saved. A new valid replace clears it.
     pub fn reject_update(&self) {
-        let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        s.invalid_update = true;
-        s.phase = Phase::Failed;
+        {
+            let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+            s.invalid_update = true;
+            s.phase = Phase::Failed;
+        }
+        crate::background::changed();
     }
 
-    /// Retry a failed save. Never rebases onto an external writer's content:
-    /// a conflict needs an explicit reload.
+    /// Retry a failed save. Never rebases onto an external writer's content
+    /// without a [`Merge`]: a conflict then needs an explicit reload.
     pub fn retry(&self) -> io::Result<()> {
-        {
+        let settled = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
             if s.invalid_update {
                 s.phase = Phase::Failed;
-                return Err(io::Error::other(
+                Some(Err(io::Error::other(
                     "invalid local state; correct it before saving",
-                ));
-            }
-            if s.blocked {
+                )))
+            } else if s.blocked {
                 s.phase = Phase::Failed;
-                return Err(io::Error::other(
+                Some(Err(io::Error::other(
                     "saved state is invalid or unavailable; reload before saving",
-                ));
-            }
-            if s.queued {
+                )))
+            } else if s.queued {
                 return Ok(());
-            }
-            if s.revision == s.saved_revision {
+            } else if s.revision == s.saved_revision {
                 s.phase = Phase::Saved;
-                return Ok(());
+                Some(Ok(()))
+            } else {
+                s.queued = true;
+                s.phase = Phase::Pending;
+                None
             }
-            s.queued = true;
-            s.phase = Phase::Pending;
+        };
+        if let Some(result) = settled {
+            crate::background::changed();
+            return result;
         }
         let owner = self.clone();
         let admitted = crate::background::submit(move || {
@@ -199,9 +234,12 @@ impl Document {
             }
         });
         if admitted.is_err() {
-            let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-            s.queued = false;
-            s.phase = Phase::Failed;
+            {
+                let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+                s.queued = false;
+                s.phase = Phase::Failed;
+            }
+            crate::background::changed();
         }
         admitted
     }
@@ -217,20 +255,28 @@ impl Document {
             .ok_or_else(|| io::Error::other("missing private directory"))?;
         std::fs::create_dir_all(parent)?;
         let _lock = storage::WriteLock::try_acquire(&self.path)?;
-        if storage::read_regular_limited(&self.path, MAX_BYTES)? != expected {
-            return Err(io::Error::other(
-                "state changed in another instance; reload before saving",
-            ));
-        }
         if desired != expected {
-            let bytes = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
+            let ours = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
+            let theirs = storage::read_regular_limited(&self.path, MAX_BYTES)?;
+            let bytes = if theirs == expected {
+                ours.clone()
+            } else {
+                let merge = self.merge.ok_or_else(|| {
+                    io::Error::other("state changed in another instance; reload before saving")
+                })?;
+                merge(expected.as_deref(), &ours, theirs.as_deref()).ok_or_else(|| {
+                    io::Error::other("state changed in another instance and could not be combined")
+                })?
+            };
             storage::atomic_write_private(&self.path, &bytes)?;
-            // Merge only publication state, not desired values that may have
-            // changed during I/O. This short lock is never held around a syscall.
+            // `expected` is what this process's state derives from: after a
+            // merge the file also holds the other process's change, and the
+            // next save merges again. Publication state only, not desired
+            // values that may have changed during I/O; never held around a syscall.
             self.state
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
-                .expected = Some(bytes);
+                .expected = Some(ours);
         }
         let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         s.saved_revision = revision;
@@ -291,6 +337,83 @@ mod tests {
         drain(&doc);
         assert_eq!(doc.status().phase, Phase::Failed);
         assert_eq!(std::fs::read(&p).unwrap(), b"external");
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    /// A merge that keeps every line of both sides, enough to see what reaches it.
+    fn union(base: Option<&[u8]>, ours: &[u8], theirs: Option<&[u8]>) -> Option<Vec<u8>> {
+        let lines = |bytes: Option<&[u8]>| {
+            std::str::from_utf8(bytes.unwrap_or_default())
+                .ok()
+                .map(|text| {
+                    text.lines()
+                        .map(str::to_owned)
+                        .collect::<std::collections::BTreeSet<_>>()
+                })
+        };
+        let (base, ours, mut merged) = (lines(base)?, lines(Some(ours))?, lines(theirs)?);
+        merged.extend(ours.difference(&base).cloned());
+        merged.retain(|line| ours.contains(line) || !base.contains(line));
+        Some(
+            merged
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join("\n")
+                .into_bytes(),
+        )
+    }
+    #[test]
+    fn merge_combines_another_instance_save() {
+        let p = path("prefs.txt");
+        std::fs::write(&p, b"a").unwrap();
+        let doc = Document::reviewed(p.clone(), Some(b"a".to_vec())).merging(union);
+        std::fs::write(&p, b"a\nb").unwrap();
+        doc.replace(b"a\nc".to_vec()).unwrap();
+        drain(&doc);
+        assert_eq!(doc.status().phase, Phase::Saved);
+        assert_eq!(std::fs::read(&p).unwrap(), b"a\nb\nc");
+        // The next save starts from this process's own state, so the other
+        // instance's line stays and this one's removal reaches the file.
+        doc.replace(b"c".to_vec()).unwrap();
+        drain(&doc);
+        assert_eq!(std::fs::read(&p).unwrap(), b"b\nc");
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    #[test]
+    fn status_changes_without_a_job_wake_watchers() {
+        let p = path("prefs.json");
+        let doc = Document::reviewed(p.clone(), Some(b"same".to_vec()));
+        let (heard, phases) = std::sync::mpsc::channel();
+        let observed = doc.clone();
+        let _watch = crate::background::watch(move || {
+            let _ = heard.send(observed.status().phase);
+        });
+        let saw = |phase| phases.try_iter().any(|seen| seen == phase);
+        doc.reject_update();
+        assert!(saw(Phase::Failed));
+        doc.replace(b"same".to_vec()).unwrap();
+        assert!(saw(Phase::Saved));
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    #[test]
+    fn load_blocks_refused_files() {
+        let decode = |bytes: &[u8]| (bytes != b"corrupt").then(|| bytes.to_vec());
+        let p = path("prefs.json");
+        let (missing, doc) = Document::load(p.clone(), decode);
+        assert!(missing.is_empty());
+        assert_eq!(doc.status().phase, Phase::Saved);
+
+        std::fs::write(&p, b"valid").unwrap();
+        let (valid, doc) = Document::load(p.clone(), decode);
+        assert_eq!(valid, b"valid");
+        assert_eq!(doc.status().phase, Phase::Saved);
+
+        std::fs::write(&p, b"corrupt").unwrap();
+        let (refused, doc) = Document::load(p.clone(), decode);
+        assert!(refused.is_empty());
+        assert_eq!(doc.status().phase, Phase::Failed);
+        assert!(doc.replace(Vec::new()).is_err());
+        drain(&doc);
+        assert_eq!(std::fs::read(&p).unwrap(), b"corrupt");
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]

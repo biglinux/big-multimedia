@@ -5,6 +5,7 @@
 //! payload themselves and pass it to `parse_stations_json` or
 //! `parse_stations_json_filtered`.
 
+use big_os_kit::url::is_http_url;
 use log::warn;
 
 /// One station row as `(name, url, country, tags, favicon)`.
@@ -21,8 +22,8 @@ const _: () = assert!(SPAM_VOTE_THRESHOLD <= 100_000);
 /// Parse the Radio Browser station JSON `body` into [`RadioBrowserEntry`] rows.
 ///
 /// Returns an empty vector when `body` is not valid JSON or has no usable
-/// stations. Stations with empty `name` or `url` after trimming are
-/// dropped. Favicons that are missing, equal to `"null"`, or use a
+/// stations. The stream URL is `url_resolved`, or `url` when that is not an
+/// HTTP URL; stations without one or with an empty `name` are dropped. Favicons that are missing, equal to `"null"`, or use a
 /// non-HTTP scheme are normalized to an empty string.
 #[must_use]
 pub fn parse_stations_json(body: &str) -> Vec<RadioBrowserEntry> {
@@ -64,15 +65,15 @@ fn parse_stations_inner(body: &str, filter_spam: bool) -> Vec<RadioBrowserEntry>
             }
 
             let name = station.get("name")?.as_str()?.trim().to_string();
-            let url = station
-                .get("url_resolved")
-                .or_else(|| station.get("url"))?
-                .as_str()?
-                .trim()
-                .to_string();
             // The URL goes to the player; a feed entry must not pick a local
             // file or one of mpv's special protocols.
-            if name.is_empty() || !is_http_url(&url) {
+            let url = ["url_resolved", "url"]
+                .into_iter()
+                .filter_map(|key| station.get(key)?.as_str())
+                .map(str::trim)
+                .find(|url| is_http_url(url))?
+                .to_string();
+            if name.is_empty() {
                 return None;
             }
 
@@ -97,12 +98,6 @@ fn parse_stations_inner(body: &str, filter_spam: bool) -> Vec<RadioBrowserEntry>
             Some((name, url, country, tags, favicon))
         })
         .collect()
-}
-
-fn is_http_url(url: &str) -> bool {
-    url.split_once("://").is_some_and(|(scheme, _)| {
-        scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")
-    })
 }
 
 /// Best-effort detection of the user's ISO 3166-1 alpha-2 country code from locale env vars.
@@ -267,6 +262,25 @@ mod tests {
         let json = r#"[{"name": "Bot Station", "url": "http://bot.com", "votes": 999999}]"#;
         let results = parse_stations_json(json);
         assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn unusable_resolved_url_falls_back() {
+        let json = r#"[{"name": "Empty", "url_resolved": "", "url": "http://a.example/live"},
+                       {"name": "Null", "url_resolved": null, "url": "http://b.example/live"},
+                       {"name": "Blank", "url_resolved": "  ", "url": "https://c.example/live"}]"#;
+        let urls: Vec<_> = parse_stations_json(json)
+            .into_iter()
+            .map(|station| station.1)
+            .collect();
+        assert_eq!(
+            urls,
+            [
+                "http://a.example/live",
+                "http://b.example/live",
+                "https://c.example/live"
+            ]
+        );
     }
 
     #[test]

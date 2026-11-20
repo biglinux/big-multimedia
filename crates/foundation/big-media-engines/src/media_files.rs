@@ -9,7 +9,7 @@
 
 use std::path::Path;
 
-/// Container extensions recognised as video: those of the MIME types the
+/// Container extensions recognized as video: those of the MIME types the
 /// video player's desktop entry claims, so a file it is asked to open is also
 /// one its folder scan lists.
 pub const VIDEO_EXTENSIONS: &[&str] = &[
@@ -19,7 +19,7 @@ pub const VIDEO_EXTENSIONS: &[&str] = &[
     "3gp2", "3gpp2", "mjp2", "m2t", "rv", "bk2", "lrv", "moov",
 ];
 
-/// Container extensions recognised as audio, likewise the audio player's.
+/// Container extensions recognized as audio, likewise the audio player's.
 pub const AUDIO_EXTENSIONS: &[&str] = &[
     "mp3", "flac", "ogg", "opus", "wav", "m4a", "m4b", "aac", "wma", "ape", "wv", "aiff", "aif",
     "aifc", "mka", "oga", "spx", "ac3", "dts", "mpc", "tta", "amr", "awb", "au", "snd", "dff",
@@ -30,13 +30,25 @@ pub const AUDIO_EXTENSIONS: &[&str] = &[
 /// Playlist file extensions.
 pub const PLAYLIST_EXTENSIONS: &[&str] = &["m3u", "m3u8", "pls"];
 
+/// External subtitle extensions a player loads beside a video.
+pub const SUBTITLE_EXTENSIONS: &[&str] = &["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"];
+
+/// Synced lyrics read from beside a track.
+pub const LYRICS_EXTENSION: &str = "lrc";
+
+/// Image extensions read as covers and wallpapers: big-shell's
+/// `WALLPAPER_EXTENSIONS` (HEIC and JXL included) plus raster types ffmpeg can blur.
+pub const IMAGE_EXTENSIONS: &[&str] = &[
+    "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
+];
+
 /// `true` when `path` has an audio extension from [`AUDIO_EXTENSIONS`].
 #[must_use]
 pub fn is_audio_file(path: &str) -> bool {
     extension(path).is_some_and(|ext| AUDIO_EXTENSIONS.contains(&ext.as_str()))
 }
 
-/// `true` when `path` has a video extension and is not a TypeScript file mis-claimed as `.ts`.
+/// `true` when `path` has a video extension and is not a TypeScript file wrongly claimed as `.ts`.
 #[must_use]
 pub fn is_video_file(path: &str) -> bool {
     let Some(ext) = extension(path) else {
