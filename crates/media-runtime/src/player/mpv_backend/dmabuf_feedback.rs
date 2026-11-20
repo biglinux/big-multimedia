@@ -462,7 +462,7 @@ impl FeedbackSession {
             {
                 return None;
             }
-            // allow-noisy-log: debug-level reasons the window's layout falls back.
+            // Debug-level reasons the window's layout falls back.
             let Some((name, advertised)) = globals.as_ref().dmabuf else {
                 debug!("dma-buf feedback: no zwp_linux_dmabuf_v1 global");
                 return None;
