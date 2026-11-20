@@ -5,6 +5,7 @@
 use super::playback::seek_fraction;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
+use crate::video::ui::iptv::fetcher::ChannelUrls;
 use big_media_runtime::cast::tv::{TvCardAction, TvMedia, saved_height};
 
 impl VideoShell {
@@ -237,7 +238,20 @@ impl VideoShell {
             .position(|path| *path == source)
         {
             Some(index) => mpv.playlist_play_index(i64::try_from(index).unwrap_or(0)),
-            None => super::send_to_shell(VideoShellInput::OpenFiles(vec![source])),
+            // The TV holds the played URL: a channel keeps out of the queue
+            // the credentials its stored form leaves out.
+            None => {
+                if let Some(target) = self.stored_urls.unlisted(&source) {
+                    let urls = ChannelUrls {
+                        played: source,
+                        stored: None,
+                    };
+                    self.play_stream(urls, "", target);
+                } else {
+                    let entry = self.stored_urls.stored_url(&source).to_owned();
+                    super::send_to_shell(VideoShellInput::OpenFiles(vec![entry]));
+                }
+            }
         }
     }
 

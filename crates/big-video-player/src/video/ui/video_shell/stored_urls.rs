@@ -4,12 +4,17 @@
 
 use std::collections::HashMap;
 
+use big_media_runtime::player::mpv_backend::TargetSource;
+
 /// Played URLs of the channels the playlist lists by their stored URL, for
 /// this run of the player only.
 #[derive(Debug, Default)]
 pub(super) struct StoredUrls {
     played: HashMap<String, String>,
     stored: HashMap<String, String>,
+    /// Played URLs with no stored form, which no playlist may list, and the
+    /// list that named each.
+    unlisted: HashMap<String, TargetSource>,
 }
 
 impl StoredUrls {
@@ -18,6 +23,16 @@ impl StoredUrls {
     pub(super) fn insert(&mut self, stored: String, played: String) {
         self.played.insert(stored.clone(), played.clone());
         self.stored.insert(played, stored);
+    }
+
+    /// Record `played` as a channel no playlist may list, named by `source`.
+    pub(super) fn insert_unlisted(&mut self, played: String, source: TargetSource) {
+        self.unlisted.insert(played, source);
+    }
+
+    /// The list that named `played`, when no playlist may list it.
+    pub(super) fn unlisted(&self, played: &str) -> Option<TargetSource> {
+        self.unlisted.get(played).copied()
     }
 
     /// What mpv opens for the playlist's `entry`.
@@ -34,6 +49,7 @@ impl StoredUrls {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use big_os_kit::url::ListOrigin;
 
     const STORED: &str = "http://srv/live/{credentials}/1.ts";
     const PLAYED: &str = "http://srv/live/ana/s3cret/1.ts";
@@ -55,6 +71,18 @@ mod tests {
             assert_eq!(urls.played_url(entry), entry);
             assert_eq!(urls.stored_url(entry), entry);
         }
+    }
+
+    #[test]
+    fn unlisted_channels_keep_their_list() {
+        let mut urls = StoredUrls::default();
+        urls.insert_unlisted(PLAYED.into(), TargetSource::List(ListOrigin::Network));
+        assert_eq!(
+            urls.unlisted(PLAYED),
+            Some(TargetSource::List(ListOrigin::Network))
+        );
+        assert_eq!(urls.unlisted(STORED), None);
+        assert_eq!(urls.stored_url(PLAYED), PLAYED);
     }
 
     #[test]

@@ -72,8 +72,9 @@ pub(super) fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<
     if url.is_empty() {
         return None;
     }
-    let path = cache_file_for_url(url)?;
-    if let Ok(bytes) = fs::read(&path) {
+    // Without a cache folder the logo is still fetched, just not kept.
+    let path = cache_file_for_url(url);
+    if let Some(bytes) = path.as_ref().and_then(|path| fs::read(path).ok()) {
         return Some(bytes);
     }
     let headers = RequestHeaders {
@@ -82,7 +83,9 @@ pub(super) fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<
     };
     let bytes = http_get_bytes_with_headers(url, &headers)?;
     // Atomic: a cut-off write would otherwise be served from cache forever.
-    if let Err(error) = big_os_kit::storage::atomic_write(&path, &bytes) {
+    if let Some(path) = path
+        && let Err(error) = big_os_kit::storage::atomic_write(&path, &bytes)
+    {
         log::debug!("iptv logo cache write failed: {error}");
     }
     Some(bytes)

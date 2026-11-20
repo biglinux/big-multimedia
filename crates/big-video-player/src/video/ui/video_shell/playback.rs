@@ -788,7 +788,7 @@ impl VideoShell {
     /// playlist, like opening a URL, and nothing on disk is resolved for it.
     /// The playlist, which Save writes to a file, lists the stored URL; a
     /// channel without one stays out of it.
-    fn play_stream(&mut self, urls: ChannelUrls, title: &str, source: TargetSource) {
+    pub(super) fn play_stream(&mut self, urls: ChannelUrls, title: &str, source: TargetSource) {
         // A folder scan still running must not replace the channel.
         self.open_generation += 1;
         if let Some(start_video) = self.video_start.take() {
@@ -806,9 +806,12 @@ impl VideoShell {
         mpv.play();
         self.shuffle_on_load = None;
         self.playlist_paths.clear();
-        if let Some(stored) = urls.stored {
-            self.playlist_paths.push(stored.clone());
-            self.stored_urls.insert(stored, urls.played);
+        match urls.stored {
+            Some(stored) => {
+                self.playlist_paths.push(stored.clone());
+                self.stored_urls.insert(stored, urls.played);
+            }
+            None => self.stored_urls.insert_unlisted(urls.played, source),
         }
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
