@@ -117,9 +117,9 @@ profile @APP@ @{exec_path} flags=(complain) {
 
   # Programs that parse outside input.
   /usr/bin/{ffmpeg,ffprobe,rsvg-convert,magick,convert,fd,curl,yt-dlp} Cx -> decoder,
-  # glycin's loaders run in their own profile. Its bwrap sandbox stays off: the
-  # player could hand bwrap any mount, so glycin starts the loader directly.
-  deny /usr/bin/bwrap x,
+  # bwrap would take any mount the player hands it, so its child refuses a user
+  # namespace; glycin reads that failure and starts its loader in image_loader.
+  /usr/bin/bwrap Cx -> bwrap,
   /usr/lib/glycin-loaders/** Cx -> image_loader,
   # Helpers that only talk to the desktop.
   /usr/bin/{secret-tool,gsettings,qdbus6,wmctrl,systemctl} ix,
@@ -218,7 +218,7 @@ profile @APP@ @{exec_path} flags=(complain) {
     include if exists <local/@APP@.decoder>
   }
 
-  profile image_loader flags=(complain) {
+  profile image_loader {
     include <abstractions/base>
     include <abstractions/fonts>
 
@@ -235,5 +235,19 @@ profile @APP@ @{exec_path} flags=(complain) {
     owner @{HOME}/.cache/glycin/{,**} rw,
 
     include if exists <local/@APP@.image_loader>
+  }
+
+  # glycin recognizes "Creating new namespace failed" and falls back to
+  # starting its loader directly; any earlier failure breaks image loading.
+  profile bwrap flags=(complain) {
+    include <abstractions/base>
+
+    /usr/bin/bwrap mr,
+    @{PROC}/ r,
+    @{PROC}/sys/kernel/overflow{uid,gid} r,
+    @{PROC}/sys/user/max_user_namespaces r,
+    deny userns,
+
+    include if exists <local/@APP@.bwrap>
   }
 }
