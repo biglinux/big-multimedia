@@ -207,15 +207,45 @@ pub fn remove_stale_staging(directory: &Path) {
         }
         let path = entry.path();
         if metadata.is_dir() {
-            if let Ok(staged) = fs::read_dir(&path) {
-                for file in staged.flatten() {
-                    let _ = fs::remove_file(file.path());
-                }
-            }
+            empty_directory_nofollow(&path, uid);
             let _ = fs::remove_dir(&path);
         } else {
             let _ = fs::remove_file(&path);
         }
+    }
+}
+
+/// Remove the files of the directory at `path` owned by `uid`, through a
+/// descriptor opened without following a symlink: a name swapped for a link
+/// after it was checked never leads the removal into another folder.
+fn empty_directory_nofollow(path: &Path, uid: libc::uid_t) {
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+    use std::os::unix::io::AsRawFd;
+    let mut options = fs::OpenOptions::new();
+    options.read(true);
+    #[expect(clippy::disallowed_methods, reason = "the owner of no-follow reads")]
+    options.custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW);
+    let Ok(directory) = options.open(path) else {
+        return;
+    };
+    if !directory
+        .metadata()
+        .is_ok_and(|metadata| metadata.uid() == uid)
+    {
+        return;
+    }
+    let fd = directory.as_raw_fd();
+    let Ok(staged) = fs::read_dir(format!("/proc/self/fd/{fd}")) else {
+        return;
+    };
+    for file in staged.flatten() {
+        let Ok(name) = std::ffi::CString::new(file.file_name().as_bytes()) else {
+            continue;
+        };
+        // SAFETY: `fd` stays open while `directory` lives, and `name` is a
+        // NUL-terminated entry name of that directory.
+        unsafe { libc::unlinkat(fd, name.as_ptr(), 0) };
     }
 }
 
