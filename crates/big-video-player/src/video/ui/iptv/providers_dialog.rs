@@ -184,7 +184,7 @@ fn edit_provider(
         let replaced = p.secret_id != replaced_secret;
         store.borrow_mut().update(index, p);
         if replaced {
-            forget_secret(replaced_secret.clone(), note.clone());
+            forget_secret(replaced_secret.clone(), &store, note.clone());
         }
         if let (Some(list), Some(note)) = (list.upgrade(), note.upgrade()) {
             rebuild_list(&list, &store, &note);
@@ -206,19 +206,51 @@ fn remove_provider(
         .map(|provider| provider.secret_id.clone());
     store.borrow_mut().remove(index);
     if let Some(secret_id) = removed_secret {
-        forget_secret(secret_id, note.clone());
+        forget_secret(secret_id, store, note.clone());
     }
     if let (Some(list), Some(note)) = (list.upgrade(), note.upgrade()) {
         rebuild_list(&list, store, &note);
     }
 }
 
-/// Delete the keyring item `secret_id` no provider names any more, and show
-/// `note` when the keyring keeps it.
-fn forget_secret(secret_id: String, note: glib::WeakRef<gtk::Label>) {
+/// Delete the keyring item `secret_id` no provider names any more, once the
+/// providers file that drops it is written, and show `note` when the keyring
+/// keeps it. While the file still names the item, a failed save keeps both.
+fn forget_secret(
+    secret_id: String,
+    store: &Rc<RefCell<IptvProviderStore>>,
+    note: glib::WeakRef<gtk::Label>,
+) {
+    let Some(dropped_in) = store.borrow().save_status().map(|status| status.revision) else {
+        return;
+    };
     if secret_id.is_empty() {
         return;
     }
+    let store = Rc::clone(store);
+    let (wake, changes) = async_channel::bounded(1);
+    let watch = big_os_kit::background::watch(move || {
+        let _ = wake.try_send(());
+    });
+    glib::spawn_future_local(async move {
+        let _watch = watch;
+        loop {
+            let Some(status) = store.borrow().save_status() else {
+                return;
+            };
+            if status.saved_revision >= dropped_in {
+                break;
+            }
+            if status.phase == big_os_kit::deferred::Phase::Failed || changes.recv().await.is_err()
+            {
+                return;
+            }
+        }
+        clear_secret(secret_id, note);
+    });
+}
+
+fn clear_secret(secret_id: String, note: glib::WeakRef<gtk::Label>) {
     crate::settings::saving::acknowledged_task(
         true,
         move || {
@@ -293,6 +325,11 @@ where
             return;
         }
         button.set_sensitive(false);
+        // Closing now would leave the outcome to a form nobody sees: a later
+        // success would still save what the person cancelled.
+        if let Some(f) = form_weak.upgrade() {
+            f.set_can_close(false);
+        }
         if let Some(status) = status_weak.upgrade() {
             status.remove_css_class("error");
             status.set_label(&i18n("Saving the password in your keyring\u{2026}"));
@@ -313,6 +350,9 @@ where
                     .map(|()| provider)
             },
             move |result| {
+                if let Some(f) = form.upgrade() {
+                    f.set_can_close(true);
+                }
                 if let Ok(provider) = result {
                     on_save(provider);
                     if let Some(f) = form.upgrade() {
