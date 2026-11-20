@@ -76,26 +76,7 @@ async fn call_open_uri(
     fds: Option<&gio::UnixFDList>,
 ) -> Result<(), glib::Error> {
     // Subscribed before the call, so a fast response is not missed.
-    let responses = Rc::new(RefCell::new(PortalResponses::default()));
-    let sink = Rc::clone(&responses);
-    let _subscription = bus.subscribe_to_signal(
-        Some(PORTAL_NAME),
-        Some(PORTAL_REQUEST),
-        Some("Response"),
-        None,
-        None,
-        gio::DBusSignalFlags::NONE,
-        move |signal| {
-            let code = signal.parameters.child_value(0).get::<u32>();
-            let mut responses = sink.borrow_mut();
-            responses
-                .received
-                .push((signal.object_path.to_owned(), code));
-            if let Some(waker) = responses.waker.take() {
-                waker.wake();
-            }
-        },
-    );
+    let responses = PortalResponses::subscribe(bus);
     let (reply, _) = bus
         .call_with_unix_fd_list_future(
             Some(PORTAL_NAME),
@@ -110,18 +91,7 @@ async fn call_open_uri(
         )
         .await?;
     let handle = reply.child_value(0);
-    let handle = handle.str().unwrap_or_default();
-    let code = std::future::poll_fn(|context| {
-        let mut responses = responses.borrow_mut();
-        match responses.received.iter().find(|(path, _)| path == handle) {
-            Some((_, code)) => Poll::Ready(*code),
-            None => {
-                responses.waker = Some(context.waker().clone());
-                Poll::Pending
-            }
-        }
-    })
-    .await;
+    let code = responses.response(handle.str().unwrap_or_default()).await;
     match code {
         Some(0 | 1) => Ok(()),
         _ => Err(glib::Error::new(
@@ -131,11 +101,55 @@ async fn call_open_uri(
     }
 }
 
-/// `Response` signals seen so far, by request path, and the task waiting on them.
-#[derive(Default)]
+/// Response codes by request path, and the task waiting on them.
+type Responses = (Vec<(String, Option<u32>)>, Option<Waker>);
+
+/// The portal's `Response` signals, kept from subscription on.
 struct PortalResponses {
-    received: Vec<(String, Option<u32>)>,
-    waker: Option<Waker>,
+    received: Rc<RefCell<Responses>>,
+    _subscription: gio::SignalSubscription,
+}
+
+impl PortalResponses {
+    fn subscribe(bus: &gio::DBusConnection) -> Self {
+        let received = Rc::new(RefCell::new(Responses::default()));
+        let sink = Rc::clone(&received);
+        let subscription = bus.subscribe_to_signal(
+            Some(PORTAL_NAME),
+            Some(PORTAL_REQUEST),
+            Some("Response"),
+            None,
+            None,
+            gio::DBusSignalFlags::NONE,
+            move |signal| {
+                let code = signal.parameters.child_value(0).get::<u32>();
+                let (responses, waker) = &mut *sink.borrow_mut();
+                responses.push((signal.object_path.to_owned(), code));
+                if let Some(waker) = waker.take() {
+                    waker.wake();
+                }
+            },
+        );
+        Self {
+            received,
+            _subscription: subscription,
+        }
+    }
+
+    /// The response code of the request at `handle`, once it arrives.
+    async fn response(&self, handle: &str) -> Option<u32> {
+        std::future::poll_fn(|context| {
+            let (responses, waker) = &mut *self.received.borrow_mut();
+            match responses.iter().find(|(path, _)| path == handle) {
+                Some((_, code)) => Poll::Ready(*code),
+                None => {
+                    *waker = Some(context.waker().clone());
+                    Poll::Pending
+                }
+            }
+        })
+        .await
+    }
 }
 
 /// Opens the folder holding `path` in the file manager. Best effort: a

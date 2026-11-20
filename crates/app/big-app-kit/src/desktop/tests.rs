@@ -61,6 +61,29 @@ fn install_quit_action_registers_application_action() {
 /// contents read through the passed descriptor.
 type Received = std::rc::Rc<std::cell::RefCell<Vec<(String, String)>>>;
 
+/// Ends the request at `path`: links succeed, files are cancelled and folders
+/// fail, as org.freedesktop.portal.Request numbers those outcomes.
+fn answer_request(connection: &gio::DBusConnection, path: &str, method: &str) {
+    let response: u32 = match method {
+        "OpenURI" => 0,
+        "OpenFile" => 1,
+        _ => 2,
+    };
+    let results = glib::VariantDict::new(None).end();
+    connection
+        .emit_signal(
+            None,
+            path,
+            PORTAL_REQUEST,
+            "Response",
+            Some(&glib::Variant::tuple_from_iter([
+                response.to_variant(),
+                results,
+            ])),
+        )
+        .unwrap();
+}
+
 /// An OpenURI portal on `host`, answering every call and recording it.
 fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId, gio::OwnerId) {
     use crate::tray::tests::iterate_until;
@@ -93,25 +116,7 @@ fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId
             let path = format!("/org/freedesktop/portal/desktop/request/1/{method}");
             let request = glib::variant::ObjectPath::try_from(path.as_str()).unwrap();
             invocation.return_value(Some(&(request,).to_variant()));
-            // Success, cancellation and failure, as org.freedesktop.portal.Request numbers them.
-            let response: u32 = match method {
-                "OpenURI" => 0,
-                "OpenFile" => 1,
-                _ => 2,
-            };
-            let results = glib::VariantDict::new(None).end();
-            connection
-                .emit_signal(
-                    None,
-                    &path,
-                    PORTAL_REQUEST,
-                    "Response",
-                    Some(&glib::Variant::tuple_from_iter([
-                        response.to_variant(),
-                        results,
-                    ])),
-                )
-                .unwrap();
+            answer_request(&connection, &path, method);
         })
         .build()
         .unwrap();
