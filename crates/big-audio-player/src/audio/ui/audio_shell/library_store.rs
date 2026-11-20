@@ -28,12 +28,19 @@ fn start_tree(
                 &request.filter,
                 request.age,
             )?;
-            Ok::<_, &'static str>(request.ticket.is_current().then_some(tree))
+            let has_items = queries::get_library_track_count(&conn, "", None)
+                .map_err(|_| "library count failed")?
+                > 0;
+            Ok::<_, &'static str>(request.ticket.is_current().then_some((tree, has_items)))
         })
         .await;
         match result {
-            Ok(Ok(Some(data))) => {
-                let _ = input.send(AudioShellInput::LibraryTreeResolved { generation, data });
+            Ok(Ok(Some((data, has_items)))) => {
+                let _ = input.send(AudioShellInput::LibraryTreeResolved {
+                    generation,
+                    data,
+                    has_items,
+                });
             }
             Ok(Ok(None)) => {} // stale: do not display empty results or an error
             _ => {
@@ -46,8 +53,31 @@ fn start_tree(
     });
 }
 impl AudioShell {
+    /// The writer connection; without one, says the library is still opening
+    /// unless the queue banner already states why it could not be opened.
+    pub(super) fn writer(&self) -> Option<DbHandle> {
+        if self.db.is_none()
+            && self.queue_persistence.status().phase != big_os_kit::deferred::Phase::Failed
+        {
+            self.notify(&i18n(
+                "The music library is still opening. Try again in a moment.",
+            ));
+        }
+        self.db.clone()
+    }
+
+    pub(super) fn reader(&self) -> Option<DbHandle> {
+        self.db_read.clone().or_else(|| self.writer())
+    }
+
+    /// For reads that `QueueRestored` repeats once the database opens: `None`
+    /// without a notice while it is still opening.
+    pub(super) fn deferred_reader(&self) -> Option<DbHandle> {
+        self.queue_ready.then(|| self.reader()).flatten()
+    }
+
     pub(super) fn rebuild_library_tree(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             return;
         };
         let request = TreeRequest {
@@ -68,7 +98,7 @@ impl AudioShell {
 
     /// Delete a custom playlist, then refresh the manager dialog.
     pub(super) fn delete_playlist(&self, id: i64, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -84,7 +114,7 @@ impl AudioShell {
     /// Resolve the existing playlists off-thread, then open the add-to-playlist
     /// picker (shared library dialog) for `track`.
     pub(super) fn request_add_to_playlist(&self, track: Track, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -116,7 +146,7 @@ impl AudioShell {
         playlist_id: i64,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -146,7 +176,7 @@ impl AudioShell {
         track_ids: Vec<i64>,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -161,8 +191,6 @@ impl AudioShell {
 
     /// Resolve an activated browse-tree node to its tracks off-thread, then
     /// append them to the queue (+ play when idle) via `NodeTracksResolved`.
-    /// Activating an artist/album/track enqueues its tracks rather than opening
-    /// a separate detail view.
     pub(super) fn resolve_node_and_enqueue(
         &self,
         kind: u32,
@@ -170,7 +198,7 @@ impl AudioShell {
         secondary: String,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let node_kind = library_query::kind_from_u32(kind);
@@ -185,8 +213,16 @@ impl AudioShell {
                     conn, node_kind, &key, &secondary, &filter, age, &grouping,
                 )
             },
-            move |tracks| {
-                let _ = input.send(AudioShellInput::NodeTracksResolved(tracks));
+            move |tracks| match tracks {
+                Ok(tracks) => {
+                    let _ = input.send(AudioShellInput::NodeTracksResolved(tracks));
+                }
+                Err(error) => {
+                    log::warn!("library tracks could not be read: {error}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The library could not be read. The queue was not changed.",
+                    )));
+                }
             },
         );
     }
@@ -199,21 +235,29 @@ impl AudioShell {
         paths: Vec<String>,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
             move |conn| {
-                paths
-                    .iter()
-                    .filter_map(|p| queries::get_track_by_path(conn, p).ok().flatten())
-                    .collect::<Vec<Track>>()
+                let mut tracks = Vec::new();
+                for path in &paths {
+                    tracks.extend(queries::get_track_by_path(conn, path)?);
+                }
+                big_media_runtime::Result::Ok(tracks)
             },
-            move |tracks| {
-                if !tracks.is_empty() {
+            move |tracks| match tracks {
+                Ok(tracks) if tracks.is_empty() => {}
+                Ok(tracks) => {
                     let _ = input.send(AudioShellInput::DroppedResolved { insert_pos, tracks });
+                }
+                Err(error) => {
+                    log::warn!("library tracks could not be read: {error}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The library could not be read. The queue was not changed.",
+                    )));
                 }
             },
         );

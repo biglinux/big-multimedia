@@ -3,8 +3,10 @@
 
 use crate::i18n::i18n;
 
+use super::super::track_count_duration_text;
 use super::PlaylistLibraryDialogOutput;
 use big_media_runtime::i18n::gettext_noop;
+use big_relm4_components::layout::name_prompt::BigNamePromptSpec;
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct PlaylistLibraryWindowSpec {
@@ -60,16 +62,6 @@ pub(super) struct SavedPlaylistRowSpec {
     pub(super) rename_tooltip: String,
     pub(super) export_tooltip: String,
     pub(super) delete_tooltip: String,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub(super) struct NamePromptSpec {
-    pub(super) heading: &'static str,
-    pub(super) entry_label: &'static str,
-    pub(super) placeholder: &'static str,
-    pub(super) prefill: String,
-    pub(super) accept_label: &'static str,
-    pub(super) cancel_label: &'static str,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -175,37 +167,30 @@ pub(super) fn saved_playlist_row_spec(name: &str) -> SavedPlaylistRowSpec {
 }
 
 pub(super) fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String {
-    let track_label = if count == 1 {
-        i18n("track")
-    } else {
-        i18n("tracks")
-    };
-    format!(
-        "{count} {track_label} · {} {}",
-        (secs as i64) / 60,
-        i18n("min")
-    )
+    track_count_duration_text(count.unsigned_abs(), secs)
 }
 
-pub(super) fn save_current_queue_prompt_spec() -> NamePromptSpec {
-    NamePromptSpec {
-        heading: gettext_noop("Save Current Queue"),
-        entry_label: "Playlist name",
-        placeholder: gettext_noop("Name for the new playlist"),
+pub(in crate::audio::ui) fn save_queue_prompt_spec() -> BigNamePromptSpec {
+    BigNamePromptSpec {
+        title: i18n("Save Queue as Playlist"),
+        description: Some(i18n("Name for the new playlist")),
+        entry_title: i18n("Playlist name"),
         prefill: String::new(),
-        accept_label: "Save",
-        cancel_label: gettext_noop("Cancel"),
+        accept_label: i18n("Save"),
+        content_width: 420,
+        content_height: 240,
     }
 }
 
-pub(super) fn rename_playlist_prompt_spec(current_name: &str) -> NamePromptSpec {
-    NamePromptSpec {
-        heading: gettext_noop("Rename Playlist"),
-        entry_label: "Playlist name",
-        placeholder: gettext_noop("New name"),
+pub(super) fn rename_playlist_prompt_spec(current_name: &str) -> BigNamePromptSpec {
+    BigNamePromptSpec {
+        title: i18n("Rename Playlist"),
+        description: Some(i18n("New name")),
+        entry_title: i18n("Playlist name"),
         prefill: current_name.to_string(),
-        accept_label: "Save",
-        cancel_label: gettext_noop("Cancel"),
+        accept_label: i18n("Save"),
+        content_width: 420,
+        content_height: 240,
     }
 }
 
@@ -224,17 +209,4 @@ pub(super) fn localized_delete_playlist_description(name: &str) -> String {
         "{} \u{201C}{name}\u{201D}?",
         i18n("This will permanently delete")
     )
-}
-
-pub(super) fn is_name_prompt_accept_enabled(text: &str) -> bool {
-    !text.trim().is_empty()
-}
-
-pub(super) fn accepted_playlist_name(text: &str) -> Option<String> {
-    let name = text.trim();
-    (!name.is_empty()).then(|| name.to_string())
-}
-
-pub(super) fn name_prompt_focus_selection() -> (i32, i32) {
-    (0, -1)
 }

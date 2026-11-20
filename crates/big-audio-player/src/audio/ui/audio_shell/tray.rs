@@ -49,7 +49,7 @@ pub(super) fn mark_quitting() {
     QUITTING.set(true);
 }
 
-/// The tray icon, when the setting is on; `None` also without a session bus.
+/// The tray icon, when the setting is on.
 pub(super) fn build_tray(sender: &ComponentSender<AudioShell>, enabled: bool) -> Option<Tray> {
     let tray = enabled.then(|| {
         let input = sender.input_sender().clone();
@@ -58,7 +58,6 @@ pub(super) fn build_tray(sender: &ComponentSender<AudioShell>, enabled: bool) ->
         });
         Tray::new(tray_spec(), command)
     });
-    let tray = tray.flatten();
     TRAY_SHOWN.set(tray.as_ref().map(Tray::shown_flag));
     tray
 }
@@ -130,7 +129,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn close_hides_only_with_a_shown_icon_and_no_quit() {
+    fn close_hides_only_to_shown_tray() {
         assert!(!close_hides_window(), "no icon: close ends the player");
         let shown = std::rc::Rc::new(std::cell::Cell::new(false));
         TRAY_SHOWN.set(Some(shown.clone()));
@@ -157,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn tray_icon_is_installed_as_a_symbolic_icon() {
+    fn tray_icon_installs_as_symbolic() {
         let icon = crate::config::audio::TRAY_ICON_NAME;
         assert!(
             icon.ends_with("-symbolic"),

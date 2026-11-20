@@ -1,13 +1,14 @@
 use super::engine::build_mpv_backend;
-use super::input::set_shell_input;
+use super::input::SHELL_INPUT;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
-use big_media_components::surface::{MediaNotice, create_media_root};
+use big_media_components::surface::{MediaNotice, create_media_root, make_banner_title_selectable};
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button_content};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
+use big_relm4_components::theme::CssSlot;
 
 const PLAYBACK_SHORTCUT_ACTIONS: &[&str] = &[
     "play-pause",
@@ -49,7 +50,6 @@ impl Component for AudioShell {
         let win_actions = gio::SimpleActionGroup::new();
 
         let settings = Settings::for_audio();
-        settings.migrate_audio_appearance();
         // Restore the saved library grouping (default: Songs = presets[0], the
         // flat track list) so the tree matches the dropdown at boot.
         let initial_grouping = {
@@ -62,10 +62,7 @@ impl Component for AudioShell {
         };
         let initial_noise = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
         let initial_voice_active = initial_noise > 0.0;
-        let initial_volume = {
-            let v = f64::from(settings.get_int(keys::AUDIO_VOLUME));
-            if v > 0.0 { v } else { 100.0 }
-        };
+        let initial_volume = settings.audio_volume_percent();
 
         // Child Controllers: each panel's Output → an AudioShellInput variant.
         let library = LibraryPanel::builder()
@@ -75,8 +72,14 @@ impl Component for AudioShell {
             sender.input_sender(),
             AudioShellInput::PlaylistLibraryDialog,
         );
+        // The sidebar sits beside the queue, or folds over it when both do not fit.
+        let split_view = adw::OverlaySplitView::builder()
+            .min_sidebar_width(360.0)
+            .max_sidebar_width(400.0)
+            .sidebar_width_fraction(0.33)
+            .build();
         let playlist = PlaylistPanel::builder()
-            .launch(())
+            .launch(split_view.clone())
             .forward(sender.input_sender(), AudioShellInput::Playlist);
         let trim = AudioTrimBar::builder()
             .launch(BigAudioTrimBarLabels::translated(i18n))
@@ -84,11 +87,11 @@ impl Component for AudioShell {
         let playback_bar = AudioPlaybackBar::builder()
             .launch(AudioPlaybackBarInit {
                 spec: BigAudioTransportSpec::new(transport_labels()),
-                max_volume: 150.0,
+                max_volume: f64::from(settings.volume_max_percent()),
                 initial_volume,
                 initial_voice_pct: (initial_noise * 100.0).clamp(0.0, 100.0),
                 trim_content: Some(trim.widget().clone().upcast()),
-                voice_settings: crate::shared::audio_effects::nr_settings_panel(&settings, {
+                voice_settings: big_media_runtime::audio_effects::nr_settings_panel(&settings, {
                     let input = sender.input_sender().clone();
                     move || input.emit(AudioShellInput::NoiseSettingsChanged)
                 })
@@ -100,8 +103,10 @@ impl Component for AudioShell {
             .launch(FileBrowserConfig {
                 is_media_file: big_media_components::media::files::is_audio_file,
                 settings: crate::settings::Settings::for_audio(),
-                fallback_dir: gtk::glib::user_special_dir(gtk::glib::UserDirectory::Music)
-                    .unwrap_or_else(|| gtk::glib::home_dir().join("Music")),
+                // With no home folder at all the browser starts at the root.
+                fallback_dir: big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Music)
+                    .or_else(|| big_os_kit::xdg_dirs::home_dir().map(|home| home.join("Music")))
+                    .unwrap_or_else(|| PathBuf::from("/")),
                 add_current_label: i18n("Add current folder to Music Library"),
                 add_selected_label: i18n("Add this folder to Music Library"),
                 filter_placeholder: i18n("Filter files…"),
@@ -133,9 +138,8 @@ impl Component for AudioShell {
         lyrics_paned.set_end_child(Some(playlist.widget()));
         lyrics.widget().set_visible(false);
 
-        // LEFT sidebar pane (distinct `.sidebar-pane` colour, always visible):
-        // Music | Files | Radio | Podcasts in a view stack switched from its
-        // own header.
+        // LEFT sidebar pane (distinct `.sidebar-pane` color): Music | Files |
+        // Radio | Podcasts in a view stack switched from its own header.
         let view_stack = gtk::Stack::new();
         view_stack
             .add_titled(library.widget(), Some("music"), &i18n("Music"))
@@ -145,7 +149,7 @@ impl Component for AudioShell {
             .set_icon_name("folder-symbolic");
         view_stack
             .add_titled(radio.widget(), Some("radio"), &i18n("Radio"))
-            .set_icon_name("icon_radio");
+            .set_icon_name(big_player_ui::radio_panel::RADIO_ICON);
         view_stack
             .add_titled(podcast.widget(), Some("podcast"), &i18n("Podcasts"))
             .set_icon_name("microphone-sensitivity-high-symbolic");
@@ -169,10 +173,14 @@ impl Component for AudioShell {
         let tabs: [(&str, String, &str); 4] = [
             ("emblem-music-symbolic", i18n("Music"), "music"),
             ("folder-symbolic", i18n("Files"), "files"),
-            ("icon_radio", i18n("Radio"), "radio"),
+            (
+                big_player_ui::radio_panel::RADIO_ICON,
+                i18n("Radio"),
+                "radio",
+            ),
             (
                 "microphone-sensitivity-high-symbolic",
-                i18n("Podcast"),
+                i18n("Podcasts"),
                 "podcast",
             ),
         ];
@@ -208,11 +216,7 @@ impl Component for AudioShell {
             BigToolbarHeaderSpec::new().show_end_title_buttons(false),
             &tab_bar,
         );
-        let sidebar_pane = BigToolbarPane::new(
-            BigToolbarPaneSpec::new()
-                .css_class("sidebar-pane")
-                .width_request(360),
-        );
+        let sidebar_pane = BigToolbarPane::new(BigToolbarPaneSpec::new().css_class("sidebar-pane"));
         sidebar_pane.add_top_bar(sidebar_header.root());
         sidebar_pane.set_content(&view_stack);
 
@@ -282,10 +286,8 @@ impl Component for AudioShell {
         let content_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
-        let queue_save_banner = adw::Banner::builder()
-            .title(i18n("The playback queue could not be saved or restored. Your previous saved queue was kept."))
-            .button_label(i18n("Retry saving"))
-            .build();
+        let queue_save_banner = adw::Banner::new("");
+        make_banner_title_selectable(&queue_save_banner);
         content_box.append(&queue_save_banner);
         // Messages take a row above the transport instead of covering it.
         let notice = MediaNotice::new();
@@ -297,14 +299,14 @@ impl Component for AudioShell {
         let content_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
         content_pane.set_content(&content_box);
         // Connected on first use (the TV dialog), never merely by starting.
-        let tv = crate::shared::tv_cast::TvLink::new();
+        let tv = big_media_runtime::cast::tv::TvLink::new();
         tv.subscribe({
             let input = sender.input_sender().clone();
             move || {
                 let _ = input.send(AudioShellInput::TvChanged);
             }
         });
-        let tv_card = crate::shared::tv_cast::TvCard::new("tv-strip", true, true, false, {
+        let tv_card = big_media_runtime::cast::tv::TvCard::new("tv-strip", true, true, false, {
             let input = sender.input_sender().clone();
             move |action| {
                 let _ = input.send(AudioShellInput::Tv(action));
@@ -313,21 +315,34 @@ impl Component for AudioShell {
         content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());
 
-        let main_paned = gtk::Paned::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .shrink_start_child(false)
-            .shrink_end_child(false)
-            .resize_start_child(false)
-            .resize_end_child(true)
-            .position(400)
+        split_view.set_sidebar(Some(sidebar_pane.root()));
+        split_view.set_content(Some(content_pane.root()));
+        // 640 px fits the queue and the transport bar with the sidebar folded;
+        // 900 sp leaves both panes their minimum side by side.
+        let responsive = adw::BreakpointBin::builder()
+            .width_request(640)
+            .height_request(400)
+            .hexpand(true)
+            .vexpand(true)
+            .child(&split_view)
             .build();
-        main_paned.set_start_child(Some(sidebar_pane.root()));
-        main_paned.set_end_child(Some(content_pane.root()));
-
-        root.append(&main_paned);
+        let fold_sidebar = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+            adw::BreakpointConditionLengthType::MaxWidth,
+            900.0,
+            adw::LengthUnit::Sp,
+        ));
+        fold_sidebar.add_setter(&split_view, "collapsed", Some(&true.to_value()));
+        big_gtk_kit::breakpoint::add(&responsive, fold_sidebar);
+        root.append(&responsive);
 
         // App stylesheet (lyrics/radio/queue CSS classes).
         let provider = gtk::CssProvider::new();
+        // An application provider answers `@media (prefers-contrast)` from its
+        // own property, not from the settings as the theme does.
+        gtk::Settings::for_display(&root.display())
+            .bind_property("gtk-interface-contrast", &provider, "prefers-contrast")
+            .sync_create()
+            .build();
         provider.load_from_resource(&format!(
             "{}/style.css",
             crate::config::audio::RESOURCE_PREFIX
@@ -337,6 +352,12 @@ impl Component for AudioShell {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        // Icons the resources ship (the radio's); once per display.
+        let icons = gtk::IconTheme::for_display(&root.display());
+        let icon_path = format!("{}/icons", crate::config::audio::RESOURCE_PREFIX);
+        if !icons.resource_path().iter().any(|path| *path == icon_path) {
+            icons.add_resource_path(&icon_path);
+        }
 
         for action in PLAYBACK_SHORTCUT_ACTIONS {
             let input = sender.input_sender().clone();
@@ -360,36 +381,19 @@ impl Component for AudioShell {
             let _ = eq_sender.send(AudioShellInput::ShowEqualizer);
         });
 
-        // Appearance: apply the saved palette + high-contrast now, and let the dialog re-apply live via the same two
-        // provider slots (replaced in place, never stacked).
-        let theme_provider: std::rc::Rc<std::cell::RefCell<Option<gtk::CssProvider>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-        let hc_provider: std::rc::Rc<std::cell::RefCell<Option<gtk::CssProvider>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-        crate::audio::ui::theming::apply_appearance(
-            &settings,
-            &mut theme_provider.borrow_mut(),
-            &mut hc_provider.borrow_mut(),
-        );
-        {
-            let theme_provider = theme_provider.clone();
-            let hc_provider = hc_provider.clone();
-            root.connect_destroy(move |root| {
-                for slot in [&theme_provider, &hc_provider] {
-                    if let Some(provider) = slot.borrow_mut().take() {
-                        gtk::style_context_remove_provider_for_display(&root.display(), &provider);
-                    }
-                }
-            });
-        }
+        // Appearance: apply the saved palette + high-contrast now, and let the dialog re-apply live through the
+        // same two slots, which leave the display with this content.
+        let theme_slot = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        let hc_slot = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        crate::audio::ui::theming::apply_appearance(&settings, &theme_slot, &hc_slot);
         {
             // Weak: these actions live in the window's action map, so a strong
             // window capture is a window⇄action cycle that pins the whole
             // window after close (invisible standalone, where close exits).
             let root_weak = root.downgrade();
             let s = settings.clone();
-            let tp = theme_provider.clone();
-            let hp = hc_provider.clone();
+            let tp = theme_slot.clone();
+            let hp = hc_slot.clone();
             let blur_sender = sender.input_sender().clone();
             big_app_kit::desktop::install_action(&win_actions, "show-appearance", move || {
                 let s_apply = s.clone();
@@ -404,11 +408,7 @@ impl Component for AudioShell {
                     return;
                 };
                 crate::audio::appearance::show_audio_appearance_dialog(&win, &s, move || {
-                    crate::audio::ui::theming::apply_appearance(
-                        &s_apply,
-                        &mut tp.borrow_mut(),
-                        &mut hp.borrow_mut(),
-                    );
+                    crate::audio::ui::theming::apply_appearance(&s_apply, &tp, &hp);
                     // The Effects toggle lives in this dialog; re-evaluate the bar.
                     let _ = blur_sender.send(AudioShellInput::RefreshBlurArt);
                 });
@@ -473,19 +473,22 @@ impl Component for AudioShell {
         })
         .set_enabled(converter);
 
-        // Engine: DB + mpv (built once at init). The event loop forwards
-        // PlayerEvents into the shell.
-        let db = db::open_database().ok();
-        let db_read = db::open_read_connection().ok();
-        let (queue_persistence, queue_updates) =
-            queue_persistence::QueuePersistence::new(db.clone());
+        // The database opens off the GTK thread with the queue restore; mpv is
+        // built once here and its event loop forwards PlayerEvents.
+        let (queue_persistence, queue_updates) = queue_persistence::QueuePersistence::new();
         let close_store = queue_persistence.clone();
         crate::settings::saving::bind_write_drain_with_unsaved(&root, move || {
             close_store.unsaved()
         });
         queue_persistence.bind_failure_banner(&queue_save_banner, queue_updates);
         queue_persistence.load(&sender);
-        let mpv = build_mpv_backend(&sender, &settings);
+        let (mpv, engine_failure) = match build_mpv_backend(&sender, &settings) {
+            Ok(mpv) => (Some(mpv), None),
+            Err(message) => {
+                notice.show(&message);
+                (None, Some(message))
+            }
+        };
         // Standalone shutdown can precede model destruction; save while mpv is alive.
         let shutdown_handler = gio::Application::default().and_then(|app| {
             let weak = Arc::downgrade(mpv.as_ref()?);
@@ -496,19 +499,25 @@ impl Component for AudioShell {
             });
             Some((app.downgrade(), handler))
         });
+        save_volume_on_close(&root, mpv.as_ref(), &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
-        let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
+        let tray = super::tray::build_tray(&sender, settings.get_bool(keys::TRAY_ICON));
 
-        // Publish the shell input so the application `open` handler can deliver
-        // files opened from the desktop / CLI.
-        set_shell_input(sender.input_sender().clone());
+        // Files opened from the desktop, the command line or a host reach this
+        // shell while its content is realized.
+        let shell_input = big_media_runtime::app::ShellInputSlot::bind(
+            &SHELL_INPUT,
+            &root,
+            sender.input_sender().clone(),
+        );
 
-        // Sync the grouping dropdown to the restored preset (no re-emit), then
-        // build the tree with that grouping + load the playlists sidebar.
+        // Sync the grouping dropdown to the restored preset (no re-emit); the
+        // tree is built once the database opens.
         library.emit(LibraryPanelInput::SetGrouping(initial_grouping.clone()));
-        sender.input(AudioShellInput::RebuildLibraryTree);
-        sender.input(AudioShellInput::RefreshPlaylists);
+        playlist.emit(PlaylistPanelInput::ApplyColumnWidths(
+            settings.get_string(keys::PLAYLIST_COLUMN_WIDTHS),
+        ));
 
         // Publish the "win" action group on the content Root so `win.*` actions
         // (the hamburger menu + accels) resolve through the widget hierarchy in
@@ -537,6 +546,7 @@ impl Component for AudioShell {
                 _podcast: podcast,
                 notice,
                 podcast_mode: false,
+                podcast_feed_request: 0,
                 saved_music_queue: None,
                 saved_podcast_queue: None,
                 queue: PlayQueue::new(),
@@ -546,9 +556,9 @@ impl Component for AudioShell {
                 open_generation: 0,
                 history: QueueHistory::default(),
                 now_playing_gen: 0,
-                voice_active: std::rc::Rc::new(crate::shared::popovers::VoiceStrength::new(
-                    initial_voice_active,
-                )),
+                voice_active: std::rc::Rc::new(
+                    big_media_runtime::audio_effects::VoiceStrength::new(initial_voice_active),
+                ),
                 np_box,
                 np_art,
                 np_title,
@@ -565,14 +575,16 @@ impl Component for AudioShell {
                 trim_ranges: Vec::new(),
                 trim_play_selection: false,
                 mpv,
+                engine_failure,
                 shutdown_handler,
-                db,
-                db_read,
+                _shell_input: shell_input,
+                db: None,
+                db_read: None,
                 settings,
-                sleep_timer_source: None,
-                sleep_timer_remaining: 0,
-                sleep_timer_action: String::new(),
-                sleep_timer_volume: 100.0,
+                volume_save: big_relm4_components::input::debounce::BigDebouncedAction::new(
+                    VOLUME_SAVE_DELAY,
+                ),
+                sleep_timer: big_media_runtime::sleep_timer::SleepTimer::default(),
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
                 library_age: 0,
@@ -602,6 +614,36 @@ impl Component for AudioShell {
     }
 }
 
+/// How long the volume stays put before it is saved.
+const VOLUME_SAVE_DELAY: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// Save the volume when the window closes, before the close checks for unsaved
+/// settings, so a change still inside [`VOLUME_SAVE_DELAY`] is kept. Connected
+/// on the content's first realize, which precedes the map that binds that check.
+fn save_volume_on_close(root: &gtk::Box, mpv: Option<&Arc<MpvBackend>>, settings: &Settings) {
+    let Some(mpv) = mpv.map(Arc::downgrade) else {
+        return;
+    };
+    let settings = settings.clone();
+    let done = std::cell::Cell::new(false);
+    root.connect_realize(move |root| {
+        if done.replace(true) {
+            return;
+        }
+        let Some(window) = root.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        let mpv = mpv.clone();
+        let settings = settings.clone();
+        window.connect_close_request(move |_| {
+            if let Some(mpv) = mpv.upgrade() {
+                settings.put_audio_volume_percent(mpv.get_volume());
+            }
+            glib::Propagation::Proceed
+        });
+    });
+}
+
 #[cfg(test)]
 mod lifetime_tests {
     use super::*;
@@ -609,10 +651,12 @@ mod lifetime_tests {
     #[test]
     #[ignore = "requires an isolated home and GTK session"]
     fn closing_audio_releases_the_sleep_timer() {
+        // A host keeps numbers in C for libmpv; the session's LC_NUMERIC may not be.
+        gtk::disable_setlocale();
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.AudioLifetimeTest")
+            .application_id("br.com.biglinux.AudioLifetimeTest")
             .build();
         app.register(gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);
@@ -654,8 +698,8 @@ mod lifetime_tests {
                 player
                     .controller
                     .model()
-                    .sleep_timer_source
-                    .as_ref()
+                    .sleep_timer
+                    .source()
                     .expect("timer armed"),
             )
             .unwrap();
@@ -679,6 +723,10 @@ mod lifetime_tests {
         assert!(
             source.is_destroyed(),
             "closed audio component kept its countdown source"
+        );
+        assert!(
+            SHELL_INPUT.with(|slot| slot.sender().is_none()),
+            "closed audio component still receives opened files"
         );
         assert_eq!(
             Arc::weak_count(&backend),

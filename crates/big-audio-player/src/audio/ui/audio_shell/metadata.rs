@@ -119,7 +119,7 @@ impl AudioShell {
     /// and last resolved cover (on track change, and when the Appearance toggle
     /// flips). When off, or no cover, clears it.
     pub(super) fn refresh_blur_art(&self) {
-        let enabled = self.settings.get_bool_or(keys::AUDIO_ALBUM_ART_BG, true);
+        let enabled = self.settings.get_bool(keys::AUDIO_ALBUM_ART_BG);
         let blur = if enabled {
             self.last_blur_art.clone()
         } else {

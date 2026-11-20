@@ -25,7 +25,6 @@ const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
     "MusicBrainz https://musicbrainz.org",
     "Cover Art Archive https://coverartarchive.org",
     "Radio Browser https://www.radio-browser.info",
-    "ListenBrainz https://listenbrainz.org",
 ];
 
 pub(crate) fn open_paths_message(paths: Vec<String>) -> Option<AudioShellInput> {
@@ -51,17 +50,17 @@ const DOCK_CONTROLS: &[(&str, &str, &str)] = &[
     (
         "play-pause",
         "play-pause",
-        "Play or pause the running player",
+        gettext_noop("Play or pause the running player"),
     ),
     (
         "next",
         "next-track",
-        "Skip to the next track in the running player",
+        gettext_noop("Skip to the next track in the running player"),
     ),
     (
         "previous",
         "prev-track",
-        "Go back to the previous track in the running player",
+        gettext_noop("Go back to the previous track in the running player"),
     ),
 ];
 
@@ -76,8 +75,8 @@ fn dock_control_message(action: &str) -> Option<AudioShellInput> {
     Some(AudioShellInput::Playback(command))
 }
 
-fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
-    crate::shared::app_base::AboutDialogConfig {
+fn audio_about_dialog_config() -> big_media_runtime::app::AboutDialogConfig {
+    big_media_runtime::app::AboutDialogConfig {
         app_name: config::audio::APP_NAME,
         app_icon: config::audio::ICON_NAME,
         comments: AUDIO_ABOUT_COMMENTS,
@@ -126,7 +125,7 @@ mod imp {
         fn open(&self, files: &[gio::File], _hint: &str) {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker.
-            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
+            big_media_runtime::app::present_for_open(self.obj().upcast_ref());
             if let Some(message) = open_files_message(files) {
                 crate::audio::ui::audio_shell::send_to_shell(message);
             }
@@ -161,11 +160,12 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
             big_gtk_kit::install();
-            crate::shared::app_base::strip_decoration_icon();
+            big_media_runtime::app::strip_decoration_icon();
             let settings = crate::settings::Settings::for_audio();
-            crate::shared::app_base::apply_startup_color_scheme(
+            big_media_runtime::app::apply_startup_color_scheme(
                 &settings,
                 keys::AUDIO_UI_COLOR_SOURCE,
+                keys::AUDIO_UI_BG_COLOR,
             );
 
             let app = self.obj();
@@ -183,7 +183,7 @@ mod imp {
                 .activate(|app: &super::Application, _, _| {
                     let win = app.active_window();
                     let dialog =
-                        crate::shared::app_base::build_about_dialog(&audio_about_dialog_config());
+                        big_media_runtime::app::build_about_dialog(&audio_about_dialog_config());
                     dialog.add_credit_section(
                         Some(&i18n(AUDIO_ABOUT_CREDIT_SECTION_HEADING)),
                         AUDIO_ABOUT_CREDIT_LINES,
@@ -227,7 +227,7 @@ impl Application {
                 glib::Char::from(0),
                 glib::OptionFlags::NONE,
                 glib::OptionArg::None,
-                description,
+                &i18n(description),
                 None,
             );
         }
@@ -260,7 +260,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn about_icon_is_the_icon_the_package_installs() {
+    fn about_icon_matches_installed_icon() {
         let icon = crate::config::audio::ICON_NAME;
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
@@ -271,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn every_dock_menu_action_runs_a_known_option() {
+    fn dock_actions_run_known_options() {
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
         let execs: Vec<&str> = desktop

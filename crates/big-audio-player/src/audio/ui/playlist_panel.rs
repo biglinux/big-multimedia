@@ -14,16 +14,18 @@
 use adw::prelude::*;
 use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use big_app_kit::mpris::PlaybackStatus;
 use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
-use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
-use crate::audio::ui::{playlist_chrome, playlist_interactions};
+use crate::audio::ui::track_list::{Behavior, Columns, ListEvent, TrackList, track_of};
+use crate::audio::ui::{
+    playlist_chrome, playlist_interactions, track_count_duration_text, track_count_text,
+};
 use crate::db::models::Track;
 use crate::i18n::i18n;
-use big_media_components::time::duration_hm as format_duration_hm;
 
 fn playlist_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
     tracks
@@ -95,17 +97,10 @@ fn playlist_header_label(track_count: u32, total_secs: f64, playlist_name: &str)
         } else {
             playlist_name.to_string()
         }
+    } else if total_secs >= 1.0 {
+        track_count_duration_text(u64::from(track_count), total_secs)
     } else {
-        format!(
-            "{} {} · {}",
-            track_count,
-            if track_count == 1 {
-                i18n("track")
-            } else {
-                i18n("tracks")
-            },
-            format_duration_hm(total_secs),
-        )
+        track_count_text(u64::from(track_count))
     }
 }
 
@@ -120,6 +115,8 @@ pub enum PlaylistPanelInput {
         current_idx: Option<usize>,
         /// Active saved-playlist name (empty = ad-hoc queue).
         playlist_name: String,
+        /// The queue holds podcast episodes, not music.
+        podcasts: bool,
     },
     /// Incremental append (fast path; avoids a full `SetQueue`).
     AppendTracks(Vec<Track>),
@@ -136,6 +133,8 @@ pub enum PlaylistPanelInput {
     SetPlaying {
         /// New current index, if any.
         idx: Option<usize>,
+        /// How it plays; `Stopped` shows no marker.
+        playback: PlaybackStatus,
     },
     /// Scroll the current row into view (+3 look-ahead), deferred to idle.
     ScrollToCurrent {
@@ -149,9 +148,15 @@ pub enum PlaylistPanelInput {
     /// Whether the library has any tracks; picks the empty-queue placeholder
     /// (drop hint vs. first-run welcome).
     SetLibraryHasItems(bool),
-    /// Restore saved column widths (`title=width,…`), pushed by the shell at
+    /// Restore saved column widths (`key=width,…`), pushed by the shell at
     /// construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
+    /// Restoring the saved queue ended, read or not: an empty queue is final.
+    QueueRestored,
+    /// A podcast feed is being fetched: the list shows loading until false.
+    LoadingEpisodes(bool),
+    /// The radio station the player holds instead of the list, if any.
+    SetStream(Option<String>),
 }
 
 /// Intents the playlist panel emits for the shell to act on.
@@ -162,9 +167,9 @@ pub enum PlaylistPanelOutput {
         /// Queue index to jump to.
         index: usize,
     },
-    /// Remove queue tracks at these indices (descending order).
+    /// Remove the queue tracks at these indices, in any order.
     RemoveTracks {
-        /// Indices to remove, highest-first.
+        /// Queue indices; repeats are removed once.
         indices: Vec<usize>,
     },
     /// Move a queue track (single-source row reorder via drag).
@@ -230,9 +235,11 @@ pub enum PlaylistPanelOutput {
     },
     /// First-run "Open Files" picker chose audio files; shell imports + plays.
     OpenFiles(Vec<String>),
-    /// Persist the queue column widths (`title=width,…`); the shell writes the
+    /// Persist the queue column widths (`key=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
+    /// Play the list's current entry instead of the radio.
+    PlayQueue,
 }
 
 /// Relm4 playlist/queue panel component.
@@ -248,11 +255,23 @@ pub struct PlaylistPanel {
     header_label: gtk::Label,
     /// The currently-playing store object (identity target for the emphasis).
     current_track_identity: Rc<RefCell<Option<glib::Object>>>,
+    /// How the current track plays.
+    playback: Rc<Cell<PlaybackStatus>>,
     /// Active saved-playlist name (shown in the toolbar header when the queue
     /// is empty).
     playlist_name: String,
     /// Library-has-tracks flag; picks the empty-queue placeholder variant.
     library_has_items: bool,
+    /// The queue holds podcast episodes; picks the empty-queue placeholder.
+    podcasts: bool,
+    /// Until the saved queue arrives, an empty queue shows loading instead.
+    restoring: bool,
+    /// A podcast feed is being fetched; the list shows loading instead.
+    loading_episodes: bool,
+    /// Over the list while a radio station holds the player.
+    radio_card: playlist_chrome::RadioCard,
+    /// The list's page, dimmed under the radio card.
+    page: gtk::Box,
 }
 
 impl PlaylistPanel {
@@ -290,9 +309,26 @@ impl PlaylistPanel {
     /// (re)attach the list. The view is reattached, never rebuilt.
     fn refresh_empty_state(&self, sender: &ComponentSender<Self>) {
         let empty = self.store.n_items() == 0;
-        self.list.header.set_visible(!empty);
-        if empty {
-            let placeholder = playlist_chrome::build_empty_state(self.library_has_items, sender);
+        self.list
+            .header
+            .set_visible(!empty && !self.loading_episodes);
+        // Nothing to play from an empty list.
+        self.radio_card.play_list.set_visible(!empty);
+        if self.loading_episodes || (empty && self.restoring) {
+            let title = if self.loading_episodes {
+                i18n("Loading episodes…")
+            } else {
+                i18n("Loading…")
+            };
+            let loading = adw::StatusPage::builder()
+                .title(title)
+                .vexpand(true)
+                .build();
+            loading.set_paintable(Some(&adw::SpinnerPaintable::new(Some(&loading))));
+            self.scroll.set_child(Some(&loading));
+        } else if empty {
+            let placeholder =
+                playlist_chrome::build_empty_state(self.podcasts, self.library_has_items, sender);
             self.scroll.set_child(Some(&placeholder));
         } else {
             let view: gtk::Widget = self.list.view.clone().upcast();
@@ -318,22 +354,27 @@ impl PlaylistPanel {
     }
 }
 
-/// Queue behaviour: identity emphasis, single-row reorder drags, and drops of
+/// Queue behavior: identity emphasis, single-row reorder drags, and drops of
 /// that row or of files from outside.
-fn queue_behaviour(
+fn queue_behavior(
     store: &gio::ListStore,
     selection: &gtk::MultiSelection,
     current: &Rc<RefCell<Option<glib::Object>>>,
+    playback: &Rc<Cell<PlaybackStatus>>,
     sender: &ComponentSender<PlaylistPanel>,
-) -> Behaviour {
+) -> Behavior {
     let current = Rc::clone(current);
+    let playback = Rc::clone(playback);
     let selection_weak = selection.downgrade();
     let (store_weak, out) = (store.downgrade(), sender.clone());
-    Behaviour {
-        is_current: Box::new(move |item, _| {
-            is_current_indicator_track(current.borrow().as_ref(), item)
+    Behavior {
+        playback: Box::new(move |item, _| {
+            if is_current_indicator_track(current.borrow().as_ref(), item) {
+                playback.get()
+            } else {
+                PlaybackStatus::Stopped
+            }
         }),
-        cover: None,
         // Multi-row reorder is left out: where several rows land is ambiguous.
         drag: Some(Box::new(move |positions| {
             let selection = selection_weak.upgrade()?;
@@ -371,7 +412,8 @@ fn queue_behaviour(
 }
 
 impl Component for PlaylistPanel {
-    type Init = ();
+    /// The shell's split view, whose folded sidebar the toolbar reopens.
+    type Init = adw::OverlaySplitView;
     type Input = PlaylistPanelInput;
     type Output = PlaylistPanelOutput;
     type CommandOutput = ();
@@ -383,21 +425,28 @@ impl Component for PlaylistPanel {
     }
 
     fn init(
-        _init: Self::Init,
+        split_view: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
         let selection = gtk::MultiSelection::new(Some(store.clone()));
         let current_track_identity: Rc<RefCell<Option<glib::Object>>> = Rc::new(RefCell::new(None));
+        let playback = Rc::new(Cell::new(PlaybackStatus::Stopped));
 
         let list = {
-            let behaviour = queue_behaviour(&store, &selection, &current_track_identity, &sender);
+            let behavior = queue_behavior(
+                &store,
+                &selection,
+                &current_track_identity,
+                &playback,
+                &sender,
+            );
             let (store, selection, out) =
                 (store.downgrade(), selection.downgrade(), sender.clone());
             TrackList::new(
                 Columns::queue(),
-                behaviour,
+                behavior,
                 &i18n("Playlist"),
                 move |event| {
                     let (Some(store), Some(selection)) = (store.upgrade(), selection.upgrade())
@@ -456,9 +505,13 @@ impl Component for PlaylistPanel {
             .build();
         let page = list.page(&scroll);
 
-        let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender);
+        let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender, &split_view);
         root.add_top_bar(&toolbar);
-        root.set_content(Some(&page));
+        let radio_card = playlist_chrome::build_radio_card(&sender);
+        let content = gtk::Overlay::new();
+        content.set_child(Some(&page));
+        content.add_overlay(&radio_card.root);
+        root.set_content(Some(&content));
 
         let model = Self {
             store,
@@ -467,11 +520,17 @@ impl Component for PlaylistPanel {
             scroll,
             header_label,
             current_track_identity,
+            playback,
             playlist_name: String::new(),
             library_has_items: false,
+            podcasts: false,
+            restoring: true,
+            loading_episodes: false,
+            radio_card,
+            page,
         };
-        // Empty queue at boot → show the placeholder until the shell pushes a
-        // SetQueue (which reattaches the list).
+        // Empty queue at boot → show loading until the shell pushes the saved
+        // queue or reports there is none.
         model.refresh_empty_state(&sender);
         model.update_header();
 
@@ -484,8 +543,10 @@ impl Component for PlaylistPanel {
                 tracks,
                 current_idx,
                 playlist_name,
+                podcasts,
             } => {
                 self.playlist_name = playlist_name;
+                self.podcasts = podcasts;
                 // Replace only the rows that changed: each metadata batch of a
                 // large open sends the whole queue, and new objects for every
                 // row made GTK destroy and rebuild every row widget each time.
@@ -530,9 +591,10 @@ impl Component for PlaylistPanel {
                 self.refresh_empty_state(&sender);
                 self.update_header();
             }
-            PlaylistPanelInput::SetPlaying { idx } => {
+            PlaylistPanelInput::SetPlaying { idx, playback } => {
                 *self.current_track_identity.borrow_mut() =
                     idx.and_then(|i| self.store.item(i as u32));
+                self.playback.set(playback);
                 self.list.view.refresh_all();
             }
             PlaylistPanelInput::ScrollToCurrent { idx } => self.scroll_to(idx),
@@ -551,6 +613,23 @@ impl Component for PlaylistPanel {
                 }
             }
             PlaylistPanelInput::ApplyColumnWidths(spec) => self.list.apply_widths(&spec),
+            PlaylistPanelInput::QueueRestored => {
+                self.restoring = false;
+                self.refresh_empty_state(&sender);
+            }
+            PlaylistPanelInput::LoadingEpisodes(loading) => {
+                self.loading_episodes = loading;
+                self.refresh_empty_state(&sender);
+            }
+            PlaylistPanelInput::SetStream(station) => {
+                if let Some(station) = &station {
+                    self.radio_card.station.set_label(station);
+                }
+                self.radio_card.root.set_visible(station.is_some());
+                // Dimmed, the list reads as not playing; it still takes clicks.
+                self.page
+                    .set_opacity(if station.is_some() { 0.35 } else { 1.0 });
+            }
         }
     }
 }
@@ -704,11 +783,12 @@ mod tests {
         assert_eq!(playlist_header_label(0, 0.0, ""), "Playlist");
         assert_eq!(playlist_header_label(0, 0.0, "Road Mix"), "Road Mix");
 
-        let one_track = playlist_header_label(1, 65.0, "Road Mix");
-        assert!(one_track.starts_with("1 track · "));
-
-        let two_tracks = playlist_header_label(2, 125.0, "Road Mix");
-        assert!(two_tracks.starts_with("2 tracks · "));
+        assert_eq!(playlist_header_label(1, 40.0, "Road Mix"), "1 track · 40 s");
+        assert_eq!(
+            playlist_header_label(2, 125.0, "Road Mix"),
+            "2 tracks · 2 min"
+        );
+        assert_eq!(playlist_header_label(3, 0.0, ""), "3 tracks");
     }
 
     /// Metadata for rows 1 and 2, a removal, an insertion, duplicates and

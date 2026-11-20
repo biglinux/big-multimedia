@@ -26,7 +26,6 @@ struct AudioEffectsPageSpec {
     album_art_background_title: &'static str,
     album_art_background_subtitle: &'static str,
     album_art_background_key: keys::BoolKey,
-    album_art_background_default: bool,
 }
 
 fn audio_appearance_window_spec() -> AudioAppearanceWindowSpec {
@@ -48,7 +47,6 @@ fn audio_effects_page_spec() -> AudioEffectsPageSpec {
             "Show the current cover as a blurred background behind the audio controls",
         ),
         album_art_background_key: keys::AUDIO_ALBUM_ART_BG,
-        album_art_background_default: true,
     }
 }
 
@@ -99,10 +97,7 @@ fn create_effects_page(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
     let art_bg_row = adw::SwitchRow::builder()
         .title(i18n(page_spec.album_art_background_title))
         .subtitle(i18n(page_spec.album_art_background_subtitle))
-        .active(settings.get_bool_or(
-            page_spec.album_art_background_key,
-            page_spec.album_art_background_default,
-        ))
+        .active(settings.get_bool(page_spec.album_art_background_key))
         .build();
     {
         let s = settings.clone();
@@ -151,6 +146,5 @@ mod tests {
             "Show the current cover as a blurred background behind the audio controls"
         );
         assert_eq!(spec.album_art_background_key.0, keys::AUDIO_ALBUM_ART_BG.0);
-        assert!(spec.album_art_background_default);
     }
 }

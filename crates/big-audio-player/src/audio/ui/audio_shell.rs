@@ -42,7 +42,6 @@ use crate::audio::library_query;
 use crate::audio::library_scan_engine;
 use crate::audio::lyrics_fetch_engine;
 use crate::audio::mpris_state::{SharedMprisState, save_mpris_art};
-use crate::audio::playlist_import;
 use crate::audio::queue_undo::QueueHistory;
 use crate::audio::ui::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 use crate::audio::ui::library_tag_editor::TagEditFields;
@@ -54,12 +53,14 @@ use crate::audio::ui::playlist_panel::{PlaylistPanel, PlaylistPanelInput, Playli
 use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
-use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
+use crate::i18n::{i18n, ni18n};
+use crate::library::podcast::PodcastFeed;
+use crate::media::iptv::left_out_notice;
+use crate::player::mpv_backend::{
+    AudioCacheProfile, EndReason, MpvBackend, PlayerEvent, TargetSource,
+};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
-use crate::shared::converter_handoff;
-use crate::shared::spawn::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{
     CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
@@ -68,11 +69,15 @@ use big_media_components::media::file_metadata_dialog::{
     BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
     show_media_file_metadata_dialog,
 };
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_media_components::playback::audio_transport::{
     BigAudioTransportLabels, BigAudioTransportSpec,
 };
-use big_media_components::player_chrome::spawn_blocking_result;
+use big_media_components::player_chrome::{spawn_blocking_result, volume_icon_name};
 use big_media_components::time;
+use big_media_runtime::converter_handoff;
+use big_media_runtime::db_query::spawn_db_query;
+use big_os_kit::url::ListOrigin;
 use big_player_ui::audio_trim_bar::{
     AudioTrimBar, AudioTrimBarInput, AudioTrimBarOutput, BigAudioTrimBarLabels,
 };
@@ -96,9 +101,9 @@ pub struct AudioShell {
     /// Bottom transport bar (play/seek/volume/repeat/shuffle).
     playback_bar: Controller<AudioPlaybackBar>,
     /// This player's line to BigNetScreen: TV dialog, strip and controls.
-    tv: std::rc::Rc<crate::shared::tv_cast::TvLink>,
+    tv: std::rc::Rc<big_media_runtime::cast::tv::TvLink>,
     /// Above the transport while a TV plays this player's session.
-    tv_card: crate::shared::tv_cast::TvCard,
+    tv_card: big_media_runtime::cast::tv::TvCard,
     /// The session's last state: where it was when it ended.
     tv_last: Option<crate::cast::daemon::State>,
     /// Whether the session was released at the last change.
@@ -132,12 +137,15 @@ pub struct AudioShell {
     /// Whether the queue currently holds podcast episodes (suppresses the music
     /// queue + toggles the stash/restore on tab switches).
     podcast_mode: bool,
+    /// The latest feed asked for; an older fetch that lands later is dropped.
+    podcast_feed_request: u64,
     /// Music queue stashed on entering podcast mode (tracks + current index).
     saved_music_queue: Option<(Vec<Track>, Option<usize>)>,
     /// Podcast queue stashed on leaving the podcast tab (restored on return).
     saved_podcast_queue: Option<(Vec<Track>, Option<usize>)>,
     queue: PlayQueue,
     queue_persistence: queue_persistence::QueuePersistence,
+    /// Set by the first `QueueRestored`, which also brings the database handles.
     queue_ready: bool,
     pending_opens: std::collections::VecDeque<Vec<String>>,
     open_generation: u64,
@@ -156,14 +164,14 @@ pub struct AudioShell {
     np_album: gtk::Label,
     /// Whether voice-enhancement (noise reduction) is active (NR pipeline toggle
     /// crosses on this).
-    voice_active: std::rc::Rc<crate::shared::popovers::VoiceStrength>,
+    voice_active: std::rc::Rc<big_media_runtime::audio_effects::VoiceStrength>,
     /// Name of the currently-playing radio station (for recording filenames).
     radio_station_name: String,
     /// Destination of the in-progress radio recording (None = not recording).
     recording_path: Option<PathBuf>,
     recording_generation: u64,
-    /// MPRIS2 D-Bus service (None if the session bus is unavailable).
-    mpris: Option<Mpris>,
+    /// MPRIS2 D-Bus service, inactive if the session bus is unavailable.
+    mpris: Mpris,
     /// Playback-state snapshot read by the MPRIS `StateCallback` (D-Bus thread).
     mpris_state: Arc<SharedMprisState>,
     /// System tray icon (None while the setting is off).
@@ -179,21 +187,21 @@ pub struct AudioShell {
     /// Audio playback backend (system libmpv). Built once at init; `None` only
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,
+    /// Why the engine failed to start, said again whenever something is asked
+    /// to play; set exactly when `mpv` is `None`.
+    engine_failure: Option<String>,
     shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
-    /// Writer DB handle (queue persistence, ratings, playlists, deletes).
+    _shell_input: big_media_runtime::app::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
+    /// Writer DB handle (queue persistence, ratings, playlists, deletes); read
+    /// through [`Self::writer`], which explains its absence.
     db: Option<DbHandle>,
     /// Read-only DB handle (library/detail queries; avoids writer contention).
     db_read: Option<DbHandle>,
     /// Persisted settings (audio config, column widths).
     settings: Settings,
-    /// Active sleep-timer countdown source (None = no timer armed).
-    sleep_timer_source: Option<glib::SourceId>,
-    /// Seconds left on the armed sleep timer.
-    sleep_timer_remaining: u32,
-    /// Action to perform when the sleep timer expires.
-    sleep_timer_action: String,
-    /// Pre-timer volume, restored after the fade-to-pause on expiry.
-    sleep_timer_volume: f64,
+    /// Saves the volume once it stays put, not on every slider step.
+    volume_save: big_relm4_components::input::debounce::BigDebouncedAction,
+    sleep_timer: big_media_runtime::sleep_timer::SleepTimer,
     /// Current library grouping preset (drives tree + node resolution).
     library_grouping: LibraryGrouping,
     /// Current library search filter text.
@@ -224,7 +232,6 @@ pub struct AudioShell {
 
 impl Drop for AudioShell {
     fn drop(&mut self) {
-        self.cancel_sleep_timer();
         if let Some((app, handler)) = self.shutdown_handler.take()
             && let Some(app) = app.upgrade()
         {

@@ -181,8 +181,11 @@ pub(super) fn shortcut_message(action: &str) -> Option<AudioShellInput> {
         "seek-backward" => AudioShellInput::SeekBy(-5.0),
         "seek-forward-long" => AudioShellInput::SeekBy(30.0),
         "seek-backward-long" => AudioShellInput::SeekBy(-30.0),
-        "next-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Next),
-        "prev-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Previous),
+        // The single-key rows have ids of their own, so each row keeps its own key.
+        "next-track" | "next-track-key" => AudioShellInput::Playback(AudioPlaybackBarOutput::Next),
+        "prev-track" | "prev-track-key" => {
+            AudioShellInput::Playback(AudioPlaybackBarOutput::Previous)
+        }
         "toggle-repeat" => AudioShellInput::Playback(AudioPlaybackBarOutput::CycleRepeat),
         "toggle-shuffle" => AudioShellInput::ToggleShuffleShortcut,
         "undo" => AudioShellInput::Undo,
@@ -266,7 +269,6 @@ fn focus_keeps_arrows(widget: &gtk::Widget) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::audio::keybindings::build_single_key_map;
 
     #[test]
     fn every_listed_shortcut_has_a_target() {
@@ -284,7 +286,39 @@ mod tests {
     }
 
     #[test]
-    fn bare_keys_match_through_caps_lock_and_shift() {
+    fn track_rows_keep_separate_keys() {
+        let map =
+            big_app_kit::keybindings::build_accel_map(SHORTCUTS, "next-track=<Ctrl><Alt>n", false);
+        let lookup = |key, state| lookup_shortcut(&map, key, state);
+        assert_eq!(
+            lookup(
+                gdk::Key::n,
+                gdk::ModifierType::CONTROL_MASK | gdk::ModifierType::ALT_MASK
+            ),
+            Some("next-track")
+        );
+        assert_eq!(
+            lookup(gdk::Key::n, gdk::ModifierType::empty()),
+            Some("next-track-key")
+        );
+        assert_eq!(
+            lookup(gdk::Key::Right, gdk::ModifierType::CONTROL_MASK),
+            None
+        );
+        let map = big_app_kit::keybindings::build_accel_map(SHORTCUTS, "prev-track-key=b", false);
+        let lookup = |key, state| lookup_shortcut(&map, key, state);
+        assert_eq!(
+            lookup(gdk::Key::Left, gdk::ModifierType::CONTROL_MASK),
+            Some("prev-track")
+        );
+        assert_eq!(lookup(gdk::Key::p, gdk::ModifierType::empty()), None);
+        for action in ["next-track-key", "prev-track-key"] {
+            assert!(shortcut_message(action).is_some(), "{action}");
+        }
+    }
+
+    #[test]
+    fn bare_keys_ignore_caps_lock_shift() {
         let map = big_app_kit::keybindings::build_accel_map(SHORTCUTS, "", false);
         let lookup = |key, state| lookup_shortcut(&map, key, state);
         assert_eq!(
@@ -293,7 +327,7 @@ mod tests {
         );
         assert_eq!(
             lookup(gdk::Key::N, gdk::ModifierType::LOCK_MASK),
-            Some("next-track")
+            Some("next-track-key")
         );
         assert_eq!(
             lookup(gdk::Key::Right, gdk::ModifierType::CONTROL_MASK),
@@ -310,6 +344,5 @@ mod tests {
             ),
             Some("redo")
         );
-        assert!(build_single_key_map("").contains_key("space"));
     }
 }

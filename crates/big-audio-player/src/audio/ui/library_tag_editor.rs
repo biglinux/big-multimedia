@@ -136,7 +136,7 @@ pub(super) fn show_tag_editor(
     const CONTENT_W: i32 = 900;
     const CONTENT_H: i32 = 640;
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Track Info"))
         .content_width(CONTENT_W)
         .content_height(CONTENT_H)
@@ -195,8 +195,11 @@ struct EditRows {
 
 impl EditRows {
     fn new(track: &Track) -> Self {
-        let entry =
-            |title: String, text: String| adw::EntryRow::builder().title(title).text(text).build();
+        let entry = |title: String, text: String| {
+            big_relm4_components::input::entry_row::build(
+                adw::EntryRow::builder().title(title).text(text),
+            )
+        };
         let num = |n: Option<i32>| n.map_or_else(String::new, |n| n.to_string());
         Self {
             title: entry(i18n("Title"), track.title.clone().unwrap_or_default()),
@@ -426,7 +429,7 @@ fn connect_dirty_detection(save_button: &gtk::Button, rows: &EditRows, track: &T
 
 /// Save → collect fields → emit `WriteTags` → close. The shell owns the write.
 fn wire_save(
-    dialog: &adw::Dialog,
+    dialog: &big_gtk_kit::dialog::Dialog,
     save_button: &gtk::Button,
     track: &Track,
     rows: &EditRows,

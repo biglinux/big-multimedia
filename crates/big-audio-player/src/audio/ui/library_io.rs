@@ -1,145 +1,32 @@
 //! Library-panel file IO + folder-management dialogs (push-model).
 //!
-//! Free functions the panel calls when the user triggers export/import/save-as
-//! or opens the watch-folder manager. The panel never touches the DB or the
-//! scanner: the m3u8 export writes the file off-thread (it already holds the
-//! detail tracks), but every DB-backed action emits an `Output` intent and the
-//! shell runs the query/scan. `parent` is the toplevel window; it satisfies
-//! both `FilePicker` (`IsA<gtk::Window>`) and `AlertDialog::present`.
+//! Free functions the panel calls when the user opens the watch-folder
+//! manager. The panel never touches the DB or the scanner:
+//! every action emits an `Output` intent and the shell runs the query/scan.
+//! `parent` is the toplevel window; it satisfies both `FilePicker`
+//! (`IsA<gtk::Window>`) and `AlertDialog::present`.
+
+use big_relm4_components::feedback::tooltip;
+use std::path::Path;
 
 use adw::prelude::*;
-use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
-use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
-    preferences::BigPreferencesGroupSpec,
-};
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use relm4::ComponentSender;
 
-use crate::db::models::{Track, WatchFolder};
+use crate::db::models::WatchFolder;
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
-use big_media_runtime::i18n::gettext_noop;
 
 const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
 const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
 const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
 const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct NameEntryDialogSpec {
-    content_width: i32,
-    content_height: i32,
-    content_spacing: i32,
-    entry_title: &'static str,
-    cancel_label: &'static str,
-    save_label: &'static str,
-    focus_select_start: i32,
-    focus_select_end: i32,
-}
-
-fn name_entry_dialog_spec() -> NameEntryDialogSpec {
-    NameEntryDialogSpec {
-        content_width: 420,
-        content_height: 240,
-        content_spacing: 12,
-        entry_title: gettext_noop("Playlist name"),
-        cancel_label: gettext_noop("Cancel"),
-        save_label: gettext_noop("Save"),
-        focus_select_start: 0,
-        focus_select_end: -1,
-    }
-}
-
-fn normalized_playlist_name(name: &str) -> Option<String> {
-    let trimmed_name = name.trim();
-    if trimmed_name.is_empty() {
-        None
-    } else {
-        Some(trimmed_name.to_string())
-    }
-}
-
-/// Export the current detail tracks as an `.m3u8` playlist. The save picker
-/// runs on the main loop; the file is written off-thread by
-/// `playlist_scan::write_m3u` (the panel already owns the tracks, so no DB
-/// round-trip is needed). A failure surfaces through a `Notify` intent; the
-/// shell owns the notice.
-pub(super) fn export_detail_m3u8(
-    parent: &gtk::Window,
-    tracks: Vec<Track>,
-    sender: &ComponentSender<LibraryPanel>,
-) {
-    if tracks.is_empty() {
-        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to export")));
-        return;
-    }
-    let out = sender.clone();
-    FilePicker::save_file(i18n("Export Playlist"))
-        .accept_label(i18n("Save"))
-        .initial_name("playlist.m3u8")
-        .pattern_filter(&i18n("M3U8 Playlist"), &["*.m3u8", "*.m3u"])
-        .save(parent, move |path| {
-            crate::settings::saving::acknowledged_task(
-                false,
-                move || {
-                    let items: Vec<_> = tracks.into_iter().map(|t| t.file_path).collect();
-                    crate::media::playlist_scan::write_m3u(&path, &items)
-                        .map_err(|_| std::io::Error::other("Playlist export could not be confirmed"))
-                },
-                move |result| {
-                    if result.is_err() {
-                        let _ = out.output(LibraryPanelOutput::Notify(i18n(
-                            "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
-                        )));
-                    }
-                },
-            );
-        });
-}
-
-/// Pick an `.m3u`/`.m3u8`/`.pls` file and hand the path to the shell, which
-/// parses it (`big_media_runtime::media::playlist_scan`) + inserts the tracks.
-pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<LibraryPanel>) {
-    let out = sender.clone();
-    FilePicker::new(i18n("Import Playlist"))
-        .accept_label(i18n("Open"))
-        .pattern_filter(&i18n("Playlists"), &["*.m3u", "*.m3u8", "*.pls"])
-        .open(parent, move |path| {
-            let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
-        });
-}
-
-/// Prompt for a name, then ask the shell to persist `track_ids` as a new
-/// playlist (the shell owns `create_playlist` + `add_track_to_playlist`).
-pub(super) fn save_tracks_as_playlist(
-    parent: &gtk::Window,
-    track_ids: Vec<i64>,
-    sender: &ComponentSender<LibraryPanel>,
-) {
-    if track_ids.is_empty() {
-        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to save")));
-        return;
-    }
-    let out = sender.clone();
-    present_name_entry_dialog(
-        parent,
-        &i18n("Save as Playlist"),
-        &i18n("Enter a name for the new playlist"),
-        move |name| {
-            let _ = out.output(LibraryPanelOutput::SaveTracksAsPlaylist {
-                name,
-                track_ids: track_ids.clone(),
-            });
-        },
-    );
-}
 
 /// A scan opens its own progress dialog. Stacked over this one, Escape closed
 /// the progress (cancelling the scan) and left this identical-looking dialog,
@@ -181,7 +68,7 @@ pub(super) fn show_manage_folders(
     });
     content.append(&review);
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Music Folders"))
         .content_width(MUSIC_FOLDERS_DIALOG_WIDTH)
         .content_height(MUSIC_FOLDERS_DIALOG_HEIGHT)
@@ -339,105 +226,26 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
     buttons
 }
 
-/// A small shared-chrome dialog with a single name entry; calls `on_save` with
-/// the trimmed name when the user confirms.
-fn present_name_entry_dialog<F>(parent: &gtk::Window, heading: &str, body: &str, on_save: F)
-where
-    F: Fn(String) + 'static,
-{
-    let dialog_spec = name_entry_dialog_spec();
-    let dialog = adw::Dialog::builder()
-        .title(heading)
-        .content_width(dialog_spec.content_width)
-        .content_height(dialog_spec.content_height)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(dialog_spec.content_spacing);
-    page.append_description(body);
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n(dialog_spec.entry_title))
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
-        i18n(dialog_spec.cancel_label),
-        i18n(dialog_spec.save_label),
-    ));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(normalized_playlist_name(&row.text()).is_some());
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let entry_for_accept = entry.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = normalized_playlist_name(&entry_for_accept.text()) else {
-            return;
-        };
-        on_save(name);
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let entry_for_focus = entry.clone();
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_focus.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            entry_for_idle
-                .select_region(dialog_spec.focus_select_start, dialog_spec.focus_select_end);
-        });
-    });
-    dialog.present(Some(parent));
-}
-
-/// Rewrite a `$HOME`-prefixed path to a `~`-abbreviated display form.
+/// Rewrite a path inside the home folder to a `~`-abbreviated display form.
 fn abbreviate_home(path: &str) -> String {
-    let home = glib::home_dir();
-    let home_str = home.to_string_lossy();
-    if let Some(rest) = path.strip_prefix(home_str.as_ref()) {
-        format!("~{rest}")
-    } else {
-        path.to_string()
+    let Some(home) = big_os_kit::xdg_dirs::home_dir() else {
+        return path.to_string();
+    };
+    match Path::new(path).strip_prefix(&home) {
+        Ok(rest) if rest.as_os_str().is_empty() => "~".to_string(),
+        Ok(rest) => format!("~/{}", rest.display()),
+        Err(_) => path.to_string(),
     }
 }
 
 /// Error-styled circular trash button used for each folder row.
 fn build_remove_button(folder_label: &str) -> gtk::Button {
-    let remove_folder_button = gtk::Button::builder()
-        .icon_name("user-trash-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes([
-            "flat".to_string(),
-            "circular".to_string(),
-            "error".to_string(),
-        ])
-        .build();
-    remove_folder_button
-        .set_tooltip_text(Some(&i18n("Stop monitoring this folder; keep its tracks")));
+    let remove_folder_button = tooltip::icon_button(
+        "user-trash-symbolic",
+        &i18n("Stop monitoring this folder; keep its tracks"),
+        &["flat", "circular", "error"],
+    );
+    remove_folder_button.set_valign(gtk::Align::Center);
     remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",
         i18n("Remove folder")
@@ -497,7 +305,7 @@ fn build_tips_card() -> gtk::Box {
 
     for text in [
         i18n("• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"),
-        i18n("• Subfolders are included automatically — no need to add each one"),
+        i18n("• Subfolders are included automatically; no need to add each one"),
         i18n(
             "• Use the Files tab to play files from any folder without adding them to the library",
         ),
@@ -519,12 +327,11 @@ fn build_tips_card() -> gtk::Box {
 mod tests {
     #[cfg(not(miri))]
     use super::abbreviate_home;
-    use super::{NameEntryDialogSpec, name_entry_dialog_spec, normalized_playlist_name};
 
     #[cfg(not(miri))]
     #[test]
     fn abbreviate_home_rewrites_prefix() {
-        let home = gtk::glib::home_dir();
+        let home = big_os_kit::xdg_dirs::home_dir().expect("an absolute home folder");
         let input = home.join("Music/Albums");
         assert_eq!(
             abbreviate_home(&input.to_string_lossy()),
@@ -539,32 +346,8 @@ mod tests {
             abbreviate_home("/mnt/media/lib"),
             "/mnt/media/lib".to_string()
         );
-    }
-
-    #[test]
-    fn name_entry_dialog_keeps_chrome() {
-        assert_eq!(
-            name_entry_dialog_spec(),
-            NameEntryDialogSpec {
-                content_width: 420,
-                content_height: 240,
-                content_spacing: 12,
-                entry_title: "Playlist name",
-                cancel_label: "Cancel",
-                save_label: "Save",
-                focus_select_start: 0,
-                focus_select_end: -1,
-            }
-        );
-    }
-
-    #[test]
-    fn normalized_name_needs_non_blank_text() {
-        assert_eq!(normalized_playlist_name(""), None);
-        assert_eq!(normalized_playlist_name("   "), None);
-        assert_eq!(
-            normalized_playlist_name("  Favorites  "),
-            Some("Favorites".to_string())
-        );
+        let home = big_os_kit::xdg_dirs::home_dir().expect("an absolute home folder");
+        let sibling = format!("{}2/Music", home.display());
+        assert_eq!(abbreviate_home(&sibling), sibling);
     }
 }

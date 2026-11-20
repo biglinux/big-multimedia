@@ -10,7 +10,7 @@ use std::path::Path;
 use std::sync::PoisonError;
 
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, MutexGuard, TryLockError};
+use std::sync::{Arc, MutexGuard};
 /// Live counters contain no media names and need no UI-thread mutex.
 #[derive(Debug, Default)]
 pub struct ScanControl {
@@ -75,18 +75,14 @@ fn lock_db<'a>(
     db: &'a DbHandle,
     cancelled: &AtomicBool,
 ) -> Result<MutexGuard<'a, rusqlite::Connection>, String> {
-    loop {
-        if cancelled.load(Ordering::Acquire) {
-            return Err("Scan cancelled".into());
+    crate::db::lock_within(db, crate::db::BACKGROUND_LOCK_WAIT, cancelled).map_err(|error| {
+        match error {
+            big_media_runtime::Error::Cancelled => "Scan cancelled",
+            big_media_runtime::Error::Io(_) => "Library busy",
+            _ => "Library connection failed",
         }
-        match db.try_lock() {
-            Ok(conn) => return Ok(conn),
-            Err(TryLockError::WouldBlock) => {
-                std::thread::sleep(std::time::Duration::from_millis(5));
-            }
-            Err(TryLockError::Poisoned(_)) => return Err("Library connection failed".into()),
-        }
-    }
+        .to_owned()
+    })
 }
 #[cfg(test)]
 pub(crate) fn scan_folder_blocking(db: &DbHandle, folder: &str) -> Result<(usize, usize), String> {
@@ -264,25 +260,12 @@ mod tests {
     use rusqlite::Connection;
     use std::fs;
     use std::sync::{Arc, Mutex};
-    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn memory_library_db() -> MediaResult<DbHandle> {
         let conn = Connection::open_in_memory()?;
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
         schema::run_migrations(&conn)?;
         Ok(Arc::new(Mutex::new(conn)))
-    }
-
-    fn unique_audio_scan_folder(
-        purpose: &str,
-    ) -> std::result::Result<std::path::PathBuf, Box<dyn std::error::Error>> {
-        let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-        let folder = std::env::temp_dir().join(format!(
-            "big-audio-library-scan-{purpose}-{}-{unique_suffix}",
-            std::process::id()
-        ));
-        fs::create_dir_all(&folder)?;
-        Ok(folder)
     }
 
     fn track_for_path(path: &Path) -> Track {
@@ -343,7 +326,8 @@ mod tests {
     #[test]
     fn scan_imports_in_bounded_batches() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
-        let scan_folder = unique_audio_scan_folder("mixed")?;
+        let scan_dir = tempfile::tempdir()?;
+        let scan_folder = scan_dir.path();
         let valid_track_path = scan_folder.join("valid.wav");
         let invalid_track_path = scan_folder.join("invalid.mp3");
         let second_invalid_track_path = scan_folder.join("invalid.opus");
@@ -386,14 +370,15 @@ mod tests {
         assert_eq!(watch_folders[0].path, scan_folder.to_string_lossy());
 
         drop(conn);
-        fs::remove_dir_all(&scan_folder)?;
+        scan_dir.close()?;
         Ok(())
     }
 
     #[test]
     fn watch_folder_paths_are_sorted() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
-        let scan_folder = unique_audio_scan_folder("watch-paths")?;
+        let scan_dir = tempfile::tempdir()?;
+        let scan_folder = scan_dir.path();
         let album_folder = scan_folder.join("albums");
         fs::create_dir_all(&album_folder)?;
 
@@ -412,14 +397,15 @@ mod tests {
             ]
         );
 
-        fs::remove_dir_all(&scan_folder)?;
+        scan_dir.close()?;
         Ok(())
     }
 
     #[test]
     fn removing_watch_folder_keeps_tracks() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
-        let scan_folder = unique_audio_scan_folder("remove")?;
+        let scan_dir = tempfile::tempdir()?;
+        let scan_folder = scan_dir.path();
         let nested_folder = scan_folder.join("nested");
         fs::create_dir_all(&nested_folder)?;
         let parent_track_path = scan_folder.join("parent.mp3");
@@ -460,7 +446,18 @@ mod tests {
         );
 
         drop(conn);
-        fs::remove_dir_all(&scan_folder)?;
+        scan_dir.close()?;
         Ok(())
+    }
+
+    /// No other test reserves a scan, so the process-wide count starts at zero.
+    #[test]
+    fn scan_admission_caps_concurrent_scans() {
+        let first = ScanAdmission::reserve().expect("first scan admitted");
+        let second = ScanAdmission::reserve().expect("second scan admitted");
+        assert!(ScanAdmission::reserve().is_none());
+        drop(first);
+        let third = ScanAdmission::reserve().expect("a released slot is reused");
+        drop((second, third));
     }
 }

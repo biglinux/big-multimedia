@@ -1,4 +1,4 @@
-use super::playback::volume_icon;
+use super::playback::volume_indicator;
 use super::*;
 
 impl AudioShell {
@@ -10,9 +10,8 @@ impl AudioShell {
         // While the TV has the transport it shows the TV, not the paused mpv.
         let tv = self.tv.attached().is_some();
         match event {
-            // Reason 0 = natural end-of-file → advance to the next queue track
-            // (radio streams never auto-advance the music queue).
-            PlayerEvent::EndFile(0) if !self.is_stream => {
+            // Radio streams never auto-advance the music queue.
+            PlayerEvent::EndFile(EndReason::Eof) if !self.is_stream => {
                 if self.queue.advance().is_some() {
                     self.play_current();
                     self.sync_current_to_panels();
@@ -20,18 +19,24 @@ impl AudioShell {
                     self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
             }
-            // Reason 4 = the track could not be opened. Skip it, but stop once
-            // every queued track failed in a row or the queue would come back
-            // to the same one (repeat-one, a single track).
-            PlayerEvent::EndFile(4) if !self.is_stream => {
+            // Skip a track that could not be opened, but stop once every
+            // queued track failed in a row or the queue would come back to the
+            // same one (repeat-one, a single track).
+            // Every file would fail the same way, so nothing is skipped.
+            PlayerEvent::EndFile(EndReason::AudioOutputFailed) => {
+                self.failed_loads = 0;
+                self.notify(&EndReason::audio_output_failed_notice());
+                self.handle_mpris_command(MprisCommand::Stop, sender);
+            }
+            PlayerEvent::EndFile(EndReason::Error) if !self.is_stream => {
                 self.failed_loads += 1;
                 let name = std::path::Path::new(&self.current_file)
                     .file_name()
                     .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
-                self.notify(&format!(
-                    "{name}: {}",
-                    i18n("Could not play this file — it may be unsupported or corrupt.")
-                ));
+                self.notify(
+                    &i18n("Could not play “{file}”: it may be unsupported or corrupt.")
+                        .replace("{file}", &name),
+                );
                 let failed = self.queue.current_index();
                 if self.failed_loads < self.queue.len()
                     && self.queue.advance().is_some()
@@ -106,11 +111,12 @@ impl AudioShell {
                     .volume
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = vol;
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: volume_icon(vol).to_string(),
-                    });
+                let settings = self.settings.clone();
+                self.volume_save.run(move || {
+                    settings.put_audio_volume_percent(vol);
+                });
+                let muted = self.mpv.as_ref().is_some_and(|mpv| mpv.get_mute());
+                self.playback_bar.emit(volume_indicator(vol, muted));
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetVolumeValue(vol));
             }
@@ -120,15 +126,7 @@ impl AudioShell {
                     .volume
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner);
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: if muted {
-                            "audio-volume-muted-symbolic".to_string()
-                        } else {
-                            volume_icon(vol).to_string()
-                        },
-                    });
+                self.playback_bar.emit(volume_indicator(vol, muted));
             }
             PlayerEvent::FileLoaded(_) => {
                 self.failed_loads = 0;
@@ -174,9 +172,7 @@ impl AudioShell {
                     .position
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = position;
-                if let Some(mpris) = &self.mpris {
-                    mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64);
-                }
+                self.mpris.emit_seeked(position);
             }
             PlayerEvent::RateChanged(rate) if rate.is_finite() && rate > 0.0 => {
                 *self
@@ -199,12 +195,12 @@ impl AudioShell {
 }
 
 /// Build the mpv audio backend, apply persisted audio settings, and spawn the
-/// event loop that forwards `PlayerEvent`s into the shell. Returns `None` if the
-/// engine fails to initialize (the UI still loads; playback is unavailable).
+/// event loop that forwards `PlayerEvent`s into the shell. When the engine
+/// fails to initialize, the error is the message that tells the person why.
 pub(super) fn build_mpv_backend(
     sender: &ComponentSender<AudioShell>,
     settings: &Settings,
-) -> Option<Arc<MpvBackend>> {
+) -> Result<Arc<MpvBackend>, String> {
     let (tx, rx) = async_channel::bounded::<PlayerEvent>(64);
     let mpv = match MpvBackend::new_audio_only_with_output(
         tx,
@@ -213,26 +209,20 @@ pub(super) fn build_mpv_backend(
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
-            return None;
+            // mpv accepts any audio output name at start, so only the library itself fails here.
+            return Err(i18n(
+                "The playback engine could not start: {error}. Update or reinstall the mpv package, then reopen the player.",
+            )
+            .replace("{error}", &e.to_string()));
         }
     };
 
-    let replaygain = settings.get_string(keys::REPLAYGAIN);
-    mpv.set_replaygain(if replaygain.is_empty() {
-        "no"
-    } else {
-        &replaygain
-    });
+    mpv.set_replaygain(&settings.get_string(keys::REPLAYGAIN));
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
-    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
-    // Zero is a deliberate user choice, not a missing setting.
-    mpv.set_volume(f64::from(restored_volume(
-        settings.get_int_or(keys::AUDIO_VOLUME, 100),
-    )));
+    // The volume limit goes first: `set_volume` clamps to it.
+    big_media_runtime::audio_effects::apply_audio_preferences(settings, &mpv);
+    mpv.set_volume(settings.audio_volume_percent());
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
-    mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
-    mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
-    mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
 
     let input = sender.input_sender().clone();
@@ -244,22 +234,5 @@ pub(super) fn build_mpv_backend(
         }
     });
 
-    Some(Arc::new(mpv))
-}
-
-fn restored_volume(saved: i32) -> i32 {
-    saved.clamp(0, 250)
-}
-
-#[cfg(test)]
-mod review_tests {
-    use super::restored_volume;
-
-    #[test]
-    fn restored_volume_keeps_zero_and_clamps() {
-        assert_eq!(restored_volume(0), 0);
-        assert_eq!(restored_volume(-1), 0);
-        assert_eq!(restored_volume(65), 65);
-        assert_eq!(restored_volume(i32::MAX), 250);
-    }
+    Ok(Arc::new(mpv))
 }

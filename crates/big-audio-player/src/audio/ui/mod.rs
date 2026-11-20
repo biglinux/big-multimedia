@@ -9,7 +9,6 @@
 pub mod audio_shell;
 /// Cast (Chromecast) device-picker dialog.
 /// The library track list's context menu.
-mod library_detail_interactions;
 /// Shared app-local library dialogs (add-to-playlist picker).
 mod library_dialogs;
 /// Grouping / age / search controls bar.
@@ -45,3 +44,22 @@ mod unavailable_dialog;
 
 /// Import progress and cooperative cancellation without blocking GTK.
 mod scan_progress;
+
+use crate::i18n::ni18n;
+use big_media_components::time::duration_hm;
+
+/// "3 tracks" in the locale's plural form for `count`.
+fn track_count_text(count: u64) -> String {
+    ni18n("{count} track", "{count} tracks", count).replace("{count}", &count.to_string())
+}
+
+/// "3 tracks · 12 min" in the locale's plural form for `count`.
+fn track_count_duration_text(count: u64, total_secs: f64) -> String {
+    ni18n(
+        "{count} track · {duration}",
+        "{count} tracks · {duration}",
+        count,
+    )
+    .replace("{count}", &count.to_string())
+    .replace("{duration}", &duration_hm(total_secs))
+}

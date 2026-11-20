@@ -7,7 +7,6 @@ pub mod appearance;
 // Relocated to big-player-ui (engine-free UI crate); re-exported so the
 // app-local `ui::library_tree` can resolve `crate::audio::browser_node::*`.
 pub use big_player_ui::browser_node;
-mod account_security;
 pub mod keybindings;
 pub mod library_grouping;
 /// Pure library node → track resolution.
@@ -19,7 +18,6 @@ mod lyrics_fetch_engine;
 /// Shared MPRIS playback-state snapshot.
 mod mpris_state;
 /// Pure (GTK-free) M3U/PLS import parser.
-mod playlist_import;
 /// Audio + Music preferences window.
 pub mod preferences;
 /// Pure (GTK-free) snapshot-based queue undo/redo.

@@ -1,3 +1,7 @@
+use super::queue_state::{
+    LoadedAfterSwap, loaded_after_swap, podcast_episode_tracks, start_podcast_queue,
+    swap_queue_for_tab,
+};
 use super::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
@@ -43,7 +47,7 @@ impl AudioShell {
             ));
             return;
         }
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let Some(admission) = library_scan_engine::ScanAdmission::reserve() else {
@@ -88,7 +92,7 @@ impl AudioShell {
 
     /// Stop monitoring a watch folder, preserving its tracks, then refresh.
     pub(super) fn remove_watch_folder(&self, id: i64, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -111,7 +115,7 @@ impl AudioShell {
 
     /// Resolve watched folders off-thread, then open the folder manager dialog.
     pub(super) fn resolve_watch_folders(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -138,58 +142,59 @@ impl AudioShell {
                 favicon,
                 group_name,
             } => {
-                if let Some(db) = self.db.clone() {
+                if let Some(db) = self.writer() {
                     let input = sender.input_sender().clone();
                     spawn_db_query(
                         db,
                         move |conn| {
-                            let _ = queries::insert_radio_station(
-                                conn,
-                                &name,
-                                &url,
-                                &favicon,
-                                &group_name,
-                            );
-                            queries::get_all_radio_stations(conn).unwrap_or_default()
+                            queries::insert_radio_station(conn, &name, &url, &favicon, &group_name)
                         },
-                        move |stations| {
-                            let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
+                        move |saved| {
+                            let _ = input.send(after_station_write(saved, || {
+                                i18n("The station could not be saved.")
+                            }));
                         },
                     );
                 }
             }
             RadioPanelOutput::DeleteStation(id) => {
-                if let Some(db) = self.db.clone() {
+                if let Some(db) = self.writer() {
                     let input = sender.input_sender().clone();
                     spawn_db_query(
                         db,
-                        move |conn| {
-                            let _ = queries::delete_radio_station(conn, id);
-                            queries::get_all_radio_stations(conn).unwrap_or_default()
-                        },
-                        move |stations| {
-                            let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
+                        move |conn| queries::delete_radio_station(conn, id),
+                        move |deleted| {
+                            let _ = input.send(after_station_write(deleted, || {
+                                i18n("The station could not be removed.")
+                            }));
                         },
                     );
                 }
             }
             RadioPanelOutput::PlayStation { url, name } => {
+                if self.report_missing_engine() {
+                    return;
+                }
                 self.mpris_state.invalidate();
                 self.is_playing = true;
                 self.is_stream = true;
+                self.playlist
+                    .emit(PlaylistPanelInput::SetStream(Some(name.clone())));
                 self.radio_station_name = name;
                 if let Some(mpv) = &self.mpv {
                     mpv.load_file_with_audio_profile(
                         &url,
-                        crate::player::mpv_backend::AudioCacheProfile::Radio,
+                        TargetSource::List(ListOrigin::Network),
+                        AudioCacheProfile::Radio,
                     );
                     mpv.play();
                 }
                 self.current_file.clone_from(&url);
                 // A stream is not a queue/library track; clear those indicators.
-                self.library.emit(LibraryPanelInput::SetPlayingPath(None));
-                self.playlist
-                    .emit(PlaylistPanelInput::SetPlaying { idx: None });
+                self.playlist.emit(PlaylistPanelInput::SetPlaying {
+                    idx: None,
+                    playback: PlaybackStatus::Stopped,
+                });
                 self.radio.emit(RadioPanelInput::NowPlayingChanged {
                     url,
                     is_stream: true,
@@ -206,13 +211,28 @@ impl AudioShell {
         self.notice.show(message);
     }
 
+    /// Say again why nothing can play when the engine failed to start; true then.
+    pub(super) fn report_missing_engine(&self) -> bool {
+        let Some(failure) = &self.engine_failure else {
+            return false;
+        };
+        self.notify(failure);
+        true
+    }
+
     /// Start recording the current radio stream into `~/Music/Radio Recordings`.
     pub(super) fn record_radio_stream(&mut self, sender: &ComponentSender<Self>) {
-        if self.mpv.is_none() {
+        if self.report_missing_engine() {
             return;
         }
-        let music_dir = glib::user_special_dir(glib::UserDirectory::Music)
-            .unwrap_or_else(|| glib::home_dir().join("Music"));
+        let Some(music_dir) = big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Music)
+            .or_else(|| big_os_kit::xdg_dirs::home_dir().map(|home| home.join("Music")))
+        else {
+            self.notify(&i18n(
+                "There is no Music or home folder to save recordings in.",
+            ));
+            return;
+        };
         let rec_dir = music_dir.join("Radio Recordings");
         let safe_name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(
             &self.radio_station_name,
@@ -270,6 +290,7 @@ impl AudioShell {
         let filename = path.file_name().unwrap_or_default().to_string_lossy();
         self.notify(&format!("{}: {filename}", i18n("Recording to")));
         self.recording_path = Some(path);
+        self.radio.emit(RadioPanelInput::RecordingChanged(true));
     }
 
     /// Stop the in-progress recording and show a saved dialog with open actions.
@@ -278,6 +299,7 @@ impl AudioShell {
         if let Some(mpv) = &self.mpv {
             mpv.set_stream_record("");
         }
+        self.radio.emit(RadioPanelInput::RecordingChanged(false));
         let Some(path) = self.recording_path.take() else {
             return;
         };
@@ -310,26 +332,15 @@ impl AudioShell {
     ) {
         match out {
             PodcastPanelOutput::LoadFeed(url) => {
+                self.podcast_feed_request = self.podcast_feed_request.wrapping_add(1);
+                let request = self.podcast_feed_request;
+                self.playlist
+                    .emit(PlaylistPanelInput::LoadingEpisodes(true));
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(
                     move || crate::library::podcast::fetch_feed(&url),
                     move |feed| {
-                        let Some(feed) = feed else {
-                            let _ = input.send(AudioShellInput::PodcastFeedResolved {
-                                title: String::new(),
-                                episodes: Vec::new(),
-                            });
-                            return;
-                        };
-                        let episodes = feed
-                            .episodes
-                            .into_iter()
-                            .map(|ep| (ep.audio_url, ep.title))
-                            .collect();
-                        let _ = input.send(AudioShellInput::PodcastFeedResolved {
-                            title: feed.title,
-                            episodes,
-                        });
+                        let _ = input.send(AudioShellInput::PodcastFeedResolved { request, feed });
                     },
                 );
             }
@@ -337,85 +348,85 @@ impl AudioShell {
         }
     }
 
+    /// Answer the latest feed request: say why nothing loaded, or enter
+    /// podcast mode with its episodes. An older request is ignored.
+    pub(super) fn podcast_feed_resolved(&mut self, request: u64, feed: Option<PodcastFeed>) {
+        if request != self.podcast_feed_request {
+            return;
+        }
+        self.playlist
+            .emit(PlaylistPanelInput::LoadingEpisodes(false));
+        let Some(feed) = feed else {
+            self.notify(&i18n(
+                "The podcast could not be loaded. Check your connection and try again.",
+            ));
+            return;
+        };
+        if let Some(notice) = left_out_notice(false, feed.skipped) {
+            self.notify(&notice);
+        }
+        let episodes = feed
+            .episodes
+            .into_iter()
+            .map(|episode| (episode.audio_url, episode.title))
+            .collect();
+        self.enter_podcast_mode(feed.title, episodes);
+    }
+
     /// Enter podcast mode: stash the music queue (first entry), rebuild the queue
     /// from the feed's episodes, and start the first one.
     pub(super) fn enter_podcast_mode(&mut self, title: String, episodes: Vec<(String, String)>) {
         if episodes.is_empty() {
-            self.notify(&i18n("No episodes found"));
+            self.notify(&i18n("This podcast has no episodes to play."));
             return;
         }
-        if !self.podcast_mode {
-            self.saved_music_queue =
-                Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-        }
-        self.podcast_mode = true;
         self.cancel_pending_opens();
-        self.current_playlist_name.clone_from(&title);
-
-        let tracks = episodes
-            .into_iter()
-            .enumerate()
-            .map(|(i, (audio_url, ep_title))| {
-                Track::new_podcast_episode(
-                    -(i as i64 + 1),
-                    audio_url,
-                    ep_title,
-                    title.clone(),
-                    i as i32 + 1,
-                )
-            })
-            .collect::<Vec<_>>();
-        self.queue.set_tracks(tracks);
-        self.queue.jump_to(0);
+        start_podcast_queue(
+            &mut self.podcast_mode,
+            &mut self.queue,
+            &mut self.saved_music_queue,
+            podcast_episode_tracks(&title, episodes),
+        );
+        self.current_playlist_name = title;
         self.play_current();
         self.commit_queue();
     }
 
     /// Stash/restore the music vs podcast queues on view-stack tab switches.
-    pub(super) fn handle_tab_changed(&mut self, name: &str) {
+    pub(super) fn handle_tab_changed(&mut self, name: &str, sender: &ComponentSender<Self>) {
         self.cancel_pending_opens();
-        if name == "podcast" {
-            // Returning to the podcast tab restores a stashed episode queue.
-            if !self.podcast_mode
-                && let Some((tracks, index)) = self.saved_podcast_queue.take()
-            {
-                self.saved_music_queue =
-                    Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-                self.podcast_mode = true;
-                self.queue.set_tracks(tracks);
-                if let Some(idx) = index {
-                    self.queue.jump_to(idx);
-                }
-                self.commit_queue();
-            }
-        } else if self.podcast_mode {
-            // Leaving the podcast tab stashes the episode queue and restores music.
-            self.saved_podcast_queue =
-                Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-            self.podcast_mode = false;
-            if let Some((tracks, index)) = self.saved_music_queue.take() {
-                self.queue.set_tracks(tracks);
-                if let Some(idx) = index {
-                    self.queue.jump_to(idx);
-                }
-                self.commit_queue();
-            }
+        if !swap_queue_for_tab(
+            name,
+            &mut self.podcast_mode,
+            &mut self.queue,
+            &mut self.saved_music_queue,
+            &mut self.saved_podcast_queue,
+        ) {
+            return;
         }
+        let loaded = loaded_after_swap(&self.queue, &self.current_file);
+        if !self.is_stream && loaded != LoadedAfterSwap::Keep {
+            self.handle_mpris_command(MprisCommand::Stop, sender);
+            if loaded == LoadedAfterSwap::Select {
+                self.play_current_as(PlaybackStatus::Stopped);
+            } else {
+                self.current_file.clear();
+            }
+            self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
+            self.sync_now_playing_card();
+        }
+        self.commit_queue();
     }
 
     /// Load the saved radio stations off-thread → `RadioStationsResolved`.
     pub(super) fn load_radio_stations(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             return;
         };
         let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| queries::get_all_radio_stations(conn).unwrap_or_default(),
-            move |stations| {
-                let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
-            },
-        );
+        spawn_db_query(db, queries::get_all_radio_stations, move |stations| {
+            let _ = input.send(loaded_stations_message(stations));
+        });
     }
 }
 
@@ -449,7 +460,7 @@ fn recording_metadata_has_content(is_file: bool, byte_len: u64) -> bool {
 
 fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf) {
     let saved_paths = recording_saved_paths(&path);
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Recording saved"))
         .content_width(460)
         .content_height(340)
@@ -505,6 +516,32 @@ fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf)
     });
 
     dialog.present(Some(parent));
+}
+
+/// A failed station write keeps the shown list and says so; a successful one rereads it.
+fn after_station_write<T>(
+    written: big_media_runtime::Result<T>,
+    failure: impl FnOnce() -> String,
+) -> AudioShellInput {
+    match written {
+        Ok(_) => AudioShellInput::Radio(RadioPanelOutput::RequestStations),
+        Err(error) => {
+            log::warn!("radio station could not be written: {error}");
+            AudioShellInput::Notify(failure())
+        }
+    }
+}
+
+fn loaded_stations_message(
+    stations: big_media_runtime::Result<Vec<RadioStation>>,
+) -> AudioShellInput {
+    match stations {
+        Ok(stations) => AudioShellInput::RadioStationsResolved(stations),
+        Err(error) => {
+            log::warn!("radio stations could not be read: {error}");
+            AudioShellInput::Notify(i18n("Saved radio stations could not be read."))
+        }
+    }
 }
 
 fn recording_saved_field(label: &str, value: &str) -> gtk::Box {
@@ -579,5 +616,39 @@ mod tests {
         assert!(recording_file_has_content(&path));
 
         fs::remove_file(&path).expect("remove recording fixture");
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    fn station_failures_keep_the_list() {
+        use super::{
+            AudioShellInput, RadioPanelOutput, after_station_write, loaded_stations_message,
+        };
+        use crate::db::{queries, schema};
+
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let saved = queries::insert_radio_station(&conn, "A", "https://a.test", "", "");
+        assert!(matches!(
+            after_station_write(saved, || "save failed".into()),
+            AudioShellInput::Radio(RadioPanelOutput::RequestStations)
+        ));
+
+        conn.execute_batch(
+            "CREATE TEMP TRIGGER refuse BEFORE INSERT ON radio_stations
+             BEGIN SELECT RAISE(ABORT, 'refused'); END;",
+        )
+        .unwrap();
+        let refused = queries::insert_radio_station(&conn, "B", "https://b.test", "", "");
+        assert!(matches!(
+            after_station_write(refused, || "save failed".into()),
+            AudioShellInput::Notify(message) if message == "save failed"
+        ));
+
+        conn.execute_batch("DROP TABLE radio_stations").unwrap();
+        assert!(matches!(
+            loaded_stations_message(queries::get_all_radio_stations(&conn)),
+            AudioShellInput::Notify(_)
+        ));
     }
 }

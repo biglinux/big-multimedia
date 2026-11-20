@@ -2,7 +2,7 @@
 //!
 //! Snapshot-based: each user queue edit pushes the prior track list onto the
 //! undo stack (bounded by `MAX_UNDO`, oldest evicted), and a new edit clears the
-//! redo stack. Undo/redo swap the current list with the neighbouring snapshot.
+//! redo stack. Undo/redo swap the current list with the neighboring snapshot.
 //! Snapshotting the full list (rather than inverting per-op) is lossless for
 //! order/identity and keeps the shell wiring to a single `snapshot` call per
 //! edit. Bounded queues make the memory cost negligible.

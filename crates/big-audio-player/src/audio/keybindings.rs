@@ -59,14 +59,14 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         single_key: false,
     },
     ShortcutDef {
-        action: "next-track",
+        action: "next-track-key",
         display_name: gettext_noop("Next Track (single key)"),
         category: gettext_noop("Playback"),
         default_accel: "n",
         single_key: true,
     },
     ShortcutDef {
-        action: "prev-track",
+        action: "prev-track-key",
         display_name: gettext_noop("Previous Track (single key)"),
         category: gettext_noop("Playback"),
         default_accel: "p",
@@ -149,8 +149,3 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
 
 /// Display order in the shortcuts dialog.
 pub const CATEGORIES: &[&str] = &["Playback", "Navigation", "Library", "Queue"];
-
-#[must_use]
-pub fn build_single_key_map(custom: &str) -> std::collections::HashMap<String, String> {
-    build_accel_map(SHORTCUTS, custom, true)
-}
