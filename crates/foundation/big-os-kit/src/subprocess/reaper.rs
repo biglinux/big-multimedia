@@ -207,7 +207,6 @@ pub(crate) struct OwnedChild {
 impl OwnedChild {
     /// Spawn `command` as the leader of a new process group, reaped through `permit`.
     pub(crate) fn spawn(command: &mut Command, permit: Permit) -> io::Result<Self> {
-        #[cfg(unix)]
         std::os::unix::process::CommandExt::process_group(command, 0);
         Ok(Self {
             child: Some(command.spawn()?),
@@ -282,15 +281,12 @@ impl Drop for OwnedChild {
                 // The leader has not been reaped, so its PGID cannot be reused.
                 // Descendants that move to another process group are outside this
                 // supervisor's containment contract (not a sandbox).
-                #[cfg(unix)]
-                {
-                    let pid = child.id() as libc::pid_t;
-                    if pid > 1 {
-                        // SAFETY: kill(2) with a negative pid only signals the
-                        // group this child leads; no memory is involved.
-                        unsafe {
-                            libc::kill(-pid, libc::SIGKILL);
-                        }
+                let pid = child.id() as libc::pid_t;
+                if pid > 1 {
+                    // SAFETY: kill(2) with a negative pid only signals the
+                    // group this child leads; no memory is involved.
+                    unsafe {
+                        libc::kill(-pid, libc::SIGKILL);
                     }
                 }
                 let _ = child.kill();
@@ -303,7 +299,6 @@ impl Drop for OwnedChild {
 }
 
 /// Put a pipe into non-blocking mode, keeping its other status flags.
-#[cfg(unix)]
 pub(crate) fn set_nonblocking(pipe: &impl std::os::fd::AsRawFd) -> io::Result<()> {
     let fd = pipe.as_raw_fd();
     // SAFETY: the pipe keeps owning fd across both calls; only O_NONBLOCK is added.

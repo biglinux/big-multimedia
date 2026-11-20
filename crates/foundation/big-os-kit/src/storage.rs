@@ -84,17 +84,9 @@ fn create_sibling_file(path: &Path, private: bool) -> std::io::Result<fs::File> 
     let mut options = fs::OpenOptions::new();
     // O_EXCL: never truncate or follow an existing (including dangling) symlink.
     options.write(true).create_new(true);
-    #[cfg(unix)]
     if private {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
-    }
-    #[cfg(not(unix))]
-    if private {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "private atomic files are not implemented on this platform",
-        ));
     }
     options.open(path)
 }

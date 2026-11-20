@@ -1,6 +1,5 @@
 //! A private curl transport with nonblocking pipes, a total or no-progress
 //! deadline and pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
-#[cfg(unix)]
 use crate::subprocess::reaper::set_nonblocking;
 use crate::subprocess::reaper::{OwnedChild, Permit};
 use std::io::{self, Read, Write};
@@ -16,7 +15,6 @@ pub(super) struct Transport {
     finished: bool,
     failed: bool,
 }
-#[cfg(unix)]
 fn readiness(pipe: &impl std::os::fd::AsFd, events: i16, deadline: Instant) -> io::Result<()> {
     if Instant::now() >= deadline {
         return Err(io::Error::new(
@@ -32,7 +30,6 @@ fn readiness(pipe: &impl std::os::fd::AsFd, events: i16, deadline: Instant) -> i
 }
 /// Write curl's whole configuration to its nonblocking stdin before `deadline`,
 /// then close it: curl reads all of it before transferring.
-#[cfg(unix)]
 fn send_config(
     mut stdin: std::process::ChildStdin,
     config: &[u8],
@@ -70,39 +67,28 @@ impl Transport {
         config: &[u8],
         deadline: super::Deadline,
     ) -> io::Result<Self> {
-        #[cfg(not(unix))]
-        {
-            let _ = (&mut command, config, deadline);
-            return Err(io::Error::new(
-                io::ErrorKind::Unsupported,
-                "bounded curl streaming requires Unix",
-            ));
-        }
-        #[cfg(unix)]
-        {
-            let stall = match deadline {
-                super::Deadline::Total(_) => None,
-                super::Deadline::Stall(stall) => Some(stall),
-            };
-            let deadline = Instant::now()
-                .checked_add(deadline.duration())
-                .ok_or_else(|| io::Error::other("invalid HTTP timeout"))?;
-            let permit = Permit::reserve()?;
-            let mut owner = OwnedChild::spawn(&mut command, permit)?;
-            let (stdin, stdout, _) = owner.take_pipes();
-            let stdin = stdin.ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
-            send_config(stdin, config, deadline)?;
-            let stdout = stdout.ok_or_else(|| io::Error::other("curl stdout unavailable"))?;
-            set_nonblocking(&stdout)?;
-            Ok(Self {
-                owner: Some(owner),
-                stdout,
-                deadline,
-                stall,
-                finished: false,
-                failed: false,
-            })
-        }
+        let stall = match deadline {
+            super::Deadline::Total(_) => None,
+            super::Deadline::Stall(stall) => Some(stall),
+        };
+        let deadline = Instant::now()
+            .checked_add(deadline.duration())
+            .ok_or_else(|| io::Error::other("invalid HTTP timeout"))?;
+        let permit = Permit::reserve()?;
+        let mut owner = OwnedChild::spawn(&mut command, permit)?;
+        let (stdin, stdout, _) = owner.take_pipes();
+        let stdin = stdin.ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
+        send_config(stdin, config, deadline)?;
+        let stdout = stdout.ok_or_else(|| io::Error::other("curl stdout unavailable"))?;
+        set_nonblocking(&stdout)?;
+        Ok(Self {
+            owner: Some(owner),
+            stdout,
+            deadline,
+            stall,
+            finished: false,
+            failed: false,
+        })
     }
     fn read_inner(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
         if self.failed {
@@ -146,10 +132,7 @@ impl Transport {
                 Ok(n) => return Ok(n),
                 Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                    #[cfg(unix)]
                     readiness(&self.stdout, libc::POLLIN, self.deadline)?;
-                    #[cfg(not(unix))]
-                    return Err(error);
                 }
                 Err(error) => return Err(error),
             }
