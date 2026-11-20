@@ -3,6 +3,7 @@
   // The player puts its words, in its own language, on the root element.
   const words = JSON.parse(document.documentElement.dataset.words);
   const el = id => document.getElementById(id);
+  document.title = words.heading;
   for (const id of ['heading', 'prev', 'next', 'warning']) el(id).textContent = words[id];
   el('volume-label').textContent = words.volume;
   el('media').setAttribute('aria-label', words.media);
