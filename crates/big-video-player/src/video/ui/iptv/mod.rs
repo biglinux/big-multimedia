@@ -201,7 +201,7 @@ impl Component for VideoIptvBrowser {
 
         let keyring_status = gtk::Label::builder()
             .label(i18n(
-                "Some provider passwords are still in a plain file because your keyring could not be reached. Unlock your keyring, then reload the channels.",
+                "Some provider passwords are kept only until the player closes because your keyring could not be reached. Unlock your keyring, then reload the channels.",
             ))
             .wrap(true)
             .selectable(true)

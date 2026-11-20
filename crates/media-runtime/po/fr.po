@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:58-0300\n"
+"POT-Creation-Date: 2026-11-20 12:30-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2383,12 +2383,12 @@ msgstr "Rechercher des chaînes"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
-"Certains mots de passe de fournisseurs sont encore dans un fichier non "
-"chiffré, car votre trousseau de clés n’a pas pu être atteint. Déverrouillez "
-"votre trousseau de clés, puis rechargez les canaux."
+"Certains mots de passe de fournisseurs ne sont conservés que jusqu’à la "
+"fermeture du lecteur, car votre trousseau de clés n’a pas pu être atteint. "
+"Déverrouillez votre trousseau de clés, puis rechargez les canaux."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:454
@@ -4332,8 +4332,10 @@ msgstr[1] "{} fichiers mis à la corbeille"
 #, rust-format
 msgid "{} file could not be restored. Restore it from the trash."
 msgid_plural "{} files could not be restored. Restore them from the trash."
-msgstr[0] "{} fichier n’a pas pu être restauré. Restaurez-le depuis la corbeille."
-msgstr[1] "{} fichiers n’ont pas pu être restaurés. Restaurez-les depuis la corbeille."
+msgstr[0] ""
+"{} fichier n’a pas pu être restauré. Restaurez-le depuis la corbeille."
+msgstr[1] ""
+"{} fichiers n’ont pas pu être restaurés. Restaurez-les depuis la corbeille."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format

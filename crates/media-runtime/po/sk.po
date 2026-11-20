@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:58-0300\n"
+"POT-Creation-Date: 2026-11-20 12:30-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2355,12 +2355,12 @@ msgstr "Hľadať kanály"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
-"Niektoré heslá poskytovateľov sú stále v obyčajnom súbore, pretože sa "
-"nepodarilo pripojiť k zväzku kľúčov. Odomknite zväzok kľúčov a potom kanály "
-"znova načítajte."
+"Niektoré heslá poskytovateľov zostanú zachované len do zatvorenia "
+"prehrávača, pretože sa nepodarilo pripojiť k zväzku kľúčov. Odomknite zväzok "
+"kľúčov a potom kanály znova načítajte."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:454

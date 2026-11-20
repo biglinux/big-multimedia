@@ -273,7 +273,7 @@ impl IptvProviderStore {
             provider.order = i as u32;
         }
         let writer = writer.clone();
-        if let Ok(bytes) = toml::to_string_pretty(self) {
+        if let Ok(bytes) = self.file_text() {
             if writer.replace(bytes.into_bytes()).is_err() {
                 log::warn!("IPTV provider preferences not saved; inspect save status");
             }
@@ -281,6 +281,23 @@ impl IptvProviderStore {
             writer.reject_update();
             log::warn!("IPTV provider encoding failed");
         }
+    }
+    /// What `save` writes. A secret still in plain text stays in memory until
+    /// the keyring holds it: an Xtream password is left out and a credentialed
+    /// M3U URL is written redacted.
+    fn file_text(&self) -> Result<String, toml::ser::Error> {
+        let mut providers = self.providers.clone();
+        for provider in &mut providers {
+            match &mut provider.source {
+                IptvKind::Xtream { password, .. } => password.clear(),
+                IptvKind::M3uUrl { url } => *url = big_os_kit::url::redact_url(url),
+                IptvKind::M3uLocal { .. } => {}
+            }
+        }
+        toml::to_string_pretty(&Self {
+            providers,
+            persistence: None,
+        })
     }
     /// Observable result; no credential bytes are exposed.
     pub fn save_status(&self) -> Option<big_os_kit::deferred::Status> {
@@ -540,6 +557,22 @@ mod tests {
             ..IptvProviderStore::default()
         };
         toml::to_string_pretty(&store).expect("serialize")
+    }
+
+    #[test]
+    fn plaintext_secrets_stay_out_of_file() {
+        let full = "https://lists.example/get.php?username=ana&password=s3cret&type=m3u";
+        let store = IptvProviderStore {
+            providers: vec![xtream("s3cret"), m3u_url_provider("List", full)],
+            ..IptvProviderStore::default()
+        };
+        let text = store.file_text().unwrap();
+        assert!(!text.contains("s3cret"), "{text}");
+        assert!(!text.contains("username=ana"), "{text}");
+        assert!(text.contains("lists.example/get.php"), "{text}");
+        // Memory keeps them until the keyring holds them.
+        assert_eq!(store.providers[0].plaintext_secret(), Some("s3cret"));
+        assert_eq!(store.providers[1].plaintext_secret(), Some(full));
     }
 
     #[test]
