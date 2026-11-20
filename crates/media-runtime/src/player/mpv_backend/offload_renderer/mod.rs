@@ -42,6 +42,8 @@ pub struct OffloadRenderer {
     dmabuf_rejected: Cell<bool>,
     /// True after the kernel refused a dma-buf write fence; locks `glFinish`.
     fence_unsupported: Cell<bool>,
+    /// The first frame whose fence could not be made has been reported.
+    fence_failure_reported: Cell<bool>,
     pool: TexturePool,
     slots: SlotBuffers,
     fbo: u32,
@@ -141,6 +143,7 @@ impl OffloadRenderer {
             dmabuf_active: Cell::new(false),
             dmabuf_rejected: Cell::new(false),
             fence_unsupported: Cell::new(false),
+            fence_failure_reported: Cell::new(false),
             pool,
             slots: SlotBuffers::default(),
             fbo,
@@ -353,7 +356,13 @@ impl OffloadRenderer {
                     warn!("DMA-BUF write fence refused ({error}); waiting with glFinish");
                     self.fence_unsupported.set(true);
                 }
-                Err(FenceError::Failed) => debug!("DMA-BUF write fence failed; glFinish"),
+                Err(FenceError::Failed) => {
+                    if !self.fence_failure_reported.replace(true) {
+                        warn!(
+                            "DMA-BUF write fence failed; this frame and any other that fails wait with glFinish"
+                        );
+                    }
+                }
             }
         }
         // SAFETY: the context is current.
