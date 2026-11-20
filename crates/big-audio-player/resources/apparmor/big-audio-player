@@ -136,11 +136,11 @@ profile big-audio-player @{exec_path} flags=(complain) {
   # Folder views list every folder; files are read by type.
   @{user_dirs} r,
   @{user_files}.@{media_ext} r,
-  owner @{user_files}.@{media_write_ext} w,
+  owner @{user_files}.@{media_write_ext} wl,
   @{user_files}.@{companion_ext} r,
-  owner @{user_files}.@{playlist_ext} rw,
-  owner @{user_files}.@{screenshot_ext} w,
-  # Writes publish through a hidden staging copy beside the target.
+  owner @{user_files}.@{playlist_ext} rwl,
+  owner @{user_files}.@{screenshot_ext} wl,
+  # Writes publish by hard-linking a hidden staging copy beside the target.
   owner @{staging_parents}/.big-media-*/ rw,
   owner @{staging_parents}/.big-media-*/*.@{media_write_ext} rw,
   owner @{staging_parents}/.big-media-*/*.@{playlist_ext} rw,
