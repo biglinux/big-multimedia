@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:22-0300\n"
+"POT-Creation-Date: 2026-11-19 21:58-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -193,7 +193,7 @@ msgstr "Alternar repetição"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:531
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:567
 msgid "Undo"
 msgstr "Anular"
 
@@ -1530,7 +1530,7 @@ msgid "Library scan finished."
 msgstr "Análise da biblioteca concluída."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:148
-#: crates/media-runtime/src/settings/messages.rs:9
+#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Cancelamento solicitado. A concluir o passo seguro atual…"
 
@@ -2367,7 +2367,7 @@ msgstr ""
 "chaveiro e depois recarregue os canais."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:437
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Nenhum fornecedor configurado. Clique em “Gerir…” para adicionar um."
 
@@ -2375,20 +2375,20 @@ msgstr "Nenhum fornecedor configurado. Clique em “Gerir…” para adicionar u
 msgid "Showing cached channels, updating…"
 msgstr "A mostrar canais em cache — a atualizar…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:459
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
 msgid "Reloading channels…"
 msgstr "A recarregar canais…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:461
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
 msgid "Loading channels…"
 msgstr "A carregar canais…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:490
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "A mostrar os primeiros {} canais; a lista tem mais."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:509
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2396,7 +2396,7 @@ msgstr ""
 "Não foi possível contactar o fornecedor. Verifique o endereço e a sua "
 "ligação; uma lista guardada permanece no ecrã."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:512
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2404,39 +2404,39 @@ msgstr ""
 "O fornecedor recusou o acesso. Verifique o nome de utilizador e a palavra-"
 "passe, ou o User-Agent que o fornecedor pede."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:515
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr "O servidor do fornecedor falhou (erro {}). Tente novamente mais tarde."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:519
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "O fornecedor respondeu com o erro {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:521
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "A lista de canais é maior do que {} MB."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:525
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
 msgid "The provider sent no channels."
 msgstr "O fornecedor não enviou canais."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
 msgid "The provider rejected the user name or password."
 msgstr "O fornecedor rejeitou o nome de utilizador ou a palavra-passe."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:528
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Esta conta não está ativa (o fornecedor diz: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:530
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
 msgid "Could not read the playlist file."
 msgstr "Não foi possível ler o ficheiro da lista de reprodução."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2444,7 +2444,7 @@ msgstr ""
 "Não foi possível ler a palavra-passe deste fornecedor no seu chaveiro. "
 "Desbloqueie o chaveiro e depois recarregue os canais."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:535
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -4283,6 +4283,13 @@ msgid_plural "{} files moved to trash"
 msgstr[0] "{} ficheiro movido para o lixo"
 msgstr[1] "{} ficheiros movidos para o lixo"
 
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:591
+#, rust-format
+msgid "{} file could not be restored. Restore it from the trash."
+msgid_plural "{} files could not be restored. Restore them from the trash."
+msgstr[0] "Não foi possível restaurar {} ficheiro. Restaure-o a partir do lixo."
+msgstr[1] "Não foi possível restaurar {} ficheiros. Restaure-os a partir do lixo."
+
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
 msgid ""
@@ -4754,38 +4761,28 @@ msgstr ""
 "Não foi possível verificar o acesso — verifique as permissões antes de rever"
 
 #: crates/media-runtime/src/settings/messages.rs:7
-msgid "All preferences are saved."
-msgstr "Todas as preferências estão guardadas."
-
-#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Available again"
 msgstr "Novamente disponível"
 
-#: crates/media-runtime/src/settings/messages.rs:10
+#: crates/media-runtime/src/settings/messages.rs:9
 msgid "Changes are saved."
 msgstr "As alterações estão guardadas."
 
-#: crates/media-runtime/src/settings/messages.rs:11
-msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
-msgstr ""
-"As alterações foram aplicadas, mas o armazenamento seguro não foi "
-"confirmado. Tente guardar novamente."
-
-#: crates/media-runtime/src/settings/messages.rs:12
+#: crates/media-runtime/src/settings/messages.rs:10
 msgid "Not found; select only if you want to forget this library record"
 msgstr ""
 "Não encontrado — selecione apenas se pretende esquecer este registo da "
 "biblioteca"
 
-#: crates/media-runtime/src/settings/messages.rs:13
+#: crates/media-runtime/src/settings/messages.rs:11
 msgid "Remote items are not checked as local files"
 msgstr "Os itens remotos não são verificados como ficheiros locais"
 
-#: crates/media-runtime/src/settings/messages.rs:14
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Saving your changes…"
 msgstr "A guardar as alterações…"
 
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "This location is not a regular media file"
 msgstr "Esta localização não é um ficheiro multimédia normal"
 
@@ -5555,6 +5552,15 @@ msgid ""
 msgstr ""
 "Utilize apenas numa rede local de confiança. Esta ligação HTTP não é "
 "encriptada."
+
+#~ msgid "All preferences are saved."
+#~ msgstr "Todas as preferências estão guardadas."
+
+#~ msgid ""
+#~ "Changes were applied, but safe storage is not confirmed. Retry saving."
+#~ msgstr ""
+#~ "As alterações foram aplicadas, mas o armazenamento seguro não foi "
+#~ "confirmado. Tente guardar novamente."
 
 #~ msgid "Retry saving"
 #~ msgstr "Tentar guardar novamente"

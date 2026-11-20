@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:22-0300\n"
+"POT-Creation-Date: 2026-11-19 21:58-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -194,7 +194,7 @@ msgstr "Attiva/disattiva ripetizione"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:531
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:567
 msgid "Undo"
 msgstr "Annulla"
 
@@ -1533,7 +1533,7 @@ msgid "Library scan finished."
 msgstr "Scansione della libreria completata."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:148
-#: crates/media-runtime/src/settings/messages.rs:9
+#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Annullamento richiesto. Completamento del passaggio sicuro corrente…"
 
@@ -2373,7 +2373,7 @@ msgstr ""
 "ricarica i canali."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:437
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "Nessun provider configurato. Fai clic su “Gestisci…” per aggiungerne uno."
@@ -2382,20 +2382,20 @@ msgstr ""
 msgid "Showing cached channels, updating…"
 msgstr "Visualizzazione dei canali in cache — aggiornamento in corso…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:459
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
 msgid "Reloading channels…"
 msgstr "Ricaricamento dei canali…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:461
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
 msgid "Loading channels…"
 msgstr "Caricamento dei canali…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:490
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "Vengono mostrati i primi {} canali; l’elenco ne contiene altri."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:509
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2403,7 +2403,7 @@ msgstr ""
 "Impossibile raggiungere il provider. Controlla l’indirizzo e la connessione; "
 "un elenco salvato resta sullo schermo."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:512
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2411,40 +2411,40 @@ msgstr ""
 "Il provider ha negato l’accesso. Controlla nome utente e password, oppure lo "
 "User-Agent richiesto dal provider."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:515
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr ""
 "Il server del provider ha avuto un guasto (errore {}). Riprova più tardi."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:519
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Il provider ha risposto con l’errore {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:521
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "L’elenco dei canali supera {} MB."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:525
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
 msgid "The provider sent no channels."
 msgstr "Il provider non ha inviato canali."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
 msgid "The provider rejected the user name or password."
 msgstr "Il provider ha rifiutato il nome utente o la password."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:528
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Questo account non è attivo (il provider indica: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:530
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
 msgid "Could not read the playlist file."
 msgstr "Impossibile leggere il file della playlist."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2452,7 +2452,7 @@ msgstr ""
 "Impossibile leggere la password di questo provider dal portachiavi. Sblocca "
 "il portachiavi, quindi ricarica i canali."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:535
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -4291,6 +4291,13 @@ msgid_plural "{} files moved to trash"
 msgstr[0] "{} file spostato nel cestino"
 msgstr[1] "{} file spostati nel cestino"
 
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:591
+#, rust-format
+msgid "{} file could not be restored. Restore it from the trash."
+msgid_plural "{} files could not be restored. Restore them from the trash."
+msgstr[0] "Impossibile ripristinare {} file. Ripristinalo dal cestino."
+msgstr[1] "Impossibile ripristinare {} file. Ripristinali dal cestino."
+
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
 msgid ""
@@ -4760,38 +4767,28 @@ msgstr ""
 "Impossibile verificare l’accesso — controlla i permessi prima del controllo"
 
 #: crates/media-runtime/src/settings/messages.rs:7
-msgid "All preferences are saved."
-msgstr "Tutte le preferenze sono state salvate."
-
-#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Available again"
 msgstr "Di nuovo disponibile"
 
-#: crates/media-runtime/src/settings/messages.rs:10
+#: crates/media-runtime/src/settings/messages.rs:9
 msgid "Changes are saved."
 msgstr "Le modifiche sono state salvate."
 
-#: crates/media-runtime/src/settings/messages.rs:11
-msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
-msgstr ""
-"Le modifiche sono state applicate, ma l’archiviazione sicura non è "
-"confermata. Riprova a salvare."
-
-#: crates/media-runtime/src/settings/messages.rs:12
+#: crates/media-runtime/src/settings/messages.rs:10
 msgid "Not found; select only if you want to forget this library record"
 msgstr ""
 "Non trovato — selezionalo solo se vuoi dimenticare questo record della "
 "libreria"
 
-#: crates/media-runtime/src/settings/messages.rs:13
+#: crates/media-runtime/src/settings/messages.rs:11
 msgid "Remote items are not checked as local files"
 msgstr "Gli elementi remoti non vengono controllati come file locali"
 
-#: crates/media-runtime/src/settings/messages.rs:14
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Saving your changes…"
 msgstr "Salvataggio delle modifiche…"
 
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "This location is not a regular media file"
 msgstr "Questa posizione non è un normale file multimediale"
 
@@ -5566,6 +5563,15 @@ msgid ""
 msgstr ""
 "Usa solo su una rete locale attendibile. Questa connessione HTTP non è "
 "cifrata."
+
+#~ msgid "All preferences are saved."
+#~ msgstr "Tutte le preferenze sono state salvate."
+
+#~ msgid ""
+#~ "Changes were applied, but safe storage is not confirmed. Retry saving."
+#~ msgstr ""
+#~ "Le modifiche sono state applicate, ma l’archiviazione sicura non è "
+#~ "confermata. Riprova a salvare."
 
 #~ msgid "Retry saving"
 #~ msgstr "Riprova a salvare"

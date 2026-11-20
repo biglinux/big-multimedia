@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:22-0300\n"
+"POT-Creation-Date: 2026-11-19 21:58-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -195,7 +195,7 @@ msgstr "Tekrarlamayı aç/kapat"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:531
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:567
 msgid "Undo"
 msgstr "Geri al"
 
@@ -1511,7 +1511,7 @@ msgid "Library scan finished."
 msgstr "Kütüphane taraması tamamlandı."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:148
-#: crates/media-runtime/src/settings/messages.rs:9
+#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "İptal istendi. Geçerli güvenli adım tamamlanıyor…"
 
@@ -2346,7 +2346,7 @@ msgstr ""
 "yükleyin."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:437
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "Yapılandırılmış sağlayıcı yok. Eklemek için “Yönet…” düğmesine tıklayın."
@@ -2355,20 +2355,20 @@ msgstr ""
 msgid "Showing cached channels, updating…"
 msgstr "Önbellekteki kanallar gösteriliyor — güncelleniyor…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:459
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
 msgid "Reloading channels…"
 msgstr "Kanallar yeniden yükleniyor…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:461
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
 msgid "Loading channels…"
 msgstr "Kanallar yükleniyor…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:490
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "İlk {} kanal gösteriliyor; listede daha fazlası var."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:509
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2376,7 +2376,7 @@ msgstr ""
 "Sağlayıcıya ulaşılamadı. Adresi ve bağlantınızı kontrol edin; kayıtlı liste "
 "ekranda kalır."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:512
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2384,40 +2384,40 @@ msgstr ""
 "Sağlayıcı erişimi reddetti. Kullanıcı adını ve parolayı veya sağlayıcının "
 "istediği User-Agent değerini kontrol edin."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:515
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr ""
 "Sağlayıcının sunucusu başarısız oldu (hata {}). Daha sonra tekrar deneyin."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:519
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Sağlayıcı {} hatasıyla yanıt verdi."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:521
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "Kanal listesi {} MB'tan büyük."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:525
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
 msgid "The provider sent no channels."
 msgstr "Sağlayıcı hiç kanal göndermedi."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
 msgid "The provider rejected the user name or password."
 msgstr "Sağlayıcı kullanıcı adını veya parolayı reddetti."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:528
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Bu hesap etkin değil (sağlayıcı şunu söylüyor: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:530
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
 msgid "Could not read the playlist file."
 msgstr "Oynatma listesi dosyası okunamadı."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2425,7 +2425,7 @@ msgstr ""
 "Bu sağlayıcının parolası anahtarlığınızdan okunamadı. Anahtarlığınızın "
 "kilidini açın, ardından kanalları yeniden yükleyin."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:535
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -4243,6 +4243,12 @@ msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "{} dosya çöp kutusuna taşındı"
 
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:591
+#, rust-format
+msgid "{} file could not be restored. Restore it from the trash."
+msgid_plural "{} files could not be restored. Restore them from the trash."
+msgstr[0] "{} dosya geri yüklenemedi. Çöp kutusundan geri yükleyin."
+
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
 msgid ""
@@ -4704,36 +4710,26 @@ msgid "Access could not be verified; check permissions before reviewing"
 msgstr "Erişim doğrulanamadı — gözden geçirmeden önce izinleri denetleyin"
 
 #: crates/media-runtime/src/settings/messages.rs:7
-msgid "All preferences are saved."
-msgstr "Tüm tercihler kaydedildi."
-
-#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Available again"
 msgstr "Yeniden kullanılabilir"
 
-#: crates/media-runtime/src/settings/messages.rs:10
+#: crates/media-runtime/src/settings/messages.rs:9
 msgid "Changes are saved."
 msgstr "Değişiklikler kaydedildi."
 
-#: crates/media-runtime/src/settings/messages.rs:11
-msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
-msgstr ""
-"Değişiklikler uygulandı, ancak güvenli depolama doğrulanamadı. Kaydetmeyi "
-"yeniden deneyin."
-
-#: crates/media-runtime/src/settings/messages.rs:12
+#: crates/media-runtime/src/settings/messages.rs:10
 msgid "Not found; select only if you want to forget this library record"
 msgstr "Bulunamadı — yalnızca bu kütüphane kaydını unutmak istiyorsanız seçin"
 
-#: crates/media-runtime/src/settings/messages.rs:13
+#: crates/media-runtime/src/settings/messages.rs:11
 msgid "Remote items are not checked as local files"
 msgstr "Uzak öğeler yerel dosya olarak denetlenmez"
 
-#: crates/media-runtime/src/settings/messages.rs:14
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Saving your changes…"
 msgstr "Değişiklikleriniz kaydediliyor…"
 
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "This location is not a regular media file"
 msgstr "Bu konum normal bir ortam dosyası değil"
 
@@ -5502,6 +5498,15 @@ msgid ""
 msgstr ""
 "Yalnızca güvenilir bir yerel ağda kullanın. Bu HTTP bağlantısı "
 "şifrelenmemiştir."
+
+#~ msgid "All preferences are saved."
+#~ msgstr "Tüm tercihler kaydedildi."
+
+#~ msgid ""
+#~ "Changes were applied, but safe storage is not confirmed. Retry saving."
+#~ msgstr ""
+#~ "Değişiklikler uygulandı, ancak güvenli depolama doğrulanamadı. Kaydetmeyi "
+#~ "yeniden deneyin."
 
 #~ msgid "Retry saving"
 #~ msgstr "Kaydetmeyi yeniden dene"

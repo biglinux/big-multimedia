@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:22-0300\n"
+"POT-Creation-Date: 2026-11-19 21:58-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -193,7 +193,7 @@ msgstr "반복 전환"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:531
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:567
 msgid "Undo"
 msgstr "실행 취소"
 
@@ -1495,7 +1495,7 @@ msgid "Library scan finished."
 msgstr "라이브러리 스캔이 완료되었습니다."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:148
-#: crates/media-runtime/src/settings/messages.rs:9
+#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "취소를 요청했습니다. 현재 안전한 단계를 마무리하는 중…"
 
@@ -2319,7 +2319,7 @@ msgstr ""
 "에 있습니다. 키 모음 잠금을 푼 다음 채널을 다시 불러오세요."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:437
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:454
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr "설정된 제공업체가 없습니다. “관리…”를 눌러 추가하세요."
 
@@ -2327,20 +2327,20 @@ msgstr "설정된 제공업체가 없습니다. “관리…”를 눌러 추가
 msgid "Showing cached channels, updating…"
 msgstr "캐시된 채널을 표시하는 중 — 업데이트 중…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:459
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:476
 msgid "Reloading channels…"
 msgstr "채널을 다시 불러오는 중…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:461
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:478
 msgid "Loading channels…"
 msgstr "채널을 불러오는 중…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:490
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:507
 #, rust-format
 msgid "Showing the first {} channels; the list has more."
 msgstr "처음 {}개 채널을 표시하고 있습니다. 목록에 채널이 더 있습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:509
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2348,7 +2348,7 @@ msgstr ""
 "제공업체에 연결할 수 없습니다. 주소와 인터넷 연결을 확인하세요. 저장된 목록"
 "은 화면에 그대로 남습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:512
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:529
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2356,39 +2356,39 @@ msgstr ""
 "제공업체가 접근을 거부했습니다. 사용자 이름과 비밀번호 또는 제공업체가 요구하"
 "는 User-Agent를 확인하세요."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:515
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr "제공업체 서버에 오류가 발생했습니다(오류 {}). 나중에 다시 시도하세요."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:519
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:536
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "제공업체가 오류 {}(으)로 응답했습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:521
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:538
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "채널 목록이 {} MB보다 큽니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:525
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:542
 msgid "The provider sent no channels."
 msgstr "제공업체에서 채널을 보내지 않았습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:526
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:543
 msgid "The provider rejected the user name or password."
 msgstr "제공업체가 사용자 이름 또는 비밀번호를 거부했습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:528
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:545
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "이 계정은 활성 상태가 아닙니다(제공업체 응답: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:530
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:547
 msgid "Could not read the playlist file."
 msgstr "재생 목록 파일을 읽을 수 없습니다."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:532
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:549
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
@@ -2396,7 +2396,7 @@ msgstr ""
 "키 모음에서 이 제공업체의 비밀번호를 읽을 수 없습니다. 키 모음 잠금을 푼 다"
 "음 채널을 다시 불러오세요."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:535
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:552
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
@@ -4202,6 +4202,12 @@ msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "파일 {}개를 휴지통으로 이동했습니다"
 
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:591
+#, rust-format
+msgid "{} file could not be restored. Restore it from the trash."
+msgid_plural "{} files could not be restored. Restore them from the trash."
+msgstr[0] "파일 {}개를 복원하지 못했습니다. 휴지통에서 복원하세요."
+
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
 msgid ""
@@ -4662,36 +4668,26 @@ msgid "Access could not be verified; check permissions before reviewing"
 msgstr "접근 권한을 확인할 수 없습니다 — 검토하기 전에 권한을 확인하세요"
 
 #: crates/media-runtime/src/settings/messages.rs:7
-msgid "All preferences are saved."
-msgstr "모든 환경 설정이 저장되었습니다."
-
-#: crates/media-runtime/src/settings/messages.rs:8
 msgid "Available again"
 msgstr "다시 사용 가능"
 
-#: crates/media-runtime/src/settings/messages.rs:10
+#: crates/media-runtime/src/settings/messages.rs:9
 msgid "Changes are saved."
 msgstr "변경 사항이 저장되었습니다."
 
-#: crates/media-runtime/src/settings/messages.rs:11
-msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
-msgstr ""
-"변경 사항은 적용되었지만 안전한 저장을 확인할 수 없습니다. 다시 저장해 보세"
-"요."
-
-#: crates/media-runtime/src/settings/messages.rs:12
+#: crates/media-runtime/src/settings/messages.rs:10
 msgid "Not found; select only if you want to forget this library record"
 msgstr "찾을 수 없음 — 이 라이브러리 레코드를 삭제하려는 경우에만 선택하세요"
 
-#: crates/media-runtime/src/settings/messages.rs:13
+#: crates/media-runtime/src/settings/messages.rs:11
 msgid "Remote items are not checked as local files"
 msgstr "원격 항목은 로컬 파일로 확인되지 않습니다"
 
-#: crates/media-runtime/src/settings/messages.rs:14
+#: crates/media-runtime/src/settings/messages.rs:12
 msgid "Saving your changes…"
 msgstr "변경 사항을 저장하는 중…"
 
-#: crates/media-runtime/src/settings/messages.rs:15
+#: crates/media-runtime/src/settings/messages.rs:13
 msgid "This location is not a regular media file"
 msgstr "이 위치는 일반 미디어 파일이 아닙니다"
 
@@ -5456,6 +5452,15 @@ msgid ""
 msgstr ""
 "신뢰할 수 있는 로컬 네트워크에서만 사용하세요. 이 HTTP 연결은 암호화되지 않습"
 "니다."
+
+#~ msgid "All preferences are saved."
+#~ msgstr "모든 환경 설정이 저장되었습니다."
+
+#~ msgid ""
+#~ "Changes were applied, but safe storage is not confirmed. Retry saving."
+#~ msgstr ""
+#~ "변경 사항은 적용되었지만 안전한 저장을 확인할 수 없습니다. 다시 저장해 보"
+#~ "세요."
 
 #~ msgid "Retry saving"
 #~ msgstr "다시 저장"

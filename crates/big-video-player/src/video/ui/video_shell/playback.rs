@@ -563,21 +563,38 @@ impl VideoShell {
                 )
                 .replace("{}", &trashed.len().to_string());
                 let restore_sender = pl_sender.clone();
+                let restore_notice = notice.clone();
                 notice.show_action(&title, &i18n("Undo"), move || {
                     let to_restore = trashed;
                     big_media_components::player_chrome::spawn_blocking_result(
                         move || {
                             use big_media_runtime::media::playlist;
+                            let mut failed = 0_u64;
                             for path in &to_restore {
                                 if let Err(error) =
                                     playlist::restore_from_trash(std::path::Path::new(path))
                                 {
-                                    log::warn!("restoring {path} from the trash failed: {error}");
+                                    log::warn!(
+                                        "restoring {} from the trash failed: {error}",
+                                        crate::video::redaction::redact_path(path)
+                                    );
+                                    failed += 1;
                                 }
                             }
+                            failed
                         },
-                        move |()| {
+                        move |failed| {
                             let _ = restore_sender.send(VideoBrowserSidebarInput::RefreshFolder);
+                            if failed > 0 {
+                                restore_notice.show(
+                                    &ni18n(
+                                        "{} file could not be restored. Restore it from the trash.",
+                                        "{} files could not be restored. Restore them from the trash.",
+                                        failed,
+                                    )
+                                    .replace("{}", &failed.to_string()),
+                                );
+                            }
                         },
                     );
                 });
