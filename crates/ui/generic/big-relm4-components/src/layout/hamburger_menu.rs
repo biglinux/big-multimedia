@@ -155,13 +155,14 @@ pub fn menu_action_names(menu: &impl IsA<gio::MenuModel>) -> Vec<String> {
     actions
 }
 
-/// Replace a popover's child with flat named action rows.
+/// Replace a popover's child with flat named action rows. Build the popover
+/// with [`gtk::AccessibleRole::Group`]: GTK refuses a role set once an
+/// assistive technology has read the popover.
 pub fn populate_flat_action_popover(
     popover: &gtk::Popover,
     action_context: &impl IsA<gtk::Widget>,
     items: &[BigMenuActionItem],
 ) {
-    popover.set_accessible_role(gtk::AccessibleRole::Group);
     popover.add_css_class("menu");
 
     let rows = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -187,7 +188,9 @@ pub fn build_flat_action_popover(
     action_context: &impl IsA<gtk::Widget>,
     items: &[BigMenuActionItem],
 ) -> gtk::Popover {
-    let popover = gtk::Popover::new();
+    let popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     populate_flat_action_popover(&popover, action_context, items);
     popover
 }
@@ -229,17 +232,10 @@ pub fn attach_popover_to_button_with_parent(
             .as_ref()
             .set_data(ACTION_POPOVER_QDATA_KEY, popover.clone());
     }
-    {
-        let popover = popover.downgrade();
-        popover_parent.as_ref().connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    crate::feedback::popover_lifecycle::unparent_popover_on_parent_teardown(
+        popover_parent.as_ref(),
+        popover,
+    );
     {
         let popover = popover.clone();
         button.connect_clicked(move |_| {

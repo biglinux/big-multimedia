@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use qrcode::{EcLevel, QrCode};
 
 /// Build a drawing area that renders `qr_payload` as a high-contrast QR code.
-pub fn build_qr_widget(qr_payload: &str, side_px: i32) -> gtk::DrawingArea {
+pub(super) fn build_qr_widget(qr_payload: &str, side_px: i32) -> gtk::DrawingArea {
     let area = gtk::DrawingArea::new();
     area.set_content_width(side_px);
     area.set_content_height(side_px);

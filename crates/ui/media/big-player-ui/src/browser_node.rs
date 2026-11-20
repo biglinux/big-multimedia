@@ -1,6 +1,6 @@
 //! `BigMediaBrowserNode`: generic GObject node type for a media library /
 //! file-browser tree. Covers folder/file/divider plus the music-library
-//! flavours (artist/album/genre/year/station/playlist). Reusable by any media
+//! flavors (artist/album/genre/year/station/playlist). Reusable by any media
 //! app; the constructors are convenience factories, not a fixed taxonomy.
 
 use gtk::glib;
@@ -39,6 +39,8 @@ pub enum BrowserNodeKind {
     Divider = 10,
     /// The "Various Artists" compilation grouping.
     VariousArtists = 11,
+    /// An audio-format grouping (MP3, FLAC, …).
+    Format = 12,
 }
 
 mod imp {
@@ -147,6 +149,18 @@ impl BrowserNode {
             BrowserNodeKind::Genre,
             name,
             "audio-x-generic-symbolic",
+            name,
+            "",
+            count,
+        )
+    }
+
+    /// Audio-format node; `key` is the format name.
+    pub fn format(name: &str, count: i32) -> Self {
+        Self::with_fields(
+            BrowserNodeKind::Format,
+            name,
+            "document-properties-symbolic",
             name,
             "",
             count,

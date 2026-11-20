@@ -1,16 +1,9 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Didactic preference cards with app-wired state.
+//! Numeric range shared by the spin inputs.
 
-use relm4::gtk;
-use relm4::gtk::prelude::*;
-
-use crate::layout::didactic_card::{BigDidacticCardSpec, didactic_card};
-
-const DEFAULT_SPIN_WIDTH_CHARS: i32 = 7;
-
-/// Numeric range descriptor reused by spin and scale preference cards.
+/// Bounds and steps of a numeric spin input.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BigSpinRange {
     /// Lowest legal value.
@@ -34,107 +27,28 @@ impl BigSpinRange {
             page_step,
         }
     }
-}
 
-/// Didactic card carrying a boolean toggle on the right.
-#[derive(Debug, Clone)]
-pub struct BigSwitchPreferenceCard {
-    root: gtk::Box,
-    switch: gtk::Switch,
-}
-
-impl BigSwitchPreferenceCard {
-    /// Creates a new instance.
+    /// This range made safe for a `gtk::Adjustment`: a non-finite `min` reads
+    /// as 0 and `max` as `min`, `max` is at least `min`, the step is positive
+    /// and a page is at least one step.
     #[must_use]
-    pub fn new(spec: BigDidacticCardSpec, active: bool) -> Self {
-        let switch = gtk::Switch::builder()
-            .active(active)
-            .valign(gtk::Align::Center)
-            .build();
-        switch.update_property(&[gtk::accessible::Property::Label(&spec.title)]);
-        let root = didactic_card(spec, &switch);
-        Self { root, switch }
-    }
-
-    /// Return a reference to the `root` exposed by this [`BigSwitchPreferenceCard`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn root(&self) -> &gtk::Box {
-        &self.root
-    }
-
-    /// Return a reference to the `switch` exposed by this [`BigSwitchPreferenceCard`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn switch(&self) -> &gtk::Switch {
-        &self.switch
-    }
-
-    /// Consume `self` and yield the underlying parts.
-    #[must_use]
-    pub fn into_parts(self) -> (gtk::Box, gtk::Switch) {
-        (self.root, self.switch)
+    pub fn resolved(self) -> Self {
+        let min = finite_or(self.min, 0.0);
+        let max = finite_or(self.max, min).max(min);
+        let step = finite_or(self.step, 1.0).abs().max(f64::EPSILON);
+        let page_step = finite_or(self.page_step, step * 10.0).abs().max(step);
+        Self {
+            min,
+            max,
+            step,
+            page_step,
+        }
     }
 }
 
-/// Didactic card carrying a numeric spin button on the right.
-#[derive(Debug, Clone)]
-pub struct BigSpinPreferenceCard {
-    root: gtk::Box,
-    spin: gtk::SpinButton,
-}
-
-impl BigSpinPreferenceCard {
-    /// Creates a new instance.
-    #[must_use]
-    pub fn new(spec: BigDidacticCardSpec, value: f64, range: BigSpinRange, digits: u32) -> Self {
-        let adjustment = gtk::Adjustment::new(
-            value,
-            range.min,
-            range.max,
-            range.step,
-            range.page_step,
-            0.0,
-        );
-        let spin = gtk::SpinButton::builder()
-            .adjustment(&adjustment)
-            .digits(digits)
-            .numeric(true)
-            .valign(gtk::Align::Center)
-            .width_chars(DEFAULT_SPIN_WIDTH_CHARS)
-            .build();
-        spin.update_property(&[gtk::accessible::Property::Label(&spec.title)]);
-        let root = didactic_card(spec, &spin);
-        Self { root, spin }
-    }
-
-    /// Return a reference to the `root` exposed by this [`BigSpinPreferenceCard`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn root(&self) -> &gtk::Box {
-        &self.root
-    }
-
-    /// Return a reference to the `spin` exposed by this [`BigSpinPreferenceCard`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn spin(&self) -> &gtk::SpinButton {
-        &self.spin
-    }
-
-    /// Consume `self` and yield the underlying parts.
-    #[must_use]
-    pub fn into_parts(self) -> (gtk::Box, gtk::SpinButton) {
-        (self.root, self.spin)
-    }
+/// `value`, or `fallback` when it is NaN or infinite.
+pub(crate) fn finite_or(value: f64, fallback: f64) -> f64 {
+    if value.is_finite() { value } else { fallback }
 }
 
 #[cfg(test)]

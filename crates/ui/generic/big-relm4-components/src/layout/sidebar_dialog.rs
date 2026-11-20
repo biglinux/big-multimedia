@@ -13,13 +13,11 @@
 //!
 //! The sidebar pane's header is always *flat and seamless*: the split auto-tints
 //! the sidebar background, and a flat header is transparent so it shows that
-//! same tint, blending into the body below (no bottom border, no colour step;
+//! same tint, blending into the body below (no bottom border, no color step;
 //! this removes the "1px line under the sidebar header" and keeps the
 //! header from showing the lighter `headerbar` background). It carries no title
 //! by default; drop a title widget (plain title text, a primary action button,
-//! or a title/search stack) via [`BigSidebarDialog::set_sidebar_header`], and
-//! pack extra controls (e.g. a search toggle) into
-//! [`BigSidebarDialog::sidebar_header`].
+//! or a title/search stack) via [`BigSidebarDialog::set_sidebar_header`].
 //!
 //! Two entry points: [`BigSidebarDialog::new`] builds the split for embedding
 //! (exposed via [`BigSidebarDialog::root`]); [`BigSidebarDialog::install`] is the
@@ -88,7 +86,7 @@ impl BigSidebarDialog {
     #[must_use]
     pub fn new(spec: &BigSidebarDialogSpec) -> Self {
         // Sidebar pane: flat + transparent header → shows the split's sidebar
-        // tint → seamless (no border, no headerbar-coloured band). Title slot is
+        // tint → seamless (no border, no headerbar-colored band). Title slot is
         // empty until a caller sets one via `set_sidebar_header`.
         let sidebar_toolbar = adw::ToolbarView::new();
         sidebar_toolbar.set_top_bar_style(adw::ToolbarStyle::Flat);

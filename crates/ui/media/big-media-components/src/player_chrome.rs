@@ -3,8 +3,7 @@
 //!
 //! They live here so reusable player panels (`big-player-ui`) can use them
 //! without depending on the engine runtime. i18n routes through the crate
-//! translator hook ([`crate::text::text`]); the runtime re-exports these under
-//! `shared::{spawn,play_button,popovers}`.
+//! translator hook ([`crate::text::text`]).
 
 use std::time::Duration;
 
@@ -26,8 +25,9 @@ pub use big_relm4_components::feedback::hover_popover::{
     setup_exclusive_hover_popover_group, setup_hover_controller_exclusive,
 };
 
+/// The video stylesheet animates this class.
 const PLAY_BUTTON_PULSE_CSS_CLASS: &str = "play-pulse";
-const PLAY_BUTTON_PULSE_MILLISECONDS: u64 = 250;
+const PLAY_BUTTON_PULSE: Duration = Duration::from_millis(250);
 const PLAYER_SCALE_HEIGHT_REQUEST: i32 = 200;
 const TROUGH_STYLE_PROVIDER_PRIORITY_OFFSET: u32 = 2;
 const VOLUME_MINIMUM_PERCENT: f64 = 0.0;
@@ -69,10 +69,10 @@ pub use big_relm4_components::task::{spawn_blocking_result, spawn_blocking_task}
 
 /// Briefly pulse the play/pause button (CSS class for ~250ms).
 pub fn pulse_play_button(button: &gtk::Button) {
-    button.add_css_class(play_button_pulse_css_class());
+    button.add_css_class(PLAY_BUTTON_PULSE_CSS_CLASS);
     let pulsed_button = button.clone();
-    glib::timeout_add_local_once(play_button_pulse_duration(), move || {
-        pulsed_button.remove_css_class(play_button_pulse_css_class());
+    glib::timeout_add_local_once(PLAY_BUTTON_PULSE, move || {
+        pulsed_button.remove_css_class(PLAY_BUTTON_PULSE_CSS_CLASS);
     });
 }
 
@@ -109,22 +109,40 @@ pub fn build_volume_popover(
         &trough,
         trough_style_provider_priority(),
     );
-    {
-        let maximum_volume_for_trough = maximum_volume_percent;
-        // The provider is display-wide: reloading it restyles every widget, so
-        // only reload when the colour changes (it is constant up to 100 %).
-        let shown = std::cell::RefCell::new(initial_color);
-        scale.connect_value_changed(move |s| {
-            let color = volume_trough_color(s.value(), maximum_volume_for_trough);
-            if *shown.borrow() != color {
-                update_scale_trough(&trough, "volume-scale", &color);
-                *shown.borrow_mut() = color;
-            }
-        });
-    }
+    follow_volume_trough(&scale.adjustment(), trough, initial_color);
 
     scroll_moves(parent, &scale, VOLUME_SCROLL_PERCENT);
     (popover, scale)
+}
+
+/// Recolor `trough` when the value or the top of `adjustment` moves. The
+/// provider is display-wide and reloading it restyles every widget, so it
+/// reloads only when the color changes (it is constant up to 100 %).
+fn follow_volume_trough(adjustment: &gtk::Adjustment, trough: gtk::CssProvider, shown: String) {
+    let shown = std::cell::RefCell::new(shown);
+    let recolor = std::rc::Rc::new(move |adjustment: &gtk::Adjustment| {
+        let color = volume_trough_color(adjustment.value(), adjustment.upper());
+        if *shown.borrow() != color {
+            update_scale_trough(&trough, "volume-scale", &color);
+            *shown.borrow_mut() = color;
+        }
+    });
+    let on_value = recolor.clone();
+    adjustment.connect_value_changed(move |adjustment| on_value(adjustment));
+    adjustment.connect_upper_notify(move |adjustment| recolor(adjustment));
+}
+
+/// Give a scale from [`build_volume_popover`] a new top. The value is left to
+/// the caller, which knows whether moving it is a request or a mirror.
+pub fn set_volume_maximum(scale: &gtk::Scale, maximum_volume_percent: f64) {
+    scale.adjustment().set_upper(maximum_volume_percent);
+    // GtkScale places a mark only when it is added, not when the range changes.
+    scale.clear_marks();
+    scale.add_mark(
+        volume_reference_mark_percent(),
+        popover_scale_mark_position(),
+        None,
+    );
 }
 
 /// The mouse wheel over a control moves its slider a `step` a notch, up for
@@ -228,7 +246,8 @@ pub fn build_voice_popover(
     scroll_moves(parent, &scale, VOICE_SCROLL_PERCENT);
 
     let trough = gtk::CssProvider::new();
-    let initial_color = voice_trough_color(voice_spec.initial_strength_percent);
+    let initial_color =
+        voice_trough_color(voice_spec.initial_strength_percent, VOICE_MAXIMUM_PERCENT);
     update_scale_trough(&trough, "voice-scale", &initial_color);
     let shown_color = std::cell::RefCell::new(initial_color);
     big_gtk_kit::css::add_provider_for_widget_lifetime(
@@ -248,7 +267,7 @@ pub fn build_voice_popover(
         let external_voice_label = voice_label.clone();
         scale.connect_value_changed(move |scale| {
             let voice_strength = scale.value();
-            let color = voice_trough_color(voice_strength);
+            let color = voice_trough_color(voice_strength, VOICE_MAXIMUM_PERCENT);
             if *shown_color.borrow() != color {
                 update_scale_trough(&trough, "voice-scale", &color);
                 *shown_color.borrow_mut() = color;
@@ -284,14 +303,6 @@ pub fn build_voice_popover(
     }
 
     popover
-}
-
-fn play_button_pulse_css_class() -> &'static str {
-    PLAY_BUTTON_PULSE_CSS_CLASS
-}
-
-fn play_button_pulse_duration() -> Duration {
-    Duration::from_millis(PLAY_BUTTON_PULSE_MILLISECONDS)
 }
 
 fn volume_scale_popover_spec(
@@ -366,14 +377,44 @@ fn next_voice_preset(current_strength_percent: f64) -> Option<f64> {
     )
 }
 
+/// Symbolic icon of a volume control at `volume` percent. Muted and level 0
+/// share the crossed-out speaker: either way nothing plays.
+#[must_use]
+pub fn volume_icon_name(volume: f64, muted: bool) -> &'static str {
+    if muted || volume <= 0.0 {
+        "audio-volume-muted-symbolic"
+    } else if volume < 34.0 {
+        "audio-volume-low-symbolic"
+    } else if volume < 67.0 {
+        "audio-volume-medium-symbolic"
+    } else {
+        "audio-volume-high-symbolic"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn play_pulse_names_class_and_duration() {
-        assert_eq!(play_button_pulse_css_class(), "play-pulse");
-        assert_eq!(play_button_pulse_duration(), Duration::from_millis(250));
+    fn volume_icon_follows_level_and_mute() {
+        for (volume, muted, icon) in [
+            (-1.0, false, "audio-volume-muted-symbolic"),
+            (0.0, false, "audio-volume-muted-symbolic"),
+            (0.1, false, "audio-volume-low-symbolic"),
+            (33.9, false, "audio-volume-low-symbolic"),
+            (34.0, false, "audio-volume-medium-symbolic"),
+            (66.9, false, "audio-volume-medium-symbolic"),
+            (67.0, false, "audio-volume-high-symbolic"),
+            (150.0, false, "audio-volume-high-symbolic"),
+            (80.0, true, "audio-volume-muted-symbolic"),
+        ] {
+            assert_eq!(
+                volume_icon_name(volume, muted),
+                icon,
+                "{volume} muted={muted}"
+            );
+        }
     }
 
     #[test]
@@ -390,6 +431,31 @@ mod tests {
         assert!(spec.inverted);
         assert_eq!(volume_reference_mark_percent(), 100.0);
         assert_eq!(popover_scale_mark_position(), gtk::PositionType::Right);
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn volume_trough_follows_a_new_maximum() {
+        gtk::init().expect("isolated GTK session");
+        let scale = gtk::Scale::with_range(gtk::Orientation::Vertical, 0.0, 150.0, 1.0);
+        scale.set_value(120.0);
+        let trough = gtk::CssProvider::new();
+        let color = volume_trough_color(120.0, 150.0);
+        update_scale_trough(&trough, "volume-scale", &color);
+        follow_volume_trough(&scale.adjustment(), trough.clone(), color);
+
+        set_volume_maximum(&scale, 200.0);
+
+        let expected = gtk::CssProvider::new();
+        update_scale_trough(
+            &expected,
+            "volume-scale",
+            &volume_trough_color(120.0, 200.0),
+        );
+        let stale = gtk::CssProvider::new();
+        update_scale_trough(&stale, "volume-scale", &volume_trough_color(120.0, 150.0));
+        assert_ne!(expected.to_str(), stale.to_str());
+        assert_eq!(trough.to_str(), expected.to_str());
     }
 
     #[test]

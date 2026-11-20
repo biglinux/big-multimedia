@@ -5,7 +5,7 @@
 
 use adw::prelude::*;
 
-/// Display-free specification describing big preferences group behaviour.
+/// Display-free specification describing big preferences group behavior.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigPreferencesGroupSpec {
     /// Title.

@@ -17,7 +17,7 @@ use big_media_components::playback::audio_transport::{BigAudioTransport, BigAudi
 use big_media_components::playback::queue::RepeatMode;
 
 use big_media_components::player_chrome::{
-    build_speed_popover, build_voice_popover, build_volume_popover,
+    build_speed_popover, build_voice_popover, build_volume_popover, set_volume_maximum,
     setup_exclusive_hover_popover_group,
 };
 
@@ -77,6 +77,8 @@ pub enum AudioPlaybackBarInput {
     },
     /// Set the volume slider value (`0..=max_volume`) without emitting.
     SetVolumeValue(f64),
+    /// Set the slider's maximum volume percent; a higher value comes down to it.
+    SetMaxVolume(f64),
     /// Whose volume the slider moves: the TV's while a TV has the transport.
     SetVolumeOfTv(bool),
     /// Toggle the `voice-active` style on the voice button.
@@ -193,7 +195,7 @@ impl Component for AudioPlaybackBar {
         let seek_fraction = Rc::new(Cell::new(0.0));
         let duration_secs = Rc::new(Cell::new(0.0));
         install_cut_timeline_draw(
-            transport.cut_timeline(),
+            transport.cut_timeline().upcast_ref(),
             &cut_segments,
             &pending_mark,
             &seek_fraction,
@@ -202,7 +204,7 @@ impl Component for AudioPlaybackBar {
         let seek_sender = sender.clone();
         let segment_sender = sender.clone();
         wire_cut_timeline_interaction(
-            transport.cut_timeline(),
+            transport.cut_timeline().upcast_ref(),
             &cut_segments,
             &duration_secs,
             move |fraction| {
@@ -264,6 +266,7 @@ impl Component for AudioPlaybackBar {
                     big_media_components::playback::audio_transport::time_label_chars(&text);
                 t.position_label().set_min_chars(chars);
                 t.position_label().set_nat_chars(chars);
+                t.duration_label().set_width_chars(chars.cast_signed());
                 t.duration_label().set_label(&text);
             }
             AudioPlaybackBarInput::SetSeekValue(value) => {
@@ -280,10 +283,16 @@ impl Component for AudioPlaybackBar {
                     return;
                 }
                 self.with_guard(|| bar.set_value(value));
+                let duration = self.duration_secs.get();
+                t.cut_timeline()
+                    .set_position(value / 100.0 * duration, duration);
                 t.cut_timeline().queue_draw();
             }
             AudioPlaybackBarInput::SetDurationSecs(secs) => {
-                self.duration_secs.set(secs.max(0.0));
+                let duration = secs.max(0.0);
+                self.duration_secs.set(duration);
+                t.cut_timeline()
+                    .set_position(self.seek_fraction.get() * duration, duration);
                 t.cut_timeline().queue_draw();
             }
             AudioPlaybackBarInput::SetCutSegments(segments) => {
@@ -316,6 +325,12 @@ impl Component for AudioPlaybackBar {
             AudioPlaybackBarInput::SetVolumeValue(value) => {
                 let scale = self.volume_scale.clone();
                 self.with_guard(|| scale.set_value(value));
+            }
+            AudioPlaybackBarInput::SetMaxVolume(maximum) => {
+                set_volume_maximum(&self.volume_scale, maximum);
+                if self.volume_scale.value() > maximum {
+                    self.volume_scale.set_value(maximum);
+                }
             }
             AudioPlaybackBarInput::SetVolumeOfTv(tv) => {
                 use big_media_components::text::text;

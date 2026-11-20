@@ -10,7 +10,7 @@ use crate::feedback::tooltip;
 
 use super::row_core::row_text;
 
-/// Display-free specification describing big editable action row behaviour.
+/// Display-free specification describing big editable action row behavior.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigEditableActionRowSpec {
     /// Title.

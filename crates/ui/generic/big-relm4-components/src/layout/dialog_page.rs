@@ -173,6 +173,25 @@ pub fn dialog_description(text: &str) -> gtk::Label {
     label
 }
 
+/// Focus `field` and select its text from `start` to `end` (`-1` for the end)
+/// each time it is shown. The handler lives on the field, not on its dialog,
+/// so a dialog reused for another opening does not keep it.
+pub fn focus_when_shown(
+    field: &(impl IsA<gtk::Editable> + IsA<gtk::Widget>),
+    start: i32,
+    end: i32,
+) {
+    field.connect_map(move |field| {
+        let field = field.downgrade();
+        gtk::glib::idle_add_local_once(move || {
+            if let Some(field) = field.upgrade() {
+                field.grab_focus();
+                field.select_region(start, end);
+            }
+        });
+    });
+}
+
 fn scrolled_window() -> gtk::ScrolledWindow {
     gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)

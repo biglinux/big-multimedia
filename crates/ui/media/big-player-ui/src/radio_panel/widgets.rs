@@ -1,9 +1,9 @@
 //! Stateless widget builders for [`RadioPanel`](super::RadioPanel): toolbar,
-//! empty-state, loading skeleton, per-row record button + now-playing
+//! empty-state, loading skeleton, per-row action buttons + now-playing
 //! indicator, async favicon loader, and the add-station dialog.
 //! All `pub(super)`, called from the `Component` impl and the row builders.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -11,9 +11,10 @@ use adw::prelude::*;
 use relm4::ComponentSender;
 
 use big_relm4_components::feedback::tooltip;
+use big_relm4_components::input::entry_row;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -23,79 +24,108 @@ use big_media_data::i18n::i18n;
 
 use super::{RadioPanel, RadioPanelInput, TAG_EXPLORE, TAG_SAVED};
 
-/// Build the per-row action-button factory for the virtualized list: saved rows
-/// get delete + record, explore rows get record + add (add reflects the current
-/// saved set). Recreated per visible bind, so it stays cheap.
+/// Per-row buttons, rebuilt on each visible bind: delete or add, and record on
+/// the playing station's row. Each names its station, as a screen reader reaches it alone.
 pub(super) fn row_suffix_builder(
     sender: &ComponentSender<RadioPanel>,
     saved_urls: &Rc<RefCell<HashSet<String>>>,
+    playing_stream: &Rc<RefCell<String>>,
+    recording: &Rc<Cell<bool>>,
 ) -> impl Fn(&MediaRow) -> Vec<gtk::Widget> + 'static {
     let sender = sender.clone();
     let saved_urls = saved_urls.clone();
-    move |row| match row.tag {
-        TAG_SAVED => {
-            let del =
-                tooltip::icon_button("edit-delete-symbolic", &i18n("Remove station"), &["flat"]);
-            del.set_valign(gtk::Align::Center);
-            let s = sender.clone();
-            let url = row.id.clone();
-            del.connect_clicked(move |_| {
-                s.input(RadioPanelInput::DeleteStationByUrl(url.clone()));
-            });
-            vec![del.upcast(), build_record_button(&sender).upcast()]
+    let playing_stream = playing_stream.clone();
+    let recording = recording.clone();
+    move |row| {
+        let mut buttons: Vec<gtk::Widget> = Vec::new();
+        if *playing_stream.borrow() == row.id {
+            buttons.push(build_record_button(&sender, &row.title, recording.get()).upcast());
         }
-        TAG_EXPLORE => {
-            let rec = build_record_button(&sender);
-            let add =
-                tooltip::icon_button("list-add-symbolic", &i18n("Add to my stations"), &["flat"]);
-            add.set_valign(gtk::Align::Center);
-            if saved_urls.borrow().contains(&row.id) {
-                add.set_sensitive(false);
-                add.set_icon_name("object-select-symbolic");
-            } else {
-                let s = sender.clone();
-                let station = RadioStation {
-                    id: 0,
-                    name: row.title.clone(),
-                    url: row.id.clone(),
-                    favicon: row.favicon.clone(),
-                    group_name: row.group.clone(),
-                };
-                add.connect_clicked(move |button| {
-                    s.input(RadioPanelInput::AddStation(station.clone()));
-                    button.set_sensitive(false);
-                    button.set_icon_name("object-select-symbolic");
-                });
-            }
-            vec![rec.upcast(), add.upcast()]
+        match row.tag {
+            TAG_SAVED => buttons.push(build_remove_button(&sender, row).upcast()),
+            TAG_EXPLORE => buttons.push(build_add_button(&sender, row, &saved_urls).upcast()),
+            _ => {}
         }
-        _ => Vec::new(),
+        buttons
     }
 }
 
-/// Build a record toggle button that flips its own icon and emits RecordToggle.
-pub(super) fn build_record_button(sender: &ComponentSender<RadioPanel>) -> gtk::Button {
-    let rec_button =
-        tooltip::icon_button("media-record-symbolic", &i18n("Record Stream"), &["flat"]);
-    rec_button.set_valign(gtk::Align::Center);
+fn build_remove_button(sender: &ComponentSender<RadioPanel>, row: &MediaRow) -> gtk::Button {
+    let remove = tooltip::icon_button(
+        "edit-delete-symbolic",
+        &i18n("Remove {station}").replace("{station}", &row.title),
+        &["flat"],
+    );
+    remove.set_valign(gtk::Align::Center);
     let s = sender.clone();
-    rec_button.connect_clicked(move |button| {
-        let recording = button
-            .icon_name()
-            .is_some_and(|n| n == "media-playback-stop-symbolic");
-        if recording {
-            s.input(RadioPanelInput::RecordToggle(false));
-            button.set_icon_name("media-record-symbolic");
-            button.set_tooltip_text(Some(&i18n("Record Stream")));
-            button.update_property(&[gtk::accessible::Property::Label(&i18n("Record Stream"))]);
-        } else {
-            s.input(RadioPanelInput::RecordToggle(true));
-            button.set_icon_name("media-playback-stop-symbolic");
-            button.set_tooltip_text(Some(&i18n("Stop Recording")));
-            button.update_property(&[gtk::accessible::Property::Label(&i18n("Stop Recording"))]);
-        }
+    let url = row.id.clone();
+    remove.connect_clicked(move |_| {
+        s.input(RadioPanelInput::DeleteStationByUrl(url.clone()));
     });
-    rec_button
+    remove
+}
+
+fn build_add_button(
+    sender: &ComponentSender<RadioPanel>,
+    row: &MediaRow,
+    saved_urls: &Rc<RefCell<HashSet<String>>>,
+) -> gtk::Button {
+    let add = tooltip::icon_button(
+        "list-add-symbolic",
+        &i18n("Add {station} to my stations").replace("{station}", &row.title),
+        &["flat"],
+    );
+    add.set_valign(gtk::Align::Center);
+    if saved_urls.borrow().contains(&row.id) {
+        mark_saved(&add, &row.title);
+    } else {
+        let s = sender.clone();
+        let station = RadioStation {
+            id: 0,
+            name: row.title.clone(),
+            url: row.id.clone(),
+            favicon: row.favicon.clone(),
+            group_name: row.group.clone(),
+        };
+        add.connect_clicked(move |button| {
+            s.input(RadioPanelInput::AddStation(station.clone()));
+            mark_saved(button, &station.name);
+        });
+    }
+    add
+}
+
+fn mark_saved(add: &gtk::Button, station: &str) {
+    let label = i18n("{station} is in my stations").replace("{station}", station);
+    add.set_sensitive(false);
+    add.set_icon_name("object-select-symbolic");
+    add.set_tooltip_text(Some(&label));
+    add.update_property(&[gtk::accessible::Property::Label(&label)]);
+}
+
+/// Record or stop the playing stream; the shell's `RecordingChanged` redraws it.
+fn build_record_button(
+    sender: &ComponentSender<RadioPanel>,
+    station: &str,
+    recording: bool,
+) -> gtk::Button {
+    let button = if recording {
+        tooltip::icon_button(
+            "media-playback-stop-symbolic",
+            &i18n("Stop recording {station}").replace("{station}", station),
+            &["flat"],
+        )
+    } else {
+        tooltip::icon_button(
+            "media-record-symbolic",
+            &i18n("Record {station}").replace("{station}", station),
+            &["flat"],
+        )
+    };
+    button.set_valign(gtk::Align::Center);
+    let s = sender.clone();
+    button.connect_clicked(move |_| s.input(RadioPanelInput::RecordToggle(!recording)));
+    button
 }
 
 /// Build the loading skeleton (6 placeholder rows, hidden initially).
@@ -212,14 +242,11 @@ pub(super) fn build_toolbar() -> (gtk::Box, gtk::SearchEntry, gtk::DropDown, gtk
     genre_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Filter by genre"))]);
     filter_row.append(&genre_dropdown);
 
-    let add_button = gtk::Button::builder()
-        .icon_name("list-add-symbolic")
-        .css_classes(["flat"])
-        .build();
-    add_button.set_tooltip_text(Some(&i18n("Add station manually")));
-    add_button.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Add station manually",
-    ))]);
+    let add_button = tooltip::icon_button(
+        "list-add-symbolic",
+        &i18n("Add station manually"),
+        &["flat"],
+    );
     filter_row.append(&add_button);
     toolbar.append(&filter_row);
 
@@ -275,7 +302,7 @@ pub(super) fn build_empty_state(sender: &ComponentSender<RadioPanel>) -> gtk::Bo
         .build();
     empty_state.append(
         &gtk::Image::builder()
-            .icon_name("icon_radio")
+            .icon_name(super::RADIO_ICON)
             .pixel_size(64)
             .css_classes(["dim-label"])
             .build(),
@@ -320,7 +347,7 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
         return;
     };
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Add Radio Station"))
         .content_width(440)
         .content_height(300)
@@ -332,18 +359,16 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
     ));
 
     let group = BigPreferencesGroupSpec::new(i18n("Station")).build();
-    let name_entry = adw::EntryRow::builder()
-        .title(i18n("Station Name"))
-        .show_apply_button(true)
-        .build();
-    name_entry.update_property(&[gtk::accessible::Property::Label(&i18n("Station Name"))]);
-    let url_entry = adw::EntryRow::builder()
-        .title(i18n("Station stream URL"))
-        .show_apply_button(true)
-        .build();
-    url_entry.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Station stream URL",
-    ))]);
+    let name_entry = entry_row::build(
+        adw::EntryRow::builder()
+            .title(i18n("Station Name"))
+            .show_apply_button(true),
+    );
+    let url_entry = entry_row::build(
+        adw::EntryRow::builder()
+            .title(i18n("Station stream URL"))
+            .show_apply_button(true),
+    );
     group.add(&name_entry);
     group.add(&url_entry);
     page.content().append(&group);
@@ -413,14 +438,7 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
         }
     });
 
-    dialog.connect_map(move |_| {
-        let name_entry = name_entry.downgrade();
-        gtk::glib::idle_add_local_once(move || {
-            if let Some(name_entry) = name_entry.upgrade() {
-                name_entry.grab_focus();
-            }
-        });
-    });
+    focus_when_shown(&name_entry, 0, -1);
     dialog.present(Some(&window));
 }
 
@@ -436,11 +454,7 @@ fn accepted_radio_station_form(name: &str, url: &str) -> Option<RadioStationForm
     if name.is_empty() {
         return None;
     }
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return None;
-    }
-    let (_, target) = url.split_once("://")?;
-    if target.trim().is_empty() {
+    if !big_os_kit::url::is_http_url(url) {
         return None;
     }
     Some(RadioStationForm {

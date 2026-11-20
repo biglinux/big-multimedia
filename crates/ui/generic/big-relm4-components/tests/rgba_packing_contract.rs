@@ -33,10 +33,10 @@ fn rgba_source_keeps_alpha() {
     assert_eq!(image.rgba, [10, 20, 30, 128].repeat(4));
 }
 
-/// The opaque tag is a memory-format declaration, not a colour change: a fully
-/// opaque colour must download identically whether it arrived as RGB or RGBA.
+/// The opaque tag is a memory-format declaration, not a color change: a fully
+/// opaque color must download identically whether it arrived as RGB or RGBA.
 #[test]
-fn opaque_tag_keeps_downloaded_colour() {
+fn opaque_tag_keeps_downloaded_color() {
     if relm4::gtk::init().is_err() {
         eprintln!("no display: skipping the texture download comparison");
         return;

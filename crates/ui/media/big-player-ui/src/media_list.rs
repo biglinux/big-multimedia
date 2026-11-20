@@ -320,6 +320,7 @@ fn wire_factory(
             // Section header: a heading, not activatable, no image/suffix.
             if let Some(heading) = &media_row.header {
                 row_box.set_widget_name("");
+                list_item.set_accessible_label(heading);
                 list_item.set_activatable(false);
                 image.set_visible(false);
                 suffix.set_visible(false);
@@ -332,7 +333,7 @@ fn wire_factory(
 
             list_item.set_activatable(true);
             row_box.set_widget_name(&media_row.id);
-            row_box.update_property(&[gtk::accessible::Property::Label(&media_row.title)]);
+            list_item.set_accessible_label(&media_row.title);
             image.set_visible(true);
             suffix.set_visible(true);
             title.set_css_classes(&[]);

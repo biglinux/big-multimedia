@@ -7,11 +7,12 @@
 //!
 //! - [`display`]: sleep timer dialog and texture conversion.
 //! - [`feedback`]: popovers and the custom tooltip.
+//! - [`i18n`]: component-owned user-visible strings.
 //! - [`input`]: sliders, dropdown rows, shortcut capture and the zone-layout editor.
 //! - [`layout`]: media window chrome, dialogs, menus and toolbar panes.
 //! - [`list`]: `AdwActionRow` derivatives.
 //! - [`task`]: off-main-thread work with main-thread delivery.
-//! - [`text`], [`time`]: markup escaping and duration formatting.
+//! - [`time`]: duration formatting.
 //! - [`theme`]: theme helpers shared by both players.
 
 #![deny(missing_docs)]
@@ -23,6 +24,5 @@ pub mod input;
 pub mod layout;
 pub mod list;
 pub mod task;
-pub mod text;
 pub mod theme;
 pub mod time;

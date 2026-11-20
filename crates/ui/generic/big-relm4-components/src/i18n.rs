@@ -6,7 +6,7 @@
 //! Since the split these live in the ONE shared `big-media-runtime` textdomain
 //! along with every other UI string, so a single catalog translates the whole
 //! suite. The host app binds that domain once at boot
-//! (`shared::app_base::init_gettext`); [`t`] resolves against it with an
+//! (`big_media_runtime::app::boot_player`); [`t`] resolves against it with an
 //! explicit `dgettext`, so it never touches the process default domain or
 //! locale and stays safe in embedded/multicall hosts. With no app binding
 //! (standalone component demos/tests) it returns the msgid unchanged.

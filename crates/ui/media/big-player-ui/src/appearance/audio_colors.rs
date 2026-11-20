@@ -8,7 +8,7 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::rc::Rc;
 
 use super::color_palette_controls::{
-    CustomColorKeys, add_custom_color_group, color_source_group, colors_page,
+    CustomColorKeys, add_custom_color_group, color_source_group, colors_page, opacity_row,
 };
 
 /// Build the audio-player Appearance → Colors page.
@@ -39,6 +39,38 @@ pub fn create_audio_colors_page(
     );
     let (source_row, source_dropdown) = source_dropdown_row.into_parts();
     source_group.add(&source_row);
+
+    let translucent = settings.get_bool(keys::AUDIO_UI_TRANSLUCENT);
+    let translucent_row = adw::SwitchRow::builder()
+        .title(i18n("Transparent Background with Blur"))
+        .subtitle(i18n(
+            "Shows what is behind the window, blurred where the desktop supports it",
+        ))
+        .active(translucent)
+        .build();
+    // Below 30% text loses its ground.
+    let opacity = opacity_row(
+        &i18n("Background Opacity"),
+        30.0,
+        keys::AUDIO_UI_BG_OPACITY,
+        settings,
+        on_changed,
+    );
+    opacity.set_visible(translucent);
+    {
+        let settings = settings.clone();
+        let on_changed = on_changed.clone();
+        let opacity = opacity.downgrade();
+        translucent_row.connect_active_notify(move |row| {
+            let _ = settings.put_bool(keys::AUDIO_UI_TRANSLUCENT, row.is_active());
+            if let Some(opacity) = opacity.upgrade() {
+                opacity.set_visible(row.is_active());
+            }
+            on_changed();
+        });
+    }
+    source_group.add(&translucent_row);
+    source_group.add(&opacity);
     page.add(&source_group);
 
     let custom_group = add_custom_color_group(

@@ -16,6 +16,9 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::actions::install_action;
+use big_relm4_components::feedback::context_popover::open_context_menu_on_keys;
+use big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown;
+use big_relm4_components::feedback::popover_menu;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -141,15 +144,32 @@ impl Component for FileBrowser {
         let list_view = build_list_view(&selection);
 
         // Restore last directory from settings; fall back to the configured dir.
+        // Checked off the main loop: a stale network mount can hang `stat`.
         let saved = settings.get_string(keys::FILES_LAST_DIR);
-        let start_dir = if !saved.is_empty() && Path::new(&saved).is_dir() {
-            PathBuf::from(saved)
-        } else {
-            fallback_dir
-        };
-        current_dir.replace(start_dir.clone());
-        populate_dir(&store, &scan_gen, &start_dir, is_media_file);
-        path_label.set_label(&start_dir.to_string_lossy());
+        spawn_blocking_result(
+            move || {
+                if !saved.is_empty() && Path::new(&saved).is_dir() {
+                    PathBuf::from(saved)
+                } else {
+                    fallback_dir
+                }
+            },
+            glib::clone!(
+                #[strong]
+                store,
+                #[strong]
+                scan_gen,
+                #[strong]
+                current_dir,
+                #[weak]
+                path_label,
+                move |start_dir: PathBuf| {
+                    current_dir.replace(start_dir.clone());
+                    populate_dir(&store, &scan_gen, &start_dir, is_media_file);
+                    path_label.set_label(&start_dir.to_string_lossy());
+                }
+            ),
+        );
 
         wire_activate(
             &list_view,
@@ -250,6 +270,7 @@ fn build_list_view(selection: &gtk::SingleSelection) -> gtk::ListView {
         };
         icon.set_icon_name(Some(&node.icon_name()));
         label.set_label(&node.label());
+        list_item.set_accessible_label(&node.label());
     });
 
     let list_view = gtk::ListView::builder()
@@ -314,7 +335,8 @@ fn wire_activate(
     });
 }
 
-/// Attach the right-click "add to library" context menu.
+/// Attach the "add to library" context menu: right-click, touch long-press,
+/// Menu or Shift+F10.
 fn install_library_menu(
     list_view: &gtk::ListView,
     selection: &gtk::SingleSelection,
@@ -332,36 +354,21 @@ fn install_library_menu(
         Some(add_selected_label),
         Some("files.add-selected-to-library"),
     );
-    // single reused context menu
-    // (gesture pops it up per right-click) parented on the list view.
-    // GtkListView does not unparent foreign children at dispose (it
-    // finalizes "with children left" and the popover leaks), so detach at
-    // the list's unrealize, while everything is still alive.
-    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
+    // GtkListView does not unparent foreign children at dispose, so the
+    // context menu parented on it is detached by the teardown owner.
+    let popover = popover_menu::from_model(&context_menu);
     popover.set_parent(list_view);
     popover.set_has_arrow(false);
-    {
-        // `destroy`, not `unrealize`: a Files tab the user never opens never
-        // realizes, so unrealize never fires and the popover still leaked.
-        // `destroy` fires at the start of dispose with the widget valid.
-        let popover = popover.downgrade();
-        list_view.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    unparent_popover_on_parent_teardown(list_view.upcast_ref(), &popover);
 
     let action_group = gio::SimpleActionGroup::new();
     let dir_ref = current_dir.clone();
     let s = sender.clone();
     install_action(&action_group, "add-current-to-library", move || {
-        let _ = s.output(FileBrowserOutput::ScanFolder(
-            dir_ref.borrow().to_string_lossy().to_string(),
-        ));
+        let dir = dir_ref.borrow().to_string_lossy().to_string();
+        if !dir.is_empty() {
+            let _ = s.output(FileBrowserOutput::ScanFolder(dir));
+        }
     });
 
     let context_selected_path = Rc::new(RefCell::new(String::new()));
@@ -375,10 +382,19 @@ fn install_library_menu(
     });
     list_view.insert_action_group("files", Some(&action_group));
 
-    let gesture = gtk::GestureClick::new();
-    gesture.set_button(3);
+    // Opening the menu selects the row at the point, so "Add this folder" acts
+    // on the row the menu opened from rather than on an earlier selection.
     let selection = selection.clone();
-    gesture.connect_pressed(move |_gest, _n, x, y| {
+    let list = list_view.downgrade();
+    let open_menu = Rc::new(move |x: f64, y: f64| {
+        if let Some(picked) = list
+            .upgrade()
+            .and_then(|list| list.pick(x, y, gtk::PickFlags::DEFAULT))
+        {
+            // Outside a row nothing provides `listitem.select`, and the
+            // selection stays.
+            let _ = picked.activate_action("listitem.select", Some(&(false, false).to_variant()));
+        }
         let mut on_folder = false;
         if let Some(obj) = selection.item(selection.selected())
             && let Some(node) = obj.downcast_ref::<BrowserNode>()
@@ -393,7 +409,39 @@ fn install_library_menu(
         popover.set_pointing_to(Some(&point));
         popover.popup();
     });
-    list_view.add_controller(gesture);
+
+    let click = gtk::GestureClick::new();
+    click.set_button(gtk::gdk::BUTTON_SECONDARY);
+    click.connect_pressed({
+        let open_menu = open_menu.clone();
+        move |_, _, x, y| open_menu(x, y)
+    });
+    list_view.add_controller(click);
+
+    let long_press = gtk::GestureLongPress::new();
+    long_press.set_touch_only(true);
+    long_press.connect_pressed({
+        let open_menu = open_menu.clone();
+        move |gesture, x, y| {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            open_menu(x, y);
+        }
+    });
+    list_view.add_controller(long_press);
+
+    let list = list_view.downgrade();
+    open_context_menu_on_keys(list_view, move |row| {
+        let Some(point) = list
+            .upgrade()
+            .and_then(|list| row.compute_point(&list, &gtk::graphene::Point::new(0.0, 0.0)))
+        else {
+            return false;
+        };
+        let x = f64::from(point.x()) + f64::from(row.width()) / 2.0;
+        let y = f64::from(point.y()) + f64::from(row.height()) / 2.0;
+        open_menu(x, y);
+        true
+    });
 }
 
 /// Populate `store` with the media files (per `is_media_file`) and sub-folders
