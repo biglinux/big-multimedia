@@ -213,6 +213,7 @@ impl OffloadRenderer {
     /// Called from the main thread (via `glib::idle_add_once`). Renders into
     /// the back-buffer, then exports as DMA-BUF or wraps as GdkGLTexture.
     pub fn render_frame(&self, render_context: &FastRenderContext, width: i32, height: i32) {
+        let started = std::time::Instant::now();
         let _current = CurrentContext::enter(&self.gl_context);
         // update() must run with this exact context, including forced redraws.
         let new_frame = render_context.has_new_frame();
@@ -242,11 +243,14 @@ impl OffloadRenderer {
             error!("Offload render failed: {result}");
             return;
         }
+        let mut finish_wait = None;
         let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
             // DMA-BUF explicit-fence negotiation is not implemented, so glFinish
             // is the only correctness barrier before export.
+            let finish_started = std::time::Instant::now();
             // SAFETY: the context is current.
             unsafe { (self.gl.finish)() };
+            finish_wait = Some(finish_started.elapsed());
             match self.try_create_dmabuf_texture(lease, width, height) {
                 Ok(texture) => texture,
                 Err(lease) => self.create_gl_texture(lease, width, height),
@@ -255,6 +259,18 @@ impl OffloadRenderer {
             self.create_gl_texture(lease, width, height)
         };
         self.picture.set_paintable(Some(&texture));
+        // allow-noisy-log: per-frame wall times, printed only with this module at debug.
+        match finish_wait {
+            Some(wait) => debug!(
+                "Offload frame wall time: render_frame {} us, glFinish {} us",
+                started.elapsed().as_micros(),
+                wait.as_micros()
+            ),
+            None => debug!(
+                "Offload frame wall time: render_frame {} us",
+                started.elapsed().as_micros()
+            ),
+        }
 
         let count = self.frame_count.get() + 1;
         self.frame_count.set(count);
@@ -309,7 +325,7 @@ impl OffloadRenderer {
                 .set_display(&display)
                 .set_width(width as u32)
                 .set_height(height as u32)
-                .set_fourcc(export.fourcc)
+                .set_fourcc(opaque_fourcc(export.fourcc))
                 .set_modifier(export.modifier)
                 .set_n_planes(1)
                 .set_fd(0, export.fd)
@@ -403,6 +419,21 @@ impl OffloadRenderer {
     }
 }
 
+const DRM_FORMAT_ABGR8888: u32 = u32::from_le_bytes(*b"AB24");
+const DRM_FORMAT_XBGR8888: u32 = u32::from_le_bytes(*b"XB24");
+const DRM_FORMAT_ARGB8888: u32 = u32::from_le_bytes(*b"AR24");
+const DRM_FORMAT_XRGB8888: u32 = u32::from_le_bytes(*b"XR24");
+
+/// The same layout with the alpha byte declared unused. mpv renders the frame
+/// opaque, and GTK refuses to offload straight alpha the compositor cannot blend.
+fn opaque_fourcc(fourcc: u32) -> u32 {
+    match fourcc {
+        DRM_FORMAT_ABGR8888 => DRM_FORMAT_XBGR8888,
+        DRM_FORMAT_ARGB8888 => DRM_FORMAT_XRGB8888,
+        other => other,
+    }
+}
+
 fn renderer_has_nvidia_resize_leak(renderer: &str) -> bool {
     renderer.to_ascii_lowercase().contains("nvidia")
 }
@@ -421,6 +452,25 @@ impl Drop for OffloadRenderer {
 
 #[cfg(test)]
 mod tests {
+    /// Expected codes are the `fourcc_code` values of `drm_fourcc.h`.
+    #[test]
+    fn alpha_formats_become_opaque() {
+        for (exported, declared) in [
+            (0x3432_4241, 0x3432_4258), // ABGR8888 -> XBGR8888
+            (0x3432_5241, 0x3432_5258), // ARGB8888 -> XRGB8888
+            (0x3432_4258, 0x3432_4258), // XBGR8888
+            (0x3432_5258, 0x3432_5258), // XRGB8888
+            (0x3231_564E, 0x3231_564E), // NV12
+            (0, 0),
+        ] {
+            assert_eq!(
+                super::opaque_fourcc(exported),
+                declared,
+                "exported 0x{exported:08X}"
+            );
+        }
+    }
+
     #[test]
     fn nvidia_renderer_is_rejected_for_offload() {
         assert!(super::renderer_has_nvidia_resize_leak(
