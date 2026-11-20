@@ -355,7 +355,7 @@ fn admit_client(
         Err(e)
             if matches!(
                 e.raw_os_error(),
-                Some(libc::EMFILE | libc::ENFILE | libc::ENOBUFS)
+                Some(libc::EMFILE | libc::ENFILE | libc::ENOBUFS | libc::ENOMEM)
             ) =>
         {
             return Accepted::Retry;
@@ -581,7 +581,7 @@ mod tests {
     fn exhausted_accept_retries() {
         // errno values from Linux include/uapi/asm-generic/errno-base.h and errno.h.
         let mut clients = Vec::new();
-        for errno in [24, 23, 105] {
+        for errno in [24, 23, 105, 12] {
             let result = Err(std::io::Error::from_raw_os_error(errno));
             assert!(
                 matches!(admit_client(result, &mut clients), Accepted::Retry),
