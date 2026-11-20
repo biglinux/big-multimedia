@@ -193,14 +193,16 @@ apparmor_parser -Q -K crates/big-video-player/resources/apparmor/big-video-playe
 
 The profiles run in complain mode, which logs what they would refuse without
 refusing it. To see what a change misses, load a copy attached to your build and
-read the kernel log while you use the player; `sudo apparmor_parser -R` with the
-same file unloads it:
+read the kernel log while you use the player. The copy keeps the profile's
+name, so it stands in for the installed profile until the last line loads that
+one again:
 
 ```sh
 sed "s|^@{exec_path} = .*|@{exec_path} = $PWD/target/debug/big-video-player|" \
 	crates/big-video-player/resources/apparmor/big-video-player >"$TMPDIR/profile"
 sudo apparmor_parser -r -K "$TMPDIR/profile"
 journalctl -k -f | grep 'profile="big-video-player'
+sudo apparmor_parser -r /etc/apparmor.d/big-video-player
 ```
 
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
