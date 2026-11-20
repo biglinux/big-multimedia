@@ -23,7 +23,8 @@ pub type DbHandle = Arc<Mutex<Connection>>;
 pub const BACKGROUND_LOCK_WAIT: Duration = Duration::from_secs(30);
 
 /// The library connection, waited for at most `limit` and given up as soon as
-/// `cancel` is set. Polls, so never call it on the GUI thread.
+/// `cancel` is set. Polls, backing off from 5 ms to 100 ms between tries so a
+/// long wait wakes rarely; never call it on the GUI thread.
 ///
 /// # Errors
 ///
@@ -36,6 +37,7 @@ pub fn lock_within<'a>(
     cancel: &AtomicBool,
 ) -> crate::Result<MutexGuard<'a, Connection>> {
     let until = Instant::now() + limit;
+    let mut pause = Duration::from_millis(5);
     loop {
         if cancel.load(Ordering::Acquire) {
             return Err(crate::Error::Cancelled);
@@ -50,7 +52,10 @@ pub fn lock_within<'a>(
                     std::io::Error::new(std::io::ErrorKind::WouldBlock, "Library busy").into(),
                 );
             }
-            Err(TryLockError::WouldBlock) => std::thread::sleep(Duration::from_millis(5)),
+            Err(TryLockError::WouldBlock) => {
+                std::thread::sleep(pause);
+                pause = (pause * 2).min(Duration::from_millis(100));
+            }
         }
     }
 }
