@@ -80,7 +80,7 @@ fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId
     let sink = received.clone();
     let object = host
         .register_object(PORTAL_PATH, &interface)
-        .method_call(move |_, _, _, _, method, params, invocation| {
+        .method_call(move |connection, _, _, _, method, params, invocation| {
             let what = if method == "OpenURI" {
                 params.child_value(1).get::<String>().unwrap()
             } else {
@@ -90,10 +90,28 @@ fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId
                 text
             };
             sink.borrow_mut().push((method.to_owned(), what));
-            let request =
-                glib::variant::ObjectPath::try_from("/org/freedesktop/portal/desktop/request/1/t")
-                    .unwrap();
+            let path = format!("/org/freedesktop/portal/desktop/request/1/{method}");
+            let request = glib::variant::ObjectPath::try_from(path.as_str()).unwrap();
             invocation.return_value(Some(&(request,).to_variant()));
+            // Success, cancellation and failure, as org.freedesktop.portal.Request numbers them.
+            let response: u32 = match method {
+                "OpenURI" => 0,
+                "OpenFile" => 1,
+                _ => 2,
+            };
+            let results = glib::VariantDict::new(None).end();
+            connection
+                .emit_signal(
+                    None,
+                    &path,
+                    PORTAL_REQUEST,
+                    "Response",
+                    Some(&glib::Variant::tuple_from_iter([
+                        response.to_variant(),
+                        results,
+                    ])),
+                )
+                .unwrap();
         })
         .build()
         .unwrap();
@@ -110,7 +128,8 @@ fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId
     (received, object, owner)
 }
 
-/// Links go to the portal as URIs, files and folders as descriptors.
+/// Links go to the portal as URIs, files and folders as descriptors; a
+/// cancelled request succeeds and a failed one does not.
 #[test]
 #[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit portal -- --ignored"]
 fn portal_receives_links_and_files() {
@@ -133,7 +152,7 @@ fn portal_receives_links_and_files() {
         .unwrap();
     context
         .block_on(portal_call(PortalTarget::Selected(song)))
-        .unwrap();
+        .unwrap_err();
     assert_eq!(
         *received.borrow(),
         [
