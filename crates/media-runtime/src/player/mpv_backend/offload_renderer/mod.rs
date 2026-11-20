@@ -179,7 +179,10 @@ impl OffloadRenderer {
     /// the way DMA-BUF does.
     fn prepare_slot(&self, index: usize, texture: u32, width: i32, height: i32) -> bool {
         let changed = self.pool.dimensions(index) != (width, height);
+        // Once GDK refused a dma-buf, frames go out as GL textures, which need
+        // no buffer in the compositor's layout.
         let in_gbm_buffer = changed
+            && !self.dmabuf_rejected.get()
             && self.slots.bind(
                 index,
                 texture,
