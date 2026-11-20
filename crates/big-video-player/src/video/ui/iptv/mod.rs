@@ -316,8 +316,8 @@ impl Component for VideoIptvBrowser {
                 if orphaned.len() < total {
                     self.store.borrow_mut().save();
                 }
-                // The providers as they are now: one removed meanwhile no
-                // longer needs the warning.
+                // From the store, not the snapshot protected: a provider
+                // removed during the move needs no warning.
                 self.keyring_status
                     .set_visible(!self.store.borrow().unprotected().is_empty());
                 if !orphaned.is_empty() {
