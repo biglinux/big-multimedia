@@ -55,11 +55,6 @@ pub struct OffloadRenderer {
 impl OffloadRenderer {
     /// `None` when GL context creation fails or GL fns missing.
     pub fn try_new(display: &gdk::Display) -> Option<Self> {
-        if super::is_proprietary_nvidia_session() {
-            info!("Offload disabled before GL setup because the session uses the NVIDIA driver");
-            return None;
-        }
-
         let gl_context = display
             .create_gl_context()
             .map_err(|e| {
@@ -96,12 +91,12 @@ impl OffloadRenderer {
 
         // SAFETY: `gl_context` was made current above.
         let diagnostics = unsafe { current_gl_driver() };
-        if renderer_has_nvidia_resize_leak(&diagnostics.renderer) {
+        if is_proprietary_nvidia(&diagnostics.vendor, &diagnostics.renderer) {
             info!(
-                "Offload disabled for GL renderer '{}' because NVIDIA's \
+                "Offload disabled for GL {} / {} because NVIDIA's proprietary \
                  GdkGLTexture/GraphicsOffload path grows GPU memory during \
                  resize; using GtkGLArea fallback",
-                diagnostics.renderer
+                diagnostics.vendor, diagnostics.renderer
             );
             return None;
         }
@@ -499,8 +494,10 @@ fn opaque_fourcc(fourcc: u32) -> u32 {
     }
 }
 
-fn renderer_has_nvidia_resize_leak(renderer: &str) -> bool {
-    renderer.to_ascii_lowercase().contains("nvidia")
+/// Whether GL runs on NVIDIA's proprietary driver, directly or under zink, from
+/// the context's `GL_VENDOR` and `GL_RENDERER`. An NVIDIA GPU on Mesa (NVK) is not.
+fn is_proprietary_nvidia(vendor: &str, renderer: &str) -> bool {
+    vendor.starts_with("NVIDIA") || renderer.contains("(NVIDIA_PROPRIETARY)")
 }
 
 impl Drop for OffloadRenderer {
@@ -536,24 +533,41 @@ mod tests {
         }
     }
 
+    /// Strings from `eglinfo -B` and the player's log on each driver; zink
+    /// names its Vulkan driver by `VkDriverId`.
     #[test]
-    fn nvidia_renderer_is_rejected_for_offload() {
-        assert!(super::renderer_has_nvidia_resize_leak(
-            "NVIDIA GeForce RTX 3060/PCIe/SSE2"
-        ));
-        assert!(super::renderer_has_nvidia_resize_leak(
-            "NVIDIA Corporation Ada Lovelace"
-        ));
-    }
-
-    #[test]
-    fn non_nvidia_renderers_keep_offload_eligible() {
-        assert!(!super::renderer_has_nvidia_resize_leak(
-            "AMD Radeon Graphics (RADV REMBRANDT)"
-        ));
-        assert!(!super::renderer_has_nvidia_resize_leak(
-            "Mesa Intel(R) UHD Graphics"
-        ));
-        assert!(!super::renderer_has_nvidia_resize_leak("NVK on GSP"));
+    fn proprietary_nvidia_from_gl_strings() {
+        for (vendor, renderer, proprietary) in [
+            (
+                "NVIDIA Corporation",
+                "NVIDIA GeForce GTX 1660 Ti/PCIe/SSE2",
+                true,
+            ),
+            (
+                "Mesa",
+                "zink Vulkan 1.4(NVIDIA GeForce GTX 1660 Ti (NVIDIA_PROPRIETARY))",
+                true,
+            ),
+            (
+                "Mesa",
+                "zink Vulkan 1.4(NVIDIA GeForce GTX 1660 Ti (MESA_NVK))",
+                false,
+            ),
+            ("Intel", "Mesa Intel(R) HD Graphics 630 (KBL GT2)", false),
+            ("Intel", "Mesa Intel(R) Graphics (ARL)", false),
+            (
+                "AMD",
+                "AMD Radeon Graphics (radeonsi, renoir, ACO, DRM 3.61)",
+                false,
+            ),
+            ("Mesa", "llvmpipe (LLVM 23.1.4, 256 bits)", false),
+            ("", "", false),
+        ] {
+            assert_eq!(
+                super::is_proprietary_nvidia(vendor, renderer),
+                proprietary,
+                "{vendor} / {renderer}"
+            );
+        }
     }
 }

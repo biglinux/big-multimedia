@@ -27,6 +27,7 @@ struct GbmFns {
         unsafe extern "C" fn(*mut c_void, u32, u32, u32, *const u64, u32, u32) -> *mut c_void,
     destroy_bo: unsafe extern "C" fn(*mut c_void),
     plane_count: unsafe extern "C" fn(*mut c_void) -> c_int,
+    modifier_plane_count: unsafe extern "C" fn(*mut c_void, u32, u64) -> c_int,
     fd: unsafe extern "C" fn(*mut c_void) -> c_int,
     stride: unsafe extern "C" fn(*mut c_void) -> u32,
     offset: unsafe extern "C" fn(*mut c_void, c_int) -> u32,
@@ -44,6 +45,10 @@ impl GbmFns {
                 create_bo: library_function(library, c"gbm_bo_create_with_modifiers2")?,
                 destroy_bo: library_function(library, c"gbm_bo_destroy")?,
                 plane_count: library_function(library, c"gbm_bo_get_plane_count")?,
+                modifier_plane_count: library_function(
+                    library,
+                    c"gbm_device_get_format_modifier_plane_count",
+                )?,
                 fd: library_function(library, c"gbm_bo_get_fd")?,
                 stride: library_function(library, c"gbm_bo_get_stride")?,
                 offset: library_function(library, c"gbm_bo_get_offset")?,
@@ -79,9 +84,23 @@ impl Allocator {
         })
     }
 
-    /// One single-plane XB24 buffer in one of `layout`'s modifiers.
-    fn allocate(&self, width: u32, height: u32, layout: &Layout) -> Option<DmaBufExport> {
-        let count = u32::try_from(layout.modifiers.len()).ok()?;
+    /// One single-plane XB24 buffer in one of `layout`'s modifiers, or why
+    /// none could be made.
+    fn allocate(&self, width: u32, height: u32, layout: &Layout) -> Result<DmaBufExport, String> {
+        let modifiers = single_plane_modifiers(&layout.modifiers, |modifier| {
+            // SAFETY: a live device; the query reads only its arguments.
+            unsafe {
+                (self.fns.modifier_plane_count)(self.device.as_ptr(), DRM_FORMAT_XBGR8888, modifier)
+            }
+        });
+        if modifiers.is_empty() {
+            return Err(format!(
+                "none of the compositor's modifiers {:X?} lays XB24 out in one plane",
+                layout.modifiers
+            ));
+        }
+        let count = u32::try_from(modifiers.len())
+            .map_err(|_| format!("{} modifiers are more than GBM takes", modifiers.len()))?;
         let usage = if layout.scanout {
             GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT
         } else {
@@ -95,24 +114,45 @@ impl Allocator {
                 width,
                 height,
                 DRM_FORMAT_XBGR8888,
-                layout.modifiers.as_ptr(),
+                modifiers.as_ptr(),
                 count,
                 usage,
             );
             if bo.is_null() {
-                return None;
+                return Err(format!(
+                    "GBM refused the single-plane modifiers {modifiers:X?}"
+                ));
             }
-            let export = ((self.fns.plane_count)(bo) == 1).then(|| DmaBufExport {
+            let planes = (self.fns.plane_count)(bo);
+            let modifier = (self.fns.modifier)(bo);
+            let export = (planes == 1).then(|| DmaBufExport {
                 fd: (self.fns.fd)(bo),
                 fourcc: DRM_FORMAT_XBGR8888,
-                modifier: (self.fns.modifier)(bo),
+                modifier,
                 stride: (self.fns.stride)(bo),
                 offset: (self.fns.offset)(bo, 0),
             });
             (self.fns.destroy_bo)(bo);
-            export.filter(|export| export.fd >= 0)
+            match export {
+                Some(export) if export.fd >= 0 => Ok(export),
+                Some(_) => Err("GBM could not export its buffer as a dma-buf".to_owned()),
+                None => Err(format!(
+                    "GBM made modifier 0x{modifier:016X} in {planes} planes"
+                )),
+            }
         }
     }
+}
+
+/// `modifiers` that lay XB24 out in one plane, in the compositor's order. Given
+/// a compression modifier, GBM picks it and puts the control surface in a
+/// second plane, which a slot's single dma-buf cannot carry.
+fn single_plane_modifiers(modifiers: &[u64], plane_count: impl Fn(u64) -> c_int) -> Vec<u64> {
+    modifiers
+        .iter()
+        .copied()
+        .filter(|&modifier| plane_count(modifier) == 1)
+        .collect()
 }
 
 impl Drop for Allocator {
@@ -170,8 +210,9 @@ impl SlotBuffers {
         else {
             return false;
         };
-        let Some(buffer) = allocator.allocate(buffer_width, buffer_height, &layout) else {
-            return self.describe_fallback("GBM refused the compositor's modifiers");
+        let buffer = match allocator.allocate(buffer_width, buffer_height, &layout) {
+            Ok(buffer) => buffer,
+            Err(reason) => return self.describe_fallback(&reason),
         };
         if !egl_dmabuf::bind_dmabuf_texture(
             egl,
@@ -290,6 +331,58 @@ impl SlotBuffers {
             // allow-noisy-log: once per change of the slots' layout.
             info!("Offload slots: {description}");
             description.clone_into(&mut described);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::single_plane_modifiers;
+    use std::ffi::c_int;
+
+    const LINEAR: u64 = 0;
+    const X_TILED: u64 = 0x0100_0000_0000_0001;
+    const Y_TILED: u64 = 0x0100_0000_0000_0002;
+    const Y_TILED_CCS: u64 = 0x0100_0000_0000_0004;
+    const TILE_4: u64 = 0x0100_0000_0000_0009;
+    const MTL_RC_CCS: u64 = 0x0100_0000_0000_000D;
+    const MTL_RC_CCS_CC: u64 = 0x0100_0000_0000_000F;
+    const INVALID: u64 = 0x00FF_FFFF_FFFF_FFFF;
+
+    /// XB24's planes per modifier as `drm_fourcc.h` defines them (CCS at plane
+    /// 1, clear color at plane 2); -1 where GBM knows no count.
+    fn planes(modifier: u64) -> c_int {
+        match modifier {
+            LINEAR | X_TILED | Y_TILED | TILE_4 => 1,
+            Y_TILED_CCS | MTL_RC_CCS => 2,
+            MTL_RC_CCS_CC => 3,
+            _ => -1,
+        }
+    }
+
+    /// The first two rows are the modifiers Kaby Lake and Arrow Lake windows
+    /// offered for XB24 that GL also renders to.
+    #[test]
+    fn multi_plane_modifiers_dropped() {
+        let cases: [(&[u64], &[u64]); 5] = [
+            (
+                &[LINEAR, X_TILED, Y_TILED, Y_TILED_CCS],
+                &[LINEAR, X_TILED, Y_TILED],
+            ),
+            (
+                &[LINEAR, X_TILED, TILE_4, MTL_RC_CCS, MTL_RC_CCS_CC],
+                &[LINEAR, X_TILED, TILE_4],
+            ),
+            (&[MTL_RC_CCS_CC, Y_TILED, LINEAR], &[Y_TILED, LINEAR]),
+            (&[Y_TILED_CCS, MTL_RC_CCS_CC, INVALID], &[]),
+            (&[], &[]),
+        ];
+        for (offered, kept) in cases {
+            assert_eq!(
+                single_plane_modifiers(offered, planes),
+                kept,
+                "offered {offered:X?}"
+            );
         }
     }
 }
