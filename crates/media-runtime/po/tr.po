@@ -4430,7 +4430,7 @@ msgstr "Daha iyi, daha yavaş"
 
 #: crates/media-runtime/src/audio_effects/mod.rs:227
 msgid "Audio only when a voice is detected"
-msgstr "Yalnızca ses algılandığında sesi ver"
+msgstr "Yalnızca konuşma algılandığında sesi çal"
 
 #: crates/media-runtime/src/audio_effects/mod.rs:233
 msgid "Very sensitive"
@@ -4451,7 +4451,7 @@ msgstr "Çok sıkı"
 #: crates/media-runtime/src/audio_effects/mod.rs:287
 #: crates/media-runtime/src/audio_effects/mod.rs:300
 msgid "Voice detection"
-msgstr "Ses algılama"
+msgstr "Konuşma algılama"
 
 #: crates/media-runtime/src/cast/daemon.rs:110
 msgid "BigNetScreen returned an incompatible reply"
