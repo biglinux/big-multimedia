@@ -470,9 +470,9 @@ impl Settings {
     /// Worker-only save transaction (atomic, not fsynced: the kernel writes it
     /// back in its own time). Snapshot/commit/finalize separates the disk lock
     /// from the fast memory lock. Another process (a second window) may have
-    /// saved meanwhile: the file as it is now keeps every key this process did
-    /// not change, and this process takes those values in memory. A file that
-    /// no longer parses is left as it is.
+    /// saved since this one loaded: the file as found keeps every key this
+    /// process did not change, and this process takes those values in memory.
+    /// A file that does not parse is left untouched.
     pub fn try_flush(&self) -> io::Result<()> {
         let disk_lock = self
             .inner

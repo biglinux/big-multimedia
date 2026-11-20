@@ -57,31 +57,26 @@ fn install_quit_action_registers_application_action() {
     assert!(app.lookup_action("quit").is_some());
 }
 
-/// What a stand-in portal on a private bus receives: the method, the URI or the
+/// What the stand-in portal received: the method and the URI, or the
 /// contents read through the passed descriptor.
-#[test]
-#[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit portal -- --ignored"]
-fn portal_receives_links_and_files() {
+type Received = std::rc::Rc<std::cell::RefCell<Vec<(String, String)>>>;
+
+/// An OpenURI portal on `host`, answering every call and recording it.
+fn stand_in_portal(host: &gio::DBusConnection) -> (Received, gio::RegistrationId, gio::OwnerId) {
     use crate::tray::tests::iterate_until;
     use gio::prelude::UnixFDListExtManual;
-    use std::cell::RefCell;
     use std::io::Read;
-    use std::rc::Rc;
 
     const OPEN_URI_XML: &str = r#"<node><interface name="org.freedesktop.portal.OpenURI">
         <method name="OpenURI"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
         <method name="OpenFile"><arg type="s" direction="in"/><arg type="h" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
         <method name="OpenDirectory"><arg type="s" direction="in"/><arg type="h" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method>
     </interface></node>"#;
-    let context = glib::MainContext::default();
-    let host = context
-        .block_on(crate::mpris::private_session_bus())
-        .unwrap();
     let interface = gio::DBusNodeInfo::for_xml(OPEN_URI_XML)
         .unwrap()
         .lookup_interface(PORTAL_OPEN_URI)
         .unwrap();
-    let received = Rc::new(RefCell::new(Vec::<(String, String)>::new()));
+    let received = Received::default();
     let sink = received.clone();
     let object = host
         .register_object(PORTAL_PATH, &interface)
@@ -102,16 +97,28 @@ fn portal_receives_links_and_files() {
         })
         .build()
         .unwrap();
-    let owned = Rc::new(std::cell::Cell::new(false));
+    let owned = std::rc::Rc::new(std::cell::Cell::new(false));
     let flag = owned.clone();
     let owner = gio::bus_own_name_on_connection(
-        &host,
+        host,
         PORTAL_NAME,
         gio::BusNameOwnerFlags::NONE,
         move |_, _| flag.set(true),
         |_, _| {},
     );
     iterate_until(|| owned.get());
+    (received, object, owner)
+}
+
+/// Links go to the portal as URIs, files and folders as descriptors.
+#[test]
+#[ignore = "needs its own session bus: gui-run --services none -- cargo test -p big-app-kit portal -- --ignored"]
+fn portal_receives_links_and_files() {
+    let context = glib::MainContext::default();
+    let host = context
+        .block_on(crate::mpris::private_session_bus())
+        .unwrap();
+    let (received, object, owner) = stand_in_portal(&host);
 
     let dir = tempfile::tempdir().unwrap();
     let song = dir.path().join("song.txt");

@@ -14,6 +14,7 @@
 //!   policy and size limits.
 //! - [`interface_addresses`]: the IPv4 addresses of the network interfaces.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
+//! - [`poll`]: waiting for file descriptors to turn ready.
 //! - [`random`]: unguessable ids from the kernel's random source.
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
 //!   forward-migration envelope.

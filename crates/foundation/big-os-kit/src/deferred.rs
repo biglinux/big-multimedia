@@ -45,7 +45,7 @@ struct State {
 /// Combines this process's change with another process's save, for a
 /// document two windows may edit: `(base, ours, theirs)`, where `base` is what
 /// this process's state derives from, `ours` the state to save and `theirs`
-/// the file as it is now (`None`: no file). `None` refuses the save.
+/// the file as the save finds it (`None`: no file). `None` refuses the save.
 pub type Merge = fn(Option<&[u8]>, &[u8], Option<&[u8]>) -> Option<Vec<u8>>;
 
 /// Shared persistence owner. Workers retain it until completion, independent of widgets.
