@@ -121,6 +121,7 @@ pub fn run() -> gtk::glib::ExitCode {
     use relm4::{Component, ComponentController};
 
     let app = video::app::Application::new();
+    let maximized = std::env::args().any(|a| a == "--maximized");
     let shell: std::rc::Rc<
         std::cell::RefCell<Option<relm4::Controller<video::ui::video_shell::VideoShell>>>,
     > = std::rc::Rc::new(std::cell::RefCell::new(None));
@@ -136,6 +137,9 @@ pub fn run() -> gtk::glib::ExitCode {
         let window = build_player_window(app, controller.widget());
         big_media_runtime::app::log_active_renderer_once(&window);
         big_media_runtime::app::ignore_repeated_pointer_motion(&window);
+        if maximized {
+            window.maximize();
+        }
         window.present();
         *shell_for_activate.borrow_mut() = Some(controller);
     });

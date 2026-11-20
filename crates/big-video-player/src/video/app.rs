@@ -3,6 +3,7 @@
 //! broker), startup (decoration-icon strip, color-scheme, actions, accels).
 //! `--new-window` (the desktop file's New Window action) sets `NON_UNIQUE`,
 //! so the player opens its own window instead of activating the running one.
+//! `--maximized` maps the window this process builds maximized.
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -126,6 +127,16 @@ impl Application {
             glib::OptionFlags::NONE,
             glib::OptionArg::None,
             &i18n("Open a separate player window instead of using the running one"),
+            None,
+        );
+        // Read from argv by `crate::run`; a launch forwarded to the running
+        // player leaves its window as it is.
+        app.add_main_option(
+            "maximized",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::None,
+            &i18n("Open the player window maximized"),
             None,
         );
         app
