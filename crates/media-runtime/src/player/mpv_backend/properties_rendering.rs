@@ -141,7 +141,7 @@ impl MpvBackend {
         // SAFETY: the caller has the creation GL context current.
         let driver = unsafe { super::fast_render::current_gl_driver() };
         let interop = hwdec_interop_for(&driver.vendor, &driver.renderer);
-        // allow-noisy-log: one line per render context, naming the driver bug reports need.
+        // One line per render context: the driver a bug report needs.
         info!(
             "video: GL {} / {}, hwdec interop {interop}",
             driver.vendor, driver.renderer

@@ -86,7 +86,6 @@ unsafe fn extension_function<F: Copy>(name: &CStr) -> Option<F> {
     // SAFETY: forwarded from the caller.
     let function = unsafe { gl_function(name) };
     if function.is_none() {
-        // allow-noisy-log: names the extension that keeps DMA-BUF export off.
         debug!("EGL DMA-BUF: missing extension function: {name:?}");
     }
     function

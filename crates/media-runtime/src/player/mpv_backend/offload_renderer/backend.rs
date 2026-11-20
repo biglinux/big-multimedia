@@ -16,7 +16,6 @@ impl VideoBackend {
     /// Tries offload first (best on Wayland, harmless on X11), falls back to GLArea.
     pub fn detect(display: &gdk::Display) -> Self {
         if !Self::graphics_offload_requested() {
-            // allow-noisy-log: one line per video surface, naming its backend.
             info!("GraphicsOffload video backend not requested");
             return Self::GlArea;
         }

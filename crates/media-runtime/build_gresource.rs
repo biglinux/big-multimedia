@@ -19,7 +19,6 @@ fn compile_gresource(
 
     match status {
         Ok(s) if s.success() => {
-            // allow-noisy-log: a cargo build directive, not log output.
             println!("cargo::rerun-if-changed={source_dir}/");
             Ok(())
         }

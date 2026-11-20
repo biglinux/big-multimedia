@@ -113,7 +113,7 @@ pub fn log_active_renderer_once(window: &impl glib::object::IsA<gtk::Window>) {
             .map_or_else(|| "unknown".to_owned(), |r| r.type_().name().to_string());
         let pinned =
             std::env::var("GSK_RENDERER").unwrap_or_else(|_| "unset (GTK default)".to_owned());
-        // allow-noisy-log: once at startup, the renderer every drawing bug report needs.
+        // Once at startup: the renderer every drawing bug report needs.
         log::info!("GSK renderer in use: {renderer} (GSK_RENDERER={pinned})");
     });
 }

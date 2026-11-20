@@ -163,8 +163,8 @@ impl MpvClient {
     {
         match self.set_property(name, value) {
             Ok(()) => {}
-            // allow-noisy-log: expected at teardown, or for a property that
-            // exists only while a file plays.
+            // Expected at teardown, or for a property that exists only while a
+            // file plays.
             Err(
                 error @ (MpvError::DestroyedHandle
                 | MpvError::Raw(mpv_sys::mpv_error_MPV_ERROR_PROPERTY_UNAVAILABLE)),
