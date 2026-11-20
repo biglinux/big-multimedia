@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:18-0300\n"
+"POT-Creation-Date: 2026-11-19 21:19-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1333,7 +1333,7 @@ msgstr "{} z 5 hvězdiček"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:134
 #: crates/big-audio-player/src/audio/ui/track_list.rs:94
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:349
 msgid "Rating"
 msgstr "Hodnocení"
 
@@ -1367,7 +1367,7 @@ msgid "Move these files to the trash?"
 msgstr "Přesunout tyto soubory do koše?"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:225
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:353
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Saved playlists"
 msgstr "Uložené seznamy skladeb"
 
