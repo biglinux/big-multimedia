@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:58-0300\n"
+"POT-Creation-Date: 2026-11-20 12:30-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2359,11 +2359,11 @@ msgstr "Pesquisar canais"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
-"Algumas palavras-passe de fornecedores continuam num ficheiro sem "
-"encriptação porque não foi possível aceder ao seu chaveiro. Desbloqueie o "
+"Algumas palavras-passe de fornecedores só são mantidas até o reprodutor ser "
+"fechado porque não foi possível aceder ao seu chaveiro. Desbloqueie o "
 "chaveiro e depois recarregue os canais."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
@@ -4287,8 +4287,10 @@ msgstr[1] "{} ficheiros movidos para o lixo"
 #, rust-format
 msgid "{} file could not be restored. Restore it from the trash."
 msgid_plural "{} files could not be restored. Restore them from the trash."
-msgstr[0] "Não foi possível restaurar {} ficheiro. Restaure-o a partir do lixo."
-msgstr[1] "Não foi possível restaurar {} ficheiros. Restaure-os a partir do lixo."
+msgstr[0] ""
+"Não foi possível restaurar {} ficheiro. Restaure-o a partir do lixo."
+msgstr[1] ""
+"Não foi possível restaurar {} ficheiros. Restaure-os a partir do lixo."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format

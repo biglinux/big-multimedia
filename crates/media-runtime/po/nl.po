@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:58-0300\n"
+"POT-Creation-Date: 2026-11-20 12:30-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2357,12 +2357,12 @@ msgstr "Kanalen zoeken"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
-"Sommige wachtwoorden van aanbieders staan nog in een onversleuteld bestand, "
-"omdat je sleutelbos niet bereikbaar was. Ontgrendel je sleutelbos en laad de "
-"kanalen daarna opnieuw."
+"Sommige wachtwoorden van aanbieders worden alleen bewaard tot de speler "
+"wordt gesloten, omdat je sleutelbos niet bereikbaar was. Ontgrendel je "
+"sleutelbos en laad de kanalen daarna opnieuw."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:454
@@ -4283,8 +4283,11 @@ msgstr[1] "{} bestanden naar de prullenbak verplaatst"
 #, rust-format
 msgid "{} file could not be restored. Restore it from the trash."
 msgid_plural "{} files could not be restored. Restore them from the trash."
-msgstr[0] "{} bestand kon niet worden teruggezet. Zet het terug vanuit de prullenbak."
-msgstr[1] "{} bestanden konden niet worden teruggezet. Zet ze terug vanuit de prullenbak."
+msgstr[0] ""
+"{} bestand kon niet worden teruggezet. Zet het terug vanuit de prullenbak."
+msgstr[1] ""
+"{} bestanden konden niet worden teruggezet. Zet ze terug vanuit de "
+"prullenbak."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format

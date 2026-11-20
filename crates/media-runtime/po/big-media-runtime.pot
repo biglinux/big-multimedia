@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-20 12:12-0300\n"
+"POT-Creation-Date: 2026-11-20 14:29-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2270,8 +2270,8 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257

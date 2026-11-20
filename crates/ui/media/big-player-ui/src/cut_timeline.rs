@@ -3,6 +3,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use big_media_components::playback::cut_timeline::CutTimeline;
 use gtk::prelude::*;
 
 const EDGE_GRAB_PX: f64 = 8.0;
@@ -95,9 +96,10 @@ pub fn install_cut_timeline_draw(
     });
 }
 
-/// Wire click/drag interaction for a cut timeline.
+/// Wire click/drag interaction for a cut timeline, and the position
+/// assistive technology sets on it.
 pub fn wire_cut_timeline_interaction(
-    area: &gtk::DrawingArea,
+    area: &CutTimeline,
     cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
     duration_secs: &Rc<Cell<f64>>,
     on_seek_fraction: impl Fn(f64) + 'static,
@@ -106,6 +108,13 @@ pub fn wire_cut_timeline_interaction(
     let on_seek_fraction: Rc<dyn Fn(f64)> = Rc::new(on_seek_fraction);
     let on_segment_adjusted: Rc<dyn Fn(CutSegmentAdjustment)> = Rc::new(on_segment_adjusted);
     let drag_state: Rc<Cell<CutDrag>> = Rc::new(Cell::new(CutDrag::None));
+    {
+        let duration_secs = duration_secs.clone();
+        let on_seek_fraction = on_seek_fraction.clone();
+        area.connect_seek_requested(move |secs| {
+            on_seek_fraction((secs / duration_secs.get().max(0.001)).clamp(0.0, 1.0));
+        });
+    }
 
     let click = gtk::GestureClick::new();
     click.set_button(1);

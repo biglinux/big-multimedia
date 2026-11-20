@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-19 21:58-0300\n"
+"POT-Creation-Date: 2026-11-20 12:30-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2387,12 +2387,12 @@ msgstr "Kanäle suchen"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:204
 msgid ""
-"Some provider passwords are still in a plain file because your keyring could "
-"not be reached. Unlock your keyring, then reload the channels."
+"Some provider passwords are kept only until the player closes because your "
+"keyring could not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
-"Einige Anbieterpasswörter liegen noch in einer unverschlüsselten Datei, weil "
-"Ihr Schlüsselbund nicht erreichbar war. Entsperren Sie Ihren Schlüsselbund "
-"und laden Sie dann die Kanäle neu."
+"Einige Anbieterpasswörter bleiben nur erhalten, bis der Player geschlossen "
+"wird, weil Ihr Schlüsselbund nicht erreichbar war. Entsperren Sie Ihren "
+"Schlüsselbund und laden Sie dann die Kanäle neu."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:454
@@ -4332,8 +4332,12 @@ msgstr[1] "{} Dateien in den Papierkorb verschoben"
 #, rust-format
 msgid "{} file could not be restored. Restore it from the trash."
 msgid_plural "{} files could not be restored. Restore them from the trash."
-msgstr[0] "{} Datei konnte nicht wiederhergestellt werden. Stellen Sie sie aus dem Papierkorb wieder her."
-msgstr[1] "{} Dateien konnten nicht wiederhergestellt werden. Stellen Sie sie aus dem Papierkorb wieder her."
+msgstr[0] ""
+"{} Datei konnte nicht wiederhergestellt werden. Stellen Sie sie aus dem "
+"Papierkorb wieder her."
+msgstr[1] ""
+"{} Dateien konnten nicht wiederhergestellt werden. Stellen Sie sie aus dem "
+"Papierkorb wieder her."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
