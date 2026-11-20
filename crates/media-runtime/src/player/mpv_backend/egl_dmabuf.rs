@@ -44,6 +44,9 @@ const EGL_DMA_BUF_PLANE0_PITCH_EXT: EglInteger = 0x3274;
 const EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT: EglInteger = 0x3443;
 const EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT: EglInteger = 0x3444;
 const GL_TEXTURE_2D: u32 = 0x0DE1;
+const GL_NO_ERROR: u32 = 0;
+/// GL keeps one flag per error kind, fewer than ten.
+const MAX_GL_ERRORS: usize = 16;
 /// Drivers list a few dozen modifiers per format.
 const MAX_MODIFIERS: EglInteger = 256;
 // linux/dma-buf.h: _IOW('b', 3, struct dma_buf_import_sync_file).
@@ -433,7 +436,8 @@ pub(crate) fn renderable_modifiers(
 }
 
 /// Make `texture` the dma-buf described by `export`, `width` by `height`.
-/// The texture is not changed when EGL refuses the buffer (`false`).
+/// `false` when EGL refuses the buffer, leaving the texture unchanged, or GL
+/// refuses to bind it, leaving the texture without storage.
 pub(crate) fn bind_dmabuf_texture(
     egl: &EglDmaBufFns,
     import: &ImportFns,
@@ -442,6 +446,7 @@ pub(crate) fn bind_dmabuf_texture(
     height: i32,
     texture: u32,
     bind_texture: unsafe extern "C" fn(u32, u32),
+    get_error: unsafe extern "C" fn() -> u32,
 ) -> bool {
     let attribs = [
         EGL_WIDTH,
@@ -476,12 +481,20 @@ pub(crate) fn bind_dmabuf_texture(
         if image == EGL_NO_IMAGE {
             return false;
         }
+        // Errors queue up until read: clear older ones so the check below
+        // sees only this binding's.
+        for _ in 0..MAX_GL_ERRORS {
+            if get_error() == GL_NO_ERROR {
+                break;
+            }
+        }
         bind_texture(GL_TEXTURE_2D, texture);
         (import.image_target_texture)(GL_TEXTURE_2D, image);
+        let bound = get_error() == GL_NO_ERROR;
         bind_texture(GL_TEXTURE_2D, 0);
         (egl.destroy_image)(dpy, image);
+        bound
     }
-    true
 }
 
 /// Call with a current EGL/GL context.

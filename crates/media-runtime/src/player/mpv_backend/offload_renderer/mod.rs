@@ -190,7 +190,7 @@ impl OffloadRenderer {
                 height,
                 &self.picture,
                 self.egl.as_ref(),
-                self.gl.bind_texture,
+                &self.gl,
             );
         if changed {
             self.specify_texture(texture, width, height, !in_gbm_buffer);

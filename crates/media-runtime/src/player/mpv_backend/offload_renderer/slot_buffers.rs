@@ -6,6 +6,7 @@
 use super::super::dmabuf_feedback::{self, Layout};
 use super::super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns};
 use super::super::gl_proc_address::{SystemLibrary, library_function};
+use super::gl_fns::GlFns;
 use super::texture_pool::SLOT_COUNT;
 use gtk::prelude::*;
 use log::{debug, info};
@@ -145,7 +146,7 @@ impl SlotBuffers {
         height: i32,
         picture: &gtk::Picture,
         egl: Option<&EglDmaBufFns>,
-        bind_texture: unsafe extern "C" fn(u32, u32),
+        gl: &GlFns,
     ) -> bool {
         self.release(index);
         if self.disabled.get() {
@@ -177,8 +178,11 @@ impl SlotBuffers {
             width,
             height,
             texture,
-            bind_texture,
+            gl.bind_texture,
+            gl.get_error,
         ) {
+            // A driver that refuses one GBM buffer refuses the next.
+            self.disabled.set(true);
             return self.describe_fallback("EGL refused the GBM buffer");
         }
         self.describe(&format!(
