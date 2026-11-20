@@ -79,7 +79,7 @@ pub struct WriteLock {
 }
 impl WriteLock {
     /// Acquire a lock next to the target; WouldBlock asks the caller to retry
-    /// later, not to freeze GTK. Non-Unix targets fail before modifying state.
+    /// later, not to freeze GTK.
     pub fn try_acquire(target: &Path) -> io::Result<Self> {
         let mut name = target
             .file_name()
@@ -350,11 +350,12 @@ fn place_no_replace(
         Err(error) if matches!(error.raw_os_error(), Some(libc::EINVAL | libc::ENOSYS)) => {}
         result => return result,
     }
+    let mut input = File::open(stage)?;
     let mut output = OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(target)?;
-    let copied = io::copy(&mut File::open(stage)?, &mut output).and_then(|_| output.sync_all());
+    let copied = io::copy(&mut input, &mut output).and_then(|_| output.sync_all());
     if copied.is_err() {
         // create_new made this file, so it holds only our partial copy.
         let _ = fs::remove_file(target);
@@ -457,6 +458,15 @@ mod tests {
     }
     fn rename_unsupported(_: &Path, _: &Path) -> io::Result<()> {
         Err(io::Error::from_raw_os_error(libc::EINVAL))
+    }
+    #[test]
+    fn unreadable_stage_leaves_no_target() {
+        let dir = directory();
+        let target = dir.join("out.png");
+        let missing = dir.join("stage");
+        place_no_replace(&missing, &target, refuse_link, rename_unsupported).unwrap_err();
+        assert!(!target.exists());
+        fs::remove_dir_all(dir).unwrap();
     }
     /// Filesystems without hard links (FAT, exFAT, some FUSE and SMB mounts)
     /// fall back to a no-replace rename, then to an exclusive create and copy.
