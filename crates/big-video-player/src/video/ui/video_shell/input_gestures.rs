@@ -26,6 +26,8 @@ pub(super) fn wire_osd_focus_out(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>
 /// absorbs a resting hand's jitter.
 const OSD_MOTION_EPSILON_PX: f64 = 2.0;
 
+/// Pointer motion shows the OSD and restarts its fade; the pointer resting
+/// anywhere, the OSD included, lets it fade.
 pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>) {
     let motion = gtk::EventControllerMotion::new();
     let last_pos = Rc::new(Cell::new((f64::NAN, f64::NAN)));
@@ -33,8 +35,7 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
         let osd = Rc::downgrade(osd);
         let last_pos = last_pos.clone();
         motion.connect_motion(move |_, x, y| {
-            let (lx, ly) = last_pos.get();
-            if (x - lx).abs() < OSD_MOTION_EPSILON_PX && (y - ly).abs() < OSD_MOTION_EPSILON_PX {
+            if !pointer_moved(last_pos.get(), x, y) {
                 return;
             }
             last_pos.set((x, y));
@@ -45,17 +46,95 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
     }
     {
         let osd = Rc::downgrade(osd);
-        // Arm the idle timer instead of hiding at once: leaving the video (or the
-        // pointer moving onto a just-opened popover, which reads as a leave) must
-        // fade the OSD after the same delay, and the delayed hide
-        // re-checks the guards, so an open header menu keeps the OSD (and itself).
-        motion.connect_leave(move |_| {
-            if let Some(osd) = osd.upgrade() {
+        // Crossings come and go under a resting pointer as hover popovers open
+        // over it, so only a real move counts. GDK forgets the buttons on
+        // enter: a release the compositor kept while it moved the window
+        // never reaches the overlay.
+        motion.connect_enter(move |_, x, y| {
+            let Some(osd) = osd.upgrade() else {
+                return;
+            };
+            let was_held = osd.button_held.replace(false);
+            if was_held || pointer_moved(last_pos.get(), x, y) {
+                last_pos.set((x, y));
                 osd.show_and_schedule_hide();
             }
         });
     }
     main_overlay.add_controller(motion);
+}
+
+/// The OSD in use: a button held over the overlay keeps it up, and keys
+/// pressed inside the OSD (`osd_areas`) restart its fade.
+pub(super) fn wire_osd_in_use(
+    main_overlay: &gtk::Overlay,
+    osd_areas: &[gtk::Widget],
+    osd: &Rc<OsdState>,
+) {
+    // Watches presses and releases on everything under the overlay, the OSD's
+    // popovers included, without taking them from their targets.
+    let buttons = gtk::EventControllerLegacy::new();
+    buttons.set_propagation_phase(gtk::PropagationPhase::Capture);
+    {
+        let osd = Rc::downgrade(osd);
+        buttons.connect_event(move |_, event| {
+            if let Some(osd) = osd.upgrade() {
+                let was_held = osd.button_held.get();
+                let held = button_held_after(was_held, event.event_type(), event.modifier_state());
+                osd.button_held.set(held);
+                if held != was_held {
+                    osd.show_and_schedule_hide();
+                }
+            }
+            glib::Propagation::Proceed
+        });
+    }
+    main_overlay.add_controller(buttons);
+
+    for area in osd_areas {
+        let keys = gtk::EventControllerKey::new();
+        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let osd = Rc::downgrade(osd);
+        keys.connect_key_pressed(move |_, _, _, _| {
+            if let Some(osd) = osd.upgrade() {
+                osd.show_and_schedule_hide();
+            }
+            glib::Propagation::Proceed
+        });
+        area.add_controller(keys);
+    }
+}
+
+/// Whether the pointer at (`x`, `y`) left the [`OSD_MOTION_EPSILON_PX`] square
+/// around `last`; a `NaN` `last` (no motion yet) never holds it.
+fn pointer_moved(last: (f64, f64), x: f64, y: f64) -> bool {
+    let (last_x, last_y) = last;
+    let resting =
+        (x - last_x).abs() < OSD_MOTION_EPSILON_PX && (y - last_y).abs() < OSD_MOTION_EPSILON_PX;
+    !resting
+}
+
+/// Whether a pointer button or touch is down after `event`. A motion carries
+/// the buttons down at that moment, which also clears a release that never
+/// arrived.
+fn button_held_after(
+    held: bool,
+    event: gtk::gdk::EventType,
+    state: gtk::gdk::ModifierType,
+) -> bool {
+    use gtk::gdk::{EventType, ModifierType};
+    match event {
+        EventType::ButtonPress | EventType::TouchBegin => true,
+        EventType::ButtonRelease | EventType::TouchEnd | EventType::TouchCancel => false,
+        EventType::MotionNotify => state.intersects(
+            ModifierType::BUTTON1_MASK
+                | ModifierType::BUTTON2_MASK
+                | ModifierType::BUTTON3_MASK
+                | ModifierType::BUTTON4_MASK
+                | ModifierType::BUTTON5_MASK,
+        ),
+        _ => held,
+    }
 }
 
 /// Wire the pointer gestures over the video surface: button-1 double-click toggles fullscreen, right-click pops
@@ -210,4 +289,72 @@ pub(super) fn wire_video_input(
         });
     }
     main_overlay.add_controller(drag);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{button_held_after, pointer_moved};
+    use gtk::gdk::{EventType, ModifierType};
+
+    #[test]
+    fn resting_pointer_stays_idle() {
+        // A playing GLArea re-emits motion at the same position every frame.
+        assert!(!pointer_moved((400.0, 300.0), 400.0, 300.0));
+        assert!(!pointer_moved((400.0, 300.0), 401.5, 298.5), "hand jitter");
+        assert!(pointer_moved((400.0, 300.0), 402.0, 300.0));
+        assert!(pointer_moved((400.0, 300.0), 400.0, 290.0));
+        assert!(
+            pointer_moved((f64::NAN, f64::NAN), 0.0, 0.0),
+            "first motion"
+        );
+    }
+
+    #[test]
+    fn seek_drag_holds_button() {
+        let pressed = button_held_after(false, EventType::ButtonPress, ModifierType::empty());
+        assert!(pressed);
+        let dragging =
+            button_held_after(pressed, EventType::MotionNotify, ModifierType::BUTTON1_MASK);
+        assert!(dragging);
+        assert!(button_held_after(
+            dragging,
+            EventType::KeyPress,
+            ModifierType::empty()
+        ));
+        assert!(!button_held_after(
+            dragging,
+            EventType::ButtonRelease,
+            ModifierType::BUTTON1_MASK
+        ));
+    }
+
+    #[test]
+    fn touch_drag_holds_button() {
+        let touching = button_held_after(false, EventType::TouchBegin, ModifierType::empty());
+        assert!(touching);
+        assert!(button_held_after(
+            touching,
+            EventType::TouchUpdate,
+            ModifierType::empty()
+        ));
+        assert!(!button_held_after(
+            touching,
+            EventType::TouchEnd,
+            ModifierType::empty()
+        ));
+        assert!(!button_held_after(
+            touching,
+            EventType::TouchCancel,
+            ModifierType::empty()
+        ));
+    }
+
+    #[test]
+    fn lost_release_clears_on_motion() {
+        assert!(!button_held_after(
+            true,
+            EventType::MotionNotify,
+            ModifierType::SHIFT_MASK
+        ));
+    }
 }

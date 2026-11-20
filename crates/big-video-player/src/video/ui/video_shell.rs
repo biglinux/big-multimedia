@@ -49,10 +49,6 @@ const OSD_HIDE_DELAY_MS: u64 = 2500;
 /// move.
 const DRAG_THRESHOLD: f64 = 8.0;
 
-/// OSD reveal/auto-hide state machine, shared (interior-mutable) between the
-/// motion controllers and `update()`. Reveals the header + controls on pointer
-/// motion over the video, hides them after [`OSD_HIDE_DELAY_MS`] of inactivity
-/// or on pointer-leave.
 mod actions;
 mod adjustments;
 mod component;

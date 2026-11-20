@@ -21,8 +21,12 @@ pub(super) struct OsdState {
     /// (scrub / play-pause) stays reachable while marking cuts. Shared (`Rc`)
     /// with the shell model and the trim key controller (one source of truth).
     pub(super) trim_active: Rc<Cell<bool>>,
-    /// Header/controls menu popovers, so [`Self::hide_on_focus_out`] can tell a
-    /// real alt-tab from the pseudo focus-out a menu's own grab triggers.
+    /// A pointer button or touch is down over the video or the OSD: a press,
+    /// a seek-bar drag.
+    pub(super) button_held: Cell<bool>,
+    /// Header/controls menus: one open keeps the OSD up, and lets
+    /// [`Self::hide_on_focus_out`] tell a real alt-tab from the pseudo
+    /// focus-out a menu's own grab triggers.
     menu_popovers: Vec<gtk::Popover>,
 }
 
@@ -32,7 +36,7 @@ impl OsdState {
         header_revealer: &gtk::Revealer,
         controls_revealer: &gtk::Revealer,
         header_popovers: Vec<gtk::Popover>,
-        controls_popovers: Vec<gtk::Popover>,
+        controls_menu_popovers: Vec<gtk::Popover>,
         is_welcome_visible: bool,
         trim_active: Rc<Cell<bool>>,
     ) -> Rc<Self> {
@@ -43,11 +47,8 @@ impl OsdState {
         immersion.register_revealer(controls_revealer);
         let menu_popovers: Vec<gtk::Popover> = header_popovers
             .into_iter()
-            .chain(controls_popovers)
+            .chain(controls_menu_popovers)
             .collect();
-        for popover in &menu_popovers {
-            immersion.register_popover_hide_guard(popover);
-        }
 
         let state = Rc::new(Self {
             header_revealer: header_revealer.clone(),
@@ -56,6 +57,7 @@ impl OsdState {
             is_paused: Cell::new(false),
             is_welcome_visible: Cell::new(is_welcome_visible),
             trim_active,
+            button_held: Cell::new(false),
             menu_popovers,
         });
         let state_weak = Rc::downgrade(&state);
@@ -64,6 +66,16 @@ impl OsdState {
                 .upgrade()
                 .is_some_and(|state| state.should_keep_visible())
         });
+        // A menu was just used: the fade starts from its closing, as the
+        // click that picked an item came while the menu still pinned the OSD.
+        for popover in &state.menu_popovers {
+            let state = Rc::downgrade(&state);
+            popover.connect_closed(move |_| {
+                if let Some(state) = state.upgrade() {
+                    state.show_and_schedule_hide();
+                }
+            });
+        }
         state
     }
 
@@ -85,14 +97,10 @@ impl OsdState {
         // reports as a focus-out. Don't tear down the OSD then: that would also
         // hide the menu itself (a child of the header revealer). A real alt-tab
         // happens with every menu closed, so this only skips the false positive.
-        let any_menu_open = self
-            .menu_popovers
-            .iter()
-            .any(gtk::prelude::WidgetExt::is_visible);
         if !focus_out_should_hide(
             self.is_welcome_visible.get(),
             self.trim_active.get(),
-            any_menu_open,
+            self.any_menu_open(),
         ) {
             return;
         }
@@ -106,11 +114,19 @@ impl OsdState {
         self.immersion.show_and_schedule_hide();
     }
 
+    fn any_menu_open(&self) -> bool {
+        self.menu_popovers
+            .iter()
+            .any(gtk::prelude::WidgetExt::is_visible)
+    }
+
     fn should_keep_visible(&self) -> bool {
         should_keep_osd_visible(
             self.is_welcome_visible.get(),
             self.is_paused.get(),
             self.trim_active.get(),
+            self.any_menu_open(),
+            self.button_held.get(),
         )
     }
 }
@@ -123,9 +139,16 @@ fn focus_out_should_hide(welcome: bool, trim: bool, any_menu_open: bool) -> bool
 }
 
 /// Pure: keep the OSD shown while the welcome screen is up, playback is paused,
-/// or trim mode is active (the idle-hide timer is never armed while true).
-fn should_keep_osd_visible(welcome: bool, paused: bool, trim: bool) -> bool {
-    welcome || paused || trim
+/// trim mode is active, a menu is open or a button is held (the idle-hide
+/// timer is never armed while true). Where the pointer rests is not an input.
+fn should_keep_osd_visible(
+    welcome: bool,
+    paused: bool,
+    trim: bool,
+    menu_open: bool,
+    button_held: bool,
+) -> bool {
+    welcome || paused || trim || menu_open || button_held
 }
 
 /// mpv scales the subtitle margin to the shown video's height: one unit is
@@ -527,10 +550,20 @@ mod tests {
 
     #[test]
     fn osd_pinned_by_welcome_pause_trim() {
-        assert!(!should_keep_osd_visible(false, false, false));
-        assert!(should_keep_osd_visible(true, false, false));
-        assert!(should_keep_osd_visible(false, true, false));
-        assert!(should_keep_osd_visible(false, false, true));
+        assert!(!should_keep_osd_visible(false, false, false, false, false));
+        assert!(should_keep_osd_visible(true, false, false, false, false));
+        assert!(should_keep_osd_visible(false, true, false, false, false));
+        assert!(should_keep_osd_visible(false, false, true, false, false));
+    }
+
+    #[test]
+    fn open_menu_keeps_osd() {
+        assert!(should_keep_osd_visible(false, false, false, true, false));
+    }
+
+    #[test]
+    fn held_button_keeps_osd() {
+        assert!(should_keep_osd_visible(false, false, false, false, true));
     }
 
     #[test]

@@ -1,6 +1,8 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
 use super::input::SHELL_INPUT;
-use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
+use super::input_gestures::{
+    wire_osd_autohide, wire_osd_focus_out, wire_osd_in_use, wire_video_input,
+};
 use super::render::{
     FastRenderContextSlot, VideoRealizeOptions, VideoStart, wire_close, wire_realize,
 };
@@ -365,9 +367,10 @@ impl Component for VideoShell {
         // `@player_icon_color`), so both light and dark themes stay readable.
         media_stack.install_chrome(&chrome, BigMediaChromePlacement::Header);
 
-        // OSD auto-hide: reveal on pointer motion over the video, hide after
-        // `OSD_HIDE_DELAY_MS` of inactivity or on pointer-leave. The welcome screen is up at init, so the OSD
-        // never auto-hides until the first file loads.
+        // OSD auto-hide: reveal on pointer motion over the window, hide after
+        // `OSD_HIDE_DELAY_MS` without it, wherever the pointer rests. The welcome
+        // screen is up at init, so the OSD never auto-hides until the first file
+        // loads.
         let trim_active = Rc::new(Cell::new(false));
         // The TV menu too: its popover taking the focus is not the window
         // losing it, and the header must not fold away from under it.
@@ -385,7 +388,7 @@ impl Component for VideoShell {
             chrome.header_revealer(),
             chrome.bottom_revealer(),
             header_popovers,
-            controls.model().popovers(),
+            controls.model().menu_popovers().into(),
             !opening_files,
             trim_active.clone(),
         );
@@ -398,6 +401,7 @@ impl Component for VideoShell {
             super::menus::keep_focus_off_clicks(area);
         }
         wire_osd_autohide(&main_overlay, &osd);
+        wire_osd_in_use(&main_overlay, &osd_areas, &osd);
         let subtitle_lift =
             SubtitleLift::wire(&main_overlay, chrome.bottom_revealer(), &mpv, &settings);
         // The settings panel sits over the video, clear of header and controls,
@@ -413,6 +417,17 @@ impl Component for VideoShell {
         main_overlay.add_overlay(&panel.revealer);
         main_overlay.add_overlay(&playlist_panel.revealer);
         for revealer in [&panel.revealer, &playlist_panel.revealer] {
+            // The fade starts from a panel's closing, as from a menu's.
+            revealer.connect_reveal_child_notify({
+                let osd = Rc::downgrade(&osd);
+                move |revealer| {
+                    if !revealer.reveals_child()
+                        && let Some(osd) = osd.upgrade()
+                    {
+                        osd.show_and_schedule_hide();
+                    }
+                }
+            });
             let revealer = revealer.downgrade();
             osd.keep_shown_while(move || revealer.upgrade().is_some_and(|r| r.reveals_child()));
         }

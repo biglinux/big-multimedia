@@ -581,17 +581,22 @@ impl Component for VideoControlsBar {
 }
 
 impl VideoControlsBar {
-    /// Popovers the OSD auto-hide must inspect so it does not dismiss one
-    /// mid-hover or mid-menu-pick. Long-lived (built once), safe to clone for
-    /// the shell's `OsdState`.
+    /// Every popover of the bar: the hover ones (volume, speed, voice) and
+    /// [`Self::menu_popovers`]. Long-lived (built once), safe to clone.
     pub fn popovers(&self) -> Vec<gtk::Popover> {
         let mut popovers = self.hover_popovers.clone();
-        popovers.extend([
+        popovers.extend(self.menu_popovers());
+        popovers
+    }
+
+    /// The menus a click opens, which keep the OSD up while open. A hover
+    /// popover opens under a resting pointer, so it does not.
+    pub fn menu_popovers(&self) -> [gtk::Popover; 3] {
+        [
             self.button_layout.export_menu_popover.clone(),
             self.subtitle_menu_popover.clone(),
             self.audio_track_menu_popover.clone(),
-        ]);
-        popovers
+        ]
     }
 
     pub(crate) fn button_layout(&self) -> ButtonLayoutWidgets {
