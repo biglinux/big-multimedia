@@ -345,7 +345,7 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
 pub(crate) fn attach_write_fence(
     egl: &EglDmaBufFns,
     fence: &NativeFenceFns,
-    flush: impl FnOnce(),
+    flush: unsafe extern "C" fn(),
     export: &DmaBufExport,
 ) -> Result<(), FenceError> {
     // SAFETY: the context is current (caller), the functions were loaded for

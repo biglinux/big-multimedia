@@ -53,8 +53,8 @@ impl GbmFns {
     }
 }
 
-/// A GBM device on the render node GL draws on. The node closes after the
-/// device is destroyed (field order).
+/// A GBM device on the render node GL draws on. `Drop` destroys the device
+/// before the fields drop, so the node closes after it.
 struct Allocator {
     fns: GbmFns,
     device: NonNull<c_void>,

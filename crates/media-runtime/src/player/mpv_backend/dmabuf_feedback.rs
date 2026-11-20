@@ -37,7 +37,8 @@ pub(crate) struct SurfaceFeedback {
     tranches: Vec<Tranche>,
 }
 
-/// Modifiers to allocate with, in the compositor's order of preference.
+/// Modifiers to allocate with, in the order the chosen tranche lists them; the
+/// protocol orders tranches by preference, not the formats within one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Layout {
     pub(crate) modifiers: Vec<u64>,
@@ -275,6 +276,27 @@ struct Collected {
     done: bool,
 }
 
+impl Collected {
+    /// `tranche_done`: the tranche read since the last one joins the list,
+    /// up to [`MAX_TRANCHES`].
+    fn finish_tranche(&mut self) {
+        let tranche = std::mem::take(&mut self.pending);
+        if self.tranches.len() < MAX_TRANCHES {
+            self.tranches.push(tranche);
+        }
+    }
+}
+
+/// The 16-bit table indices of a `tranche_formats` array; a trailing odd byte
+/// is dropped.
+fn tranche_indices(bytes: &[u8]) -> Vec<u16> {
+    let (indices, _) = bytes.as_chunks::<2>();
+    indices
+        .iter()
+        .map(|index| u16::from_ne_bytes(*index))
+        .collect()
+}
+
 /// The bytes of a `wl_array` argument.
 ///
 /// # Safety
@@ -291,14 +313,23 @@ unsafe fn array_bytes<'a>(array: *const WlArray) -> &'a [u8] {
     }
 }
 
-/// Maps the shared table read-only and copies it out; the fd is closed on return.
+/// Maps the shared table read-only and copies it out; the fd is closed on
+/// return. A file shorter than `size` is refused: reading past its end would
+/// raise SIGBUS.
 fn read_format_table(fd: OwnedFd, size: u32) -> Option<Vec<(u32, u64)>> {
     let size = usize::try_from(size).ok()?;
-    if size == 0 || size > MAX_FORMAT_TABLE_BYTES {
+    let file_size = usize::try_from(
+        std::fs::File::from(fd.try_clone().ok()?)
+            .metadata()
+            .ok()?
+            .len(),
+    )
+    .ok()?;
+    if file_size < size {
         return None;
     }
-    // SAFETY: a private read-only mapping of the fd libwayland handed over;
-    // it is unmapped below before the fd closes.
+    // SAFETY: a private read-only mapping of at most the file's length, from
+    // the fd libwayland handed over; it is unmapped before the fd closes.
     unsafe {
         let mapping = libc::mmap(
             std::ptr::null_mut(),
@@ -358,19 +389,10 @@ unsafe extern "C" fn feedback_event(
                 collected.table = read_format_table(fd, (*args.add(1)).uint);
             }
             FEEDBACK_TRANCHE_FORMATS => {
-                let (indices, _) = array_bytes((*args).array).as_chunks::<2>();
-                collected.pending.indices = indices
-                    .iter()
-                    .map(|index| u16::from_ne_bytes(*index))
-                    .collect();
+                collected.pending.indices = tranche_indices(array_bytes((*args).array));
             }
             FEEDBACK_TRANCHE_FLAGS => collected.pending.flags = (*args).uint,
-            FEEDBACK_TRANCHE_DONE => {
-                let tranche = std::mem::take(&mut collected.pending);
-                if collected.tranches.len() < MAX_TRANCHES {
-                    collected.tranches.push(tranche);
-                }
-            }
+            FEEDBACK_TRANCHE_DONE => collected.finish_tranche(),
             _ => {}
         }
     }
@@ -582,9 +604,12 @@ impl Drop for FeedbackSession {
 #[cfg(test)]
 mod tests {
     use super::{
-        DRM_FORMAT_MOD_INVALID, DRM_FORMAT_MOD_LINEAR, Layout, MAX_FORMAT_TABLE_BYTES,
-        SurfaceFeedback, Tranche, choose_layout, parse_format_table,
+        Collected, DRM_FORMAT_MOD_INVALID, DRM_FORMAT_MOD_LINEAR, Layout, MAX_FORMAT_TABLE_BYTES,
+        MAX_TRANCHES, SurfaceFeedback, Tranche, choose_layout, parse_format_table,
+        read_format_table, tranche_indices,
     };
+    use std::io::Write;
+    use std::os::fd::{FromRawFd, OwnedFd};
 
     const XB24: u32 = 0x3432_4258;
     const AR24: u32 = 0x3432_5241;
@@ -631,6 +656,58 @@ mod tests {
             modifiers: modifiers.to_vec(),
             scanout,
         }
+    }
+
+    #[test]
+    fn tranches_capped_at_limit() {
+        let mut collected = Collected::default();
+        for index in 0..=MAX_TRANCHES {
+            collected.pending.indices =
+                tranche_indices(&u16::try_from(index).unwrap().to_ne_bytes());
+            collected.finish_tranche();
+        }
+        assert_eq!(collected.tranches.len(), MAX_TRANCHES);
+        assert_eq!(
+            collected
+                .tranches
+                .last()
+                .map(|tranche| tranche.indices.clone()),
+            Some(vec![63])
+        );
+        assert!(collected.pending.indices.is_empty());
+        assert_eq!(tranche_indices(&[1, 0, 2, 0, 9]), vec![1, 2]);
+    }
+
+    /// A memfd stands in for the compositor's shared table.
+    fn shared_table(bytes: &[u8]) -> OwnedFd {
+        // SAFETY: a constant name; the new fd is owned below.
+        let fd = unsafe { libc::memfd_create(c"format-table".as_ptr(), libc::MFD_CLOEXEC) };
+        assert!(fd >= 0, "memfd_create: {}", std::io::Error::last_os_error());
+        // SAFETY: memfd_create returned a new descriptor nothing else owns.
+        let fd = unsafe { OwnedFd::from_raw_fd(fd) };
+        std::fs::File::from(fd.try_clone().unwrap())
+            .write_all(bytes)
+            .unwrap();
+        fd
+    }
+
+    #[test]
+    fn short_table_file_refused() {
+        let bytes = [entry(XB24, DRM_FORMAT_MOD_LINEAR), entry(AR24, Y_TILED)].concat();
+        assert_eq!(
+            read_format_table(shared_table(&bytes), 32),
+            Some(vec![(XB24, DRM_FORMAT_MOD_LINEAR), (AR24, Y_TILED)])
+        );
+        assert_eq!(
+            read_format_table(shared_table(&bytes[..16]), 32),
+            None,
+            "announced past the file"
+        );
+        assert_eq!(
+            read_format_table(shared_table(&bytes), 24),
+            None,
+            "a partial entry"
+        );
     }
 
     #[test]

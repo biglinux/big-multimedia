@@ -350,10 +350,7 @@ impl OffloadRenderer {
             && let Some(fence) = egl.native_fence.as_ref()
             && !self.fence_unsupported.get()
         {
-            let flush = self.gl.flush;
-            // SAFETY: the context is current.
-            let flush = || unsafe { flush() };
-            match egl_dmabuf::attach_write_fence(egl, fence, flush, export) {
+            match egl_dmabuf::attach_write_fence(egl, fence, self.gl.flush, export) {
                 Ok(()) => return,
                 Err(FenceError::Unsupported(error)) => {
                     warn!("DMA-BUF write fence refused ({error}); waiting with glFinish");
