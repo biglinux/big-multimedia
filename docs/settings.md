@@ -16,8 +16,9 @@ Each player has its own file:
 neither `XDG_CONFIG_HOME` nor `HOME` is absolute, the player keeps its settings
 in memory only and reports that it cannot save them.
 
-Close the player before you edit the file. A running player refuses to save
-over a file another program changed after it was loaded.
+Close the player before you edit the file. A running player saves only the keys
+it changed and keeps the rest of the file as it finds it, so an edit to a key
+the player also changed is lost. A file that does not parse is never saved over.
 
 ### Format
 
