@@ -158,16 +158,51 @@ fn parent(path: &Path) -> &Path {
 /// Leading name of every staging entry next to user files.
 pub(super) const STAGING_PREFIX: &str = ".big-media-";
 
-/// Name prefix, carrying this process's PID, for staging next to user files;
-/// [`remove_stale_staging`] removes such entries once the process has exited.
+/// Name prefix, carrying this machine's tag and this process's PID, for
+/// staging next to user files; [`remove_stale_staging`] removes such entries
+/// once the process has exited.
 pub fn staging_prefix() -> String {
-    format!("{STAGING_PREFIX}{}-", std::process::id())
+    format!(
+        "{STAGING_PREFIX}{}-{}-",
+        machine_tag().unwrap_or("unknown"),
+        std::process::id()
+    )
+}
+
+/// `m` and the first 8 hex digits of `/etc/machine-id`: a folder shared by
+/// two machines holds staging whose PID means nothing to the other one's
+/// process table. `None` when the id cannot be read; such staging is never
+/// removed.
+fn machine_tag() -> Option<&'static str> {
+    static TAG: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    TAG.get_or_init(|| {
+        let id = read_regular_limited(Path::new("/etc/machine-id"), 64).ok()??;
+        let hex = id.get(..8)?;
+        hex.iter()
+            .all(u8::is_ascii_hexdigit)
+            .then(|| format!("m{}", String::from_utf8_lossy(hex).to_ascii_lowercase()))
+    })
+    .as_deref()
 }
 
 /// Best-effort removal of the staging entries in `directory` that a killed
-/// process of the current user left behind. A live owner keeps its entries.
+/// process of the current user on this machine left behind, once per
+/// directory per process: callers stage many files into one folder. A live
+/// owner keeps its entries.
 pub fn remove_stale_staging(directory: &Path) {
     use std::os::unix::fs::MetadataExt;
+    static SWEPT: std::sync::Mutex<std::collections::BTreeSet<PathBuf>> =
+        std::sync::Mutex::new(std::collections::BTreeSet::new());
+    let Some(tag) = machine_tag() else {
+        return;
+    };
+    if !SWEPT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(directory.to_owned())
+    {
+        return;
+    }
     let Ok(entries) = fs::read_dir(directory) else {
         return;
     };
@@ -175,7 +210,7 @@ pub fn remove_stale_staging(directory: &Path) {
     let uid = unsafe { libc::geteuid() };
     for entry in entries.flatten() {
         let name = entry.file_name();
-        let Some(pid) = name.to_str().and_then(staging_owner) else {
+        let Some(pid) = name.to_str().and_then(|name| staging_owner(name, tag)) else {
             continue;
         };
         // SAFETY: signal 0 only checks that the process exists; pid is positive.
@@ -205,8 +240,10 @@ pub fn remove_stale_staging(directory: &Path) {
     }
 }
 
-fn staging_owner(name: &str) -> Option<i32> {
-    let (pid, _) = name.strip_prefix(STAGING_PREFIX)?.split_once('-')?;
+/// The PID in a staging name made on the machine tagged `tag`.
+fn staging_owner(name: &str, tag: &str) -> Option<i32> {
+    let rest = name.strip_prefix(STAGING_PREFIX)?.strip_prefix(tag)?;
+    let (pid, _) = rest.strip_prefix('-')?.split_once('-')?;
     pid.parse::<i32>().ok().filter(|pid| *pid > 0)
 }
 
@@ -403,22 +440,27 @@ mod tests {
         drop(stage);
         fs::remove_dir_all(dir).unwrap();
     }
-    /// Staging of an exited process is removed by the next staging in that
-    /// directory; a live process keeps its own. No PID reaches `i32::MAX`.
+    /// Staging of an exited process of this machine is removed by the next
+    /// staging in that directory; a live process keeps its own, and another
+    /// machine's is never judged by this process table. No PID reaches `i32::MAX`.
     #[test]
     fn staging_removes_dead_process_leftovers() {
         let dir = directory();
-        let dead_directory = dir.join(format!(".big-media-{}-0a1b", i32::MAX));
+        let tag = machine_tag().expect("this machine has an id");
+        let dead_directory = dir.join(format!(".big-media-{tag}-{}-0a1b", i32::MAX));
         fs::create_dir(&dead_directory).unwrap();
         fs::write(dead_directory.join("out.png"), b"partial").unwrap();
-        let dead_file = dir.join(format!(".big-media-{}-x7Yz.flac", i32::MAX));
+        let dead_file = dir.join(format!(".big-media-{tag}-{}-x7Yz.flac", i32::MAX));
         fs::write(&dead_file, b"partial").unwrap();
-        let live_directory = dir.join(format!(".big-media-{}-0a1b", std::process::id()));
+        let live_directory = dir.join(format!("{}0a1b", staging_prefix()));
         fs::create_dir(&live_directory).unwrap();
+        let other_machine = dir.join(format!(".big-media-m00000000-{}-0a1b", i32::MAX));
+        fs::create_dir(&other_machine).unwrap();
         let stage = StagedFile::new(&dir.join("out.png")).unwrap();
         assert!(!dead_directory.exists());
         assert!(!dead_file.exists());
         assert!(live_directory.exists());
+        assert!(other_machine.exists());
         assert!(stage.path().exists());
         drop(stage);
         fs::remove_dir_all(dir).unwrap();
