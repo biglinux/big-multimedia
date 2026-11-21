@@ -16,7 +16,7 @@ use log::{debug, error, info, warn};
 use std::cell::Cell;
 use std::rc::Rc;
 pub(super) use texture_pool::CurrentContext;
-use texture_pool::{TextureLease, TexturePool};
+use texture_pool::{SLOT_COUNT, TextureLease, TexturePool};
 
 use gl_fns::{
     GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_LINEAR, GL_RGBA, GL_RGBA8,
@@ -100,6 +100,8 @@ impl OffloadRenderer {
         let egl = egl_dmabuf::probe();
 
         let pool = TexturePool::new(&gl_context, gl);
+        let slots = SlotBuffers::default();
+        slots.watch_monitors(&picture);
         let mut fbo = 0_u32;
         // SAFETY: `gl_context` is current and `fbo` is a valid out pointer.
         unsafe { (gl.gen_framebuffers)(1, &raw mut fbo) };
@@ -135,7 +137,7 @@ impl OffloadRenderer {
             fence_unsupported: Cell::new(false),
             fence_failure_reported: Cell::new(false),
             pool,
-            slots: SlotBuffers::default(),
+            slots,
             fbo,
             frame_count: Cell::new(0),
             skip_count: Cell::new(0),
@@ -215,6 +217,18 @@ impl OffloadRenderer {
         if !new_frame && !force {
             self.skip_count.set(self.skip_count.get() + 1);
             return;
+        }
+        if !self.dmabuf_rejected.get()
+            && self.slots.reread_on_monitor_change(
+                &self.picture,
+                self.egl.as_ref(),
+                (width, height),
+            )
+        {
+            // Each slot is made again in the new layout when it is next leased.
+            for index in 0..SLOT_COUNT {
+                self.pool.set_dimensions(index, 0, 0);
+            }
         }
         let Some((index, lease)) = self.pool.acquire(&self.gl) else {
             self.skip_count.set(self.skip_count.get() + 1);

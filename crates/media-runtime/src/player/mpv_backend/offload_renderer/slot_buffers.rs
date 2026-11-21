@@ -8,13 +8,14 @@ use super::super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns};
 use super::super::gl_proc_address::{SystemLibrary, library_function};
 use super::gl_fns::GlFns;
 use super::texture_pool::SLOT_COUNT;
-use gtk::prelude::*;
+use gtk::{gdk, glib, prelude::*};
 use log::{debug, info};
 use std::cell::{Cell, OnceCell, RefCell};
 use std::ffi::{CStr, c_int, c_void};
 use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::ffi::OsStrExt;
 use std::ptr::NonNull;
+use std::rc::Rc;
 
 const DRM_FORMAT_XBGR8888: u32 = u32::from_le_bytes(*b"XB24");
 const GBM_BO_USE_SCANOUT: u32 = 1 << 0;
@@ -163,6 +164,24 @@ impl Drop for Allocator {
     }
 }
 
+/// Whether slots made in `previous` are made again for `read`, the layout read
+/// after the window changed monitor. `None` is the driver's layout; the order
+/// of modifiers within a tranche states no preference.
+fn layout_changed(previous: Option<&Layout>, read: Option<&Layout>) -> bool {
+    match (previous, read) {
+        (None, None) => false,
+        (Some(previous), Some(read)) => {
+            previous.scanout != read.scanout
+                || previous.modifiers.len() != read.modifiers.len()
+                || previous
+                    .modifiers
+                    .iter()
+                    .any(|modifier| !read.modifiers.contains(modifier))
+        }
+        (None, Some(_)) | (Some(_), None) => true,
+    }
+}
+
 /// The slots' GBM buffers and the layout they were made in.
 #[derive(Default)]
 pub(super) struct SlotBuffers {
@@ -175,9 +194,66 @@ pub(super) struct SlotBuffers {
     /// Logged when it changes, so a fallback is reported once.
     described: RefCell<String>,
     disabled: Cell<bool>,
+    /// Set when the window enters or leaves a monitor, whose feedback may name
+    /// another device or a scanout tranche; the next frame reads it again.
+    monitor_changed: Rc<Cell<bool>>,
 }
 
 impl SlotBuffers {
+    /// Watch the monitors of `picture`'s window while it is realized.
+    pub(super) fn watch_monitors(&self, picture: &gtk::Picture) {
+        let watched: Rc<RefCell<Option<(gdk::Surface, [glib::SignalHandlerId; 2])>>> =
+            Rc::default();
+        let monitor_changed = Rc::clone(&self.monitor_changed);
+        let watched_on_realize = Rc::clone(&watched);
+        picture.connect_realize(move |picture| {
+            let Some(surface) = picture.native().and_then(|native| native.surface()) else {
+                return;
+            };
+            let entered = Rc::clone(&monitor_changed);
+            let left = Rc::clone(&monitor_changed);
+            let handlers = [
+                surface.connect_enter_monitor(move |_, _| entered.set(true)),
+                surface.connect_leave_monitor(move |_, _| left.set(true)),
+            ];
+            watched_on_realize.replace(Some((surface, handlers)));
+        });
+        picture.connect_unrealize(move |_| {
+            if let Some((surface, handlers)) = watched.take() {
+                for handler in handlers {
+                    surface.disconnect(handler);
+                }
+            }
+        });
+    }
+
+    /// After the window entered or left a monitor, read its layout again for
+    /// frames of `size`; `true` when the slots must be made again in it.
+    pub(super) fn reread_on_monitor_change(
+        &self,
+        picture: &gtk::Picture,
+        egl: Option<&EglDmaBufFns>,
+        size: (i32, i32),
+    ) -> bool {
+        if !self.monitor_changed.replace(false) || self.disabled.get() {
+            return false;
+        }
+        let Some(egl) = egl else { return false };
+        // Not read yet: the first slot reads it.
+        let Some(previous) = self
+            .layout
+            .borrow()
+            .as_ref()
+            .map(|(_, layout)| layout.clone())
+        else {
+            return false;
+        };
+        let read = self.read_layout(picture, egl);
+        let changed = layout_changed(previous.as_ref(), read.as_ref());
+        *self.layout.borrow_mut() = Some((size, read));
+        changed
+    }
+
     /// Bind slot `index`'s `texture` to a new buffer in the compositor's layout
     /// for `picture`'s window. `false` leaves the texture to the caller.
     pub(super) fn bind(
@@ -337,7 +413,7 @@ impl SlotBuffers {
 
 #[cfg(test)]
 mod tests {
-    use super::single_plane_modifiers;
+    use super::{Layout, layout_changed, single_plane_modifiers};
     use std::ffi::c_int;
 
     const LINEAR: u64 = 0;
@@ -382,6 +458,63 @@ mod tests {
                 single_plane_modifiers(offered, planes),
                 kept,
                 "offered {offered:X?}"
+            );
+        }
+    }
+
+    fn layout(modifiers: &[u64], scanout: bool) -> Layout {
+        Layout {
+            modifiers: modifiers.to_vec(),
+            scanout,
+        }
+    }
+
+    #[test]
+    fn slots_remade_when_layout_differs() {
+        for (name, previous, read, changed) in [
+            ("driver layout kept", None, None, false),
+            (
+                "same layout",
+                Some(layout(&[LINEAR, Y_TILED], false)),
+                Some(layout(&[LINEAR, Y_TILED], false)),
+                false,
+            ),
+            (
+                "reordered modifiers",
+                Some(layout(&[LINEAR, Y_TILED], false)),
+                Some(layout(&[Y_TILED, LINEAR], false)),
+                false,
+            ),
+            (
+                "scanout tranche gained",
+                Some(layout(&[LINEAR], false)),
+                Some(layout(&[LINEAR], true)),
+                true,
+            ),
+            (
+                "modifier dropped",
+                Some(layout(&[LINEAR, Y_TILED], false)),
+                Some(layout(&[LINEAR], false)),
+                true,
+            ),
+            (
+                "another modifier",
+                Some(layout(&[Y_TILED], false)),
+                Some(layout(&[TILE_4], false)),
+                true,
+            ),
+            (
+                "feedback appeared",
+                None,
+                Some(layout(&[LINEAR], false)),
+                true,
+            ),
+            ("feedback gone", Some(layout(&[LINEAR], false)), None, true),
+        ] {
+            assert_eq!(
+                layout_changed(previous.as_ref(), read.as_ref()),
+                changed,
+                "{name}"
             );
         }
     }
