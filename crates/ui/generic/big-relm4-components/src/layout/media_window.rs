@@ -616,9 +616,9 @@ impl BigMediaImmersionController {
     }
 
     /// Hide `revealer` when the media surface becomes idle. Neither keyboard
-    /// focus nor the pointer resting on it pins it open, as in mpv and VLC:
-    /// while it shows, the video cannot go to a hardware plane. The app pins it
-    /// with a hide guard while a control is in use.
+    /// focus nor the pointer resting on it pins it open: while it shows, the
+    /// video cannot go to a hardware plane. The app pins it with a hide guard
+    /// while a control is in use.
     pub fn register_revealer(&self, revealer: &gtk::Revealer) {
         self.reveal_targets.borrow_mut().push(revealer.downgrade());
     }
@@ -628,16 +628,6 @@ impl BigMediaImmersionController {
         self.hide_guard_predicates
             .borrow_mut()
             .push(Box::new(should_keep_visible));
-    }
-
-    /// Keep chrome visible while `popover` is open.
-    pub fn register_popover_hide_guard(&self, popover: &gtk::Popover) {
-        let popover = popover.downgrade();
-        self.register_hide_guard(move || {
-            popover
-                .upgrade()
-                .is_some_and(|popover| popover.is_visible())
-        });
     }
 
     /// Reveal registered chrome without arming an idle hide.

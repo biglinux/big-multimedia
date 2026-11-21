@@ -64,8 +64,8 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
     main_overlay.add_controller(motion);
 }
 
-/// The OSD in use: a button held over the overlay keeps it up, and keys
-/// pressed inside the OSD (`osd_areas`) restart its fade.
+/// The OSD in use: a button held over the overlay keeps it up, and a wheel
+/// turn over it or keys pressed inside the OSD (`osd_areas`) restart its fade.
 pub(super) fn wire_osd_in_use(
     main_overlay: &gtk::Overlay,
     osd_areas: &[gtk::Widget],
@@ -82,7 +82,8 @@ pub(super) fn wire_osd_in_use(
                 let was_held = osd.button_held.get();
                 let held = button_held_after(was_held, event.event_type(), event.modifier_state());
                 osd.button_held.set(held);
-                if held != was_held {
+                // A wheel turned over a bar control adjusts it without moving the pointer.
+                if held != was_held || event.event_type() == gtk::gdk::EventType::Scroll {
                     osd.show_and_schedule_hide();
                 }
             }

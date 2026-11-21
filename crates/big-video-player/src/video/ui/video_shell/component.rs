@@ -431,6 +431,32 @@ impl Component for VideoShell {
             let revealer = revealer.downgrade();
             osd.keep_shown_while(move || revealer.upgrade().is_some_and(|r| r.reveals_child()));
         }
+        for popover in controls.model().hover_popovers() {
+            // A hover popover holding focus is in use: one opened by keyboard stays
+            // while a screen reader reads it. The fade starts when focus leaves,
+            // unless the window lost it, which collapses the OSD itself.
+            let focus = gtk::EventControllerFocus::new();
+            focus.connect_leave({
+                let osd = Rc::downgrade(&osd);
+                move |focus| {
+                    let window_active = focus
+                        .widget()
+                        .and_then(|widget| widget.root())
+                        .and_downcast::<gtk::Window>()
+                        .is_some_and(|window| window.is_active());
+                    if window_active && let Some(osd) = osd.upgrade() {
+                        osd.show_and_schedule_hide();
+                    }
+                }
+            });
+            let focus_weak = focus.downgrade();
+            popover.add_controller(focus);
+            let popover = popover.downgrade();
+            osd.keep_shown_while(move || {
+                popover.upgrade().is_some_and(|p| p.is_visible())
+                    && focus_weak.upgrade().is_some_and(|f| f.contains_focus())
+            });
+        }
         // Collapse the OSD when the window loses focus (alt-tab to another
         // app), like other video players, as well as on the idle timer.
         wire_osd_focus_out(&main_overlay, &osd);

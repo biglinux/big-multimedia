@@ -643,7 +643,7 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
 /// popover takes a Wayland grab that anchors to the window origin (top-left)
 /// instead of the button. The button click toggles it and selecting a row pops it
 /// down; the OSD keeps itself shown while it is open (see
-/// `VideoControlsBar::popovers`).
+/// `VideoControlsBar::menu_popovers`).
 fn setup_end_menu_popover(button: &gtk::Button, popover: &gtk::Popover) {
     popover.set_position(gtk::PositionType::Top);
     popover.set_autohide(false);

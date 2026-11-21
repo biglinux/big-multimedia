@@ -169,8 +169,6 @@ pub struct VideoControlsBar {
     /// Live mpv handle shared with the popover callbacks (for track menus).
     mpv: MpvSlot,
     /// The hover popovers (volume / speed / voice) built in the start box.
-    /// Exposed so the shell's OSD auto-hide can keep the OSD shown while any of
-    /// them is open (else the auto-hide timer dismisses the popover mid-hover).
     hover_popovers: Vec<gtk::Popover>,
     /// Bottom OSD button-zone handles used by the Appearance dialog's live
     /// layout editor.
@@ -587,6 +585,11 @@ impl VideoControlsBar {
         let mut popovers = self.hover_popovers.clone();
         popovers.extend(self.menu_popovers());
         popovers
+    }
+
+    /// The volume, speed and voice popovers, which a resting pointer opens.
+    pub fn hover_popovers(&self) -> &[gtk::Popover] {
+        &self.hover_popovers
     }
 
     /// The menus a click opens, which keep the OSD up while open. A hover

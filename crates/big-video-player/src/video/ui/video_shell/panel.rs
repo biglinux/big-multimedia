@@ -378,7 +378,6 @@ impl VideoShell {
         self.panel.scroller.set_child(None::<&gtk::Widget>);
         self.panel.effects.take();
         self.last_reset = None;
-        self.osd.show_and_schedule_hide();
         self.refresh_adjustments(sender);
     }
 
