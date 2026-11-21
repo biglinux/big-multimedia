@@ -60,7 +60,7 @@ xgettext \
   --directory="$ROOT" \
   --files-from="$candidates"
 
-awk '/^#: / { for (i = 2; i <= NF; i++) { sub(/:[0-9]+$/, "", $i); print $i } }' \
+awk '/^#: / { for (i = 2; i <= NF; i++) print $i }' \
   "$HERE/big-media-runtime.pot" | LC_ALL=C sort -u > "$HERE/POTFILES.in"
 
 echo "POT regenerated: $HERE/big-media-runtime.pot"
