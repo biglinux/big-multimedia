@@ -512,7 +512,7 @@ fn is_proprietary_nvidia(vendor: &str, renderer: &str) -> bool {
 /// Whether offload may go on `driver`, logging a refusal or its override.
 fn driver_allows_offload(driver: &GlDriver, forced: bool) -> bool {
     let proprietary_nvidia = is_proprietary_nvidia(&driver.vendor, &driver.renderer);
-    if !offload_permitted(proprietary_nvidia, forced) {
+    if proprietary_nvidia && !forced {
         info!(
             "Offload disabled for GL {} / {} because NVIDIA's proprietary \
              GdkGLTexture/GraphicsOffload path grows GPU memory during \
@@ -532,12 +532,6 @@ fn driver_allows_offload(driver: &GlDriver, forced: bool) -> bool {
         );
     }
     true
-}
-
-/// Whether offload may go on this driver: the proprietary NVIDIA refusal
-/// yields only to `forced`.
-fn offload_permitted(proprietary_nvidia: bool, forced: bool) -> bool {
-    !proprietary_nvidia || forced
 }
 
 impl Drop for OffloadRenderer {
@@ -575,16 +569,21 @@ mod tests {
 
     #[test]
     fn force_overrides_nvidia_refusal() {
-        for (proprietary_nvidia, forced, permitted) in [
-            (false, false, true),
-            (false, true, true),
-            (true, false, false),
-            (true, true, true),
+        for (vendor, forced, permitted) in [
+            ("Intel", false, true),
+            ("Intel", true, true),
+            ("NVIDIA Corporation", false, false),
+            ("NVIDIA Corporation", true, true),
         ] {
+            let driver = super::GlDriver {
+                vendor: vendor.to_owned(),
+                renderer: String::new(),
+                version: String::new(),
+            };
             assert_eq!(
-                super::offload_permitted(proprietary_nvidia, forced),
+                super::driver_allows_offload(&driver, forced),
                 permitted,
-                "proprietary NVIDIA {proprietary_nvidia}, forced {forced}"
+                "GL vendor {vendor}, forced {forced}"
             );
         }
     }

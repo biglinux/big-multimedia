@@ -43,7 +43,6 @@ impl VideoBackend {
                      ({COMPOSITOR_RENDERER}={SOFTWARE_COMPOSITOR})"
                 )
             };
-            // allow-noisy-log: the chosen video path is said once per player.
             info!("Using GLArea video backend: {reason}");
             return Self::GlArea;
         }
@@ -84,34 +83,22 @@ fn truthy(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    /// The environment check, then the driver check `try_new` makes, as the
-    /// player runs them.
     #[test]
-    fn offload_default_honors_refusals() {
-        for (proprietary_nvidia, software_compositor, disabled, forced, offload) in [
-            (false, false, false, false, true),
-            (false, false, true, false, false),
-            (false, true, false, false, false),
-            (false, true, true, false, false),
-            (true, false, false, false, false),
-            (true, false, true, false, false),
-            (true, true, false, false, false),
-            (true, true, true, false, false),
-            (false, false, false, true, true),
-            (false, false, true, true, true),
-            (false, true, false, true, true),
-            (false, true, true, true, true),
-            (true, false, false, true, true),
-            (true, false, true, true, true),
-            (true, true, false, true, true),
-            (true, true, true, true, true),
+    fn force_overrides_environment_refusals() {
+        for (forced, disabled, software_compositor, requested) in [
+            (false, false, false, true),
+            (false, true, false, false),
+            (false, false, true, false),
+            (false, true, true, false),
+            (true, false, false, true),
+            (true, true, false, true),
+            (true, false, true, true),
+            (true, true, true, true),
         ] {
             assert_eq!(
-                super::offload_requested(forced, disabled, software_compositor)
-                    && super::super::offload_permitted(proprietary_nvidia, forced),
-                offload,
-                "proprietary NVIDIA {proprietary_nvidia}, software compositor \
-                 {software_compositor}, opted out {disabled}, forced {forced}"
+                super::offload_requested(forced, disabled, software_compositor),
+                requested,
+                "forced {forced}, opted out {disabled}, software compositor {software_compositor}"
             );
         }
     }

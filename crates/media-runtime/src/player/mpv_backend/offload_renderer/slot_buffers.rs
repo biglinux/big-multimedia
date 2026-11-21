@@ -1,7 +1,7 @@
 //! Offload slots allocated through GBM in a layout the compositor takes for the
 //! window, from its `linux-dmabuf` feedback, instead of the layout the driver
-//! picks for a GL texture (Y-tiled on Sandy Bridge, which big-compositor's 2d
-//! refuses). Any step that fails leaves the slot to `glTexImage2D` and export.
+//! picks for a GL texture (Y-tiled on Sandy Bridge, which that GPU's planes
+//! refuse). Any step that fails leaves the slot to `glTexImage2D` and export.
 
 use super::super::dmabuf_feedback::{self, FeedbackSession, Layout};
 use super::super::egl_dmabuf::{self, DmaBufExport, EglDmaBufFns};
@@ -194,8 +194,8 @@ pub(super) struct SlotBuffers {
     /// Logged when it changes, so a fallback is reported once.
     described: RefCell<String>,
     disabled: Cell<bool>,
-    /// Set when the window enters or leaves a monitor, whose feedback may name
-    /// another device or a scanout tranche; the next frame reads it again.
+    /// Set when the window enters or leaves a monitor, whose feedback may list
+    /// other modifiers or a scanout tranche; the next frame reads it again.
     monitor_changed: Rc<Cell<bool>>,
 }
 
